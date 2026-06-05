@@ -1,0 +1,92 @@
+from __future__ import annotations
+
+import logging
+import re
+from dataclasses import dataclass, field
+
+import httpx
+
+from api.config import settings
+
+log = logging.getLogger(__name__)
+
+_BASE = "https://api.scrapecreators.com"
+_URL_RE = re.compile(r"https?://[^\s]+")
+
+
+@dataclass
+class ReelMetadata:
+    source_url: str
+    canonical_url: str
+    description: str
+    thumbnail_url: str | None
+    creator_handle: str | None
+    linked_urls: list[str] = field(default_factory=list)
+
+
+class ScrapeCreatorsClient:
+    def __init__(self) -> None:
+        self._headers = {"x-api-key": settings.scrapecreators_api_key}
+
+    def _platform(self, url: str) -> str:
+        if "tiktok.com" in url:
+            return "tiktok"
+        return "instagram"
+
+    async def fetch_reel(self, url: str) -> ReelMetadata:
+        platform = self._platform(url)
+        endpoint = (
+            f"{_BASE}/v1/tiktok/video" if platform == "tiktok"
+            else f"{_BASE}/v1/instagram/post"
+        )
+        async with httpx.AsyncClient(timeout=30) as client:
+            r = await client.get(endpoint, headers=self._headers, params={"url": url})
+            r.raise_for_status()
+            data = r.json()
+
+        import json as _json
+        log.debug("ScrapeCreators raw response: %s", _json.dumps(data, indent=2)[:3000])
+
+        if platform == "tiktok":
+            description = data.get("desc", "") or ""
+            thumbnail_url = data.get("cover", data.get("dynamicCover"))
+            creator_handle = (data.get("author") or {}).get("uniqueId")
+            canonical_url = url
+        else:
+            # Instagram response: data.data.xdt_shortcode_media
+            media = (data.get("data") or {}).get("xdt_shortcode_media") or {}
+            edges = (media.get("edge_media_to_caption") or {}).get("edges") or []
+            description = edges[0]["node"]["text"] if edges else ""
+            thumbnail_url = media.get("thumbnail_src") or media.get("display_url")
+            creator_handle = (media.get("owner") or {}).get("username")
+            canonical_url = url
+
+        linked_urls = _URL_RE.findall(description)
+        return ReelMetadata(
+            source_url=url,
+            canonical_url=canonical_url,
+            description=description,
+            thumbnail_url=thumbnail_url,
+            creator_handle=creator_handle,
+            linked_urls=linked_urls,
+        )
+
+    async def fetch_transcript(self, url: str) -> str:
+        platform = self._platform(url)
+        endpoint = (
+            f"{_BASE}/v1/tiktok/video/transcript" if platform == "tiktok"
+            else f"{_BASE}/v2/instagram/media/transcript"
+        )
+        async with httpx.AsyncClient(timeout=60) as client:
+            r = await client.get(endpoint, headers=self._headers, params={"url": url})
+            r.raise_for_status()
+            data = r.json()
+
+        # transcripts is an array; join all segments
+        transcripts = data.get("transcripts") or []
+        if transcripts:
+            return " ".join(t.get("text") or "" for t in transcripts).strip()
+        return data.get("text", "")
+
+
+scraper = ScrapeCreatorsClient()

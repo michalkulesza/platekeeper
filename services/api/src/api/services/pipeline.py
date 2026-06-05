@@ -1,0 +1,181 @@
+from __future__ import annotations
+
+import json
+import logging
+from collections.abc import AsyncGenerator
+from typing import Any
+
+import httpx
+from bs4 import BeautifulSoup
+
+from api.models import (
+    ImportMetadata,
+    ImportResult,
+    ImportStage,
+    Ingredient,
+    RecipeComponent,
+    RecipeExtraction,
+)
+from api.services import gemini as gemini_svc
+from api.services.scraper import ReelMetadata, scraper
+
+log = logging.getLogger(__name__)
+
+
+def _is_complete(recipe: RecipeExtraction) -> bool:
+    return any(c.ingredients and c.steps for c in recipe.components)
+
+
+def _extract_jsonld_recipe(html: str) -> RecipeExtraction | None:
+    soup = BeautifulSoup(html, "html.parser")
+    for tag in soup.find_all("script", type="application/ld+json"):
+        try:
+            data = json.loads(tag.string or "")
+        except (json.JSONDecodeError, TypeError):
+            continue
+        items = data if isinstance(data, list) else [data]
+        for item in items:
+            if item.get("@type") == "Recipe":
+                return _jsonld_to_extraction(item)
+    return None
+
+
+def _jsonld_to_extraction(data: dict) -> RecipeExtraction:
+    ingredients = [
+        Ingredient(name=line)
+        for line in data.get("recipeIngredient", [])
+        if line.strip()
+    ]
+    steps: list[str] = []
+    for s in data.get("recipeInstructions", []):
+        if isinstance(s, str):
+            steps.append(s)
+        elif isinstance(s, dict):
+            steps.append(s.get("text", ""))
+
+    servings_raw = data.get("recipeYield")
+    servings: int | None = None
+    if isinstance(servings_raw, int):
+        servings = servings_raw
+    elif isinstance(servings_raw, str):
+        try:
+            servings = int("".join(c for c in servings_raw if c.isdigit()) or "0") or None
+        except ValueError:
+            pass
+
+    component = RecipeComponent(role="main", ingredients=ingredients, steps=steps)
+    return RecipeExtraction(
+        title=data.get("name"),
+        servings=servings,
+        components=[component] if (ingredients or steps) else [],
+    )
+
+
+def _strip_html(html: str) -> str:
+    soup = BeautifulSoup(html, "html.parser")
+    for tag in soup(["script", "style", "nav", "header", "footer", "aside"]):
+        tag.decompose()
+    return soup.get_text(separator="\n", strip=True)[:8000]
+
+
+async def _try_linked_url(url: str) -> RecipeExtraction | None:
+    try:
+        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+            r = await client.get(url, headers={"User-Agent": "Mozilla/5.0"})
+            r.raise_for_status()
+            html = r.text
+    except Exception as exc:
+        log.warning("Failed to fetch linked URL %s: %s", url, exc)
+        return None
+
+    jsonld = _extract_jsonld_recipe(html)
+    if jsonld and _is_complete(jsonld):
+        return jsonld
+
+    page_text = _strip_html(html)
+    if len(page_text) < 50:
+        return None
+
+    result = await gemini_svc.extract_recipe(page_text, source_hint="webpage")
+    return result if _is_complete(result) else None
+
+
+def _stage_event(key: str, label: str) -> dict[str, Any]:
+    return {"type": "stage", "key": key, "label": label}
+
+
+def _done_event(result: ImportResult) -> dict[str, Any]:
+    return {"type": "done", "result": result.model_dump()}
+
+
+async def run_import_stream(url: str) -> AsyncGenerator[dict[str, Any], None]:
+    yield _stage_event("fetching_metadata", "Fetching reel metadata…")
+
+    try:
+        metadata: ReelMetadata = await scraper.fetch_reel(url)
+    except Exception as exc:
+        yield _done_event(ImportResult(
+            stage=ImportStage.FAILED,
+            metadata=ImportMetadata(source_url=url),
+            error=f"Could not fetch reel: {exc}",
+        ))
+        return
+
+    meta = ImportMetadata(
+        source_url=metadata.source_url,
+        creator_handle=metadata.creator_handle,
+        thumbnail_url=metadata.thumbnail_url,
+    )
+
+    # Stage 1 — description
+    if metadata.description.strip():
+        yield _stage_event("checking_description", "Checking caption with Gemini…")
+        try:
+            result = await gemini_svc.extract_recipe(
+                metadata.description, source_hint="instagram/tiktok caption"
+            )
+            if _is_complete(result):
+                yield _done_event(ImportResult(stage=ImportStage.DESCRIPTION, recipe=result, metadata=meta))
+                return
+        except Exception as exc:
+            log.warning("Gemini description stage failed: %s", exc)
+
+    # Stage 2 — linked URLs
+    for link in metadata.linked_urls[:3]:
+        yield _stage_event("checking_links", f"Checking linked page…")
+        try:
+            result = await _try_linked_url(link)
+            if result and _is_complete(result):
+                yield _done_event(ImportResult(stage=ImportStage.LINK, recipe=result, metadata=meta))
+                return
+        except Exception as exc:
+            log.warning("Link stage failed for %s: %s", link, exc)
+
+    # Stage 3 — transcript
+    yield _stage_event("fetching_transcript", "Fetching video transcript…")
+    try:
+        transcript = await scraper.fetch_transcript(url)
+        if transcript.strip():
+            yield _stage_event("analyzing_transcript", "Analyzing transcript with Gemini…")
+            result = await gemini_svc.extract_recipe(transcript, source_hint="video transcript")
+            log.debug("Transcript extraction result: title=%r components=%d", result.title, len(result.components))
+            # Last resort — return whatever Gemini found, even if partial
+            yield _done_event(ImportResult(stage=ImportStage.TRANSCRIPT, recipe=result, metadata=meta))
+            return
+    except Exception as exc:
+        log.warning("Transcription stage failed: %s", exc)
+
+    yield _done_event(ImportResult(
+        stage=ImportStage.FAILED,
+        metadata=meta,
+        error="Could not extract a recipe from this reel.",
+    ))
+
+
+async def run_import(url: str) -> ImportResult:
+    result: ImportResult | None = None
+    async for event in run_import_stream(url):
+        if event["type"] == "done":
+            result = ImportResult.model_validate(event["result"])
+    assert result is not None
+    return result
