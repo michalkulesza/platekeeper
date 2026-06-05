@@ -2,10 +2,14 @@ import { useState } from "react";
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import BottomNav from "./components/BottomNav";
 import AddRecipeModal from "./components/AddRecipeModal";
+import ProtectedRoute from "./components/ProtectedRoute";
 import RecipesPage from "./pages/RecipesPage";
 import MealPlanPage from "./pages/MealPlanPage";
 import ShoppingListPage from "./pages/ShoppingListPage";
 import SettingsPage from "./pages/SettingsPage";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+import { AuthProvider } from "./context/AuthContext";
 
 function AppShell() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -18,7 +22,6 @@ function AppShell() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Page content — padded so it clears the bottom nav */}
       <div className="pb-[calc(4.5rem+env(safe-area-inset-bottom))]">
         <Routes>
           <Route path="/" element={<RecipesPage onAddRecipe={openAddRecipe} />} />
@@ -27,7 +30,6 @@ function AppShell() {
           <Route path="/settings" element={<SettingsPage />} />
         </Routes>
       </div>
-
       <BottomNav onAddRecipe={openAddRecipe} />
       <AddRecipeModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
     </div>
@@ -37,7 +39,20 @@ function AppShell() {
 export default function App() {
   return (
     <BrowserRouter>
-      <AppShell />
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route
+            path="/*"
+            element={
+              <ProtectedRoute>
+                <AppShell />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 }
