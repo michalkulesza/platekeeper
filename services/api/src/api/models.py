@@ -26,6 +26,7 @@ class RecipeComponent(BaseModel):
 class RecipeExtraction(BaseModel):
     title: str | None = None
     servings: int | None = None
+    kcal_per_serving: int | None = None
     components: list[RecipeComponent] = []
 
 

@@ -15,9 +15,9 @@ async def create_import(body: ImportRequest) -> ImportResult:
 
 
 @router.get("/stream")
-async def stream_import(url: str) -> StreamingResponse:
+async def stream_import(url: str, model: str = "gemini-2.5-flash") -> StreamingResponse:
     async def generate():
-        async for event in run_import_stream(url):
+        async for event in run_import_stream(url, model=model):
             yield f"data: {json.dumps(event)}\n\n"
 
     return StreamingResponse(

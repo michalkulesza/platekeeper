@@ -16,6 +16,7 @@ from api.models import (
     RecipeComponent,
     RecipeExtraction,
 )
+from api.services import cache as cache_svc
 from api.services import gemini as gemini_svc
 from api.services.scraper import ReelMetadata, scraper
 
@@ -78,7 +79,7 @@ def _strip_html(html: str) -> str:
     return soup.get_text(separator="\n", strip=True)[:8000]
 
 
-async def _try_linked_url(url: str) -> RecipeExtraction | None:
+async def _try_linked_url(url: str, model: str = "gemini-2.5-flash") -> RecipeExtraction | None:
     try:
         async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
             r = await client.get(url, headers={"User-Agent": "Mozilla/5.0"})
@@ -96,7 +97,7 @@ async def _try_linked_url(url: str) -> RecipeExtraction | None:
     if len(page_text) < 50:
         return None
 
-    result = await gemini_svc.extract_recipe(page_text, source_hint="webpage")
+    result = await gemini_svc.extract_recipe(page_text, source_hint="webpage", model=model)
     return result if _is_complete(result) else None
 
 
@@ -104,11 +105,19 @@ def _stage_event(key: str, label: str) -> dict[str, Any]:
     return {"type": "stage", "key": key, "label": label}
 
 
-def _done_event(result: ImportResult) -> dict[str, Any]:
+def _done_event(result: ImportResult, cache_key: str | None = None) -> dict[str, Any]:
+    if cache_key and result.stage != ImportStage.FAILED:
+        cache_svc.set(cache_key, result)
     return {"type": "done", "result": result.model_dump()}
 
 
-async def run_import_stream(url: str) -> AsyncGenerator[dict[str, Any], None]:
+async def run_import_stream(url: str, model: str = "gemini-2.5-flash") -> AsyncGenerator[dict[str, Any], None]:
+    cached = cache_svc.get(url)
+    if cached is not None:
+        log.debug("Cache hit for %s", url)
+        yield _done_event(cached)
+        return
+
     yield _stage_event("fetching_metadata", "Fetching reel metadata…")
 
     try:
@@ -132,10 +141,10 @@ async def run_import_stream(url: str) -> AsyncGenerator[dict[str, Any], None]:
         yield _stage_event("checking_description", "Checking caption with Gemini…")
         try:
             result = await gemini_svc.extract_recipe(
-                metadata.description, source_hint="instagram/tiktok caption"
+                metadata.description, source_hint="instagram/tiktok caption", model=model
             )
             if _is_complete(result):
-                yield _done_event(ImportResult(stage=ImportStage.DESCRIPTION, recipe=result, metadata=meta))
+                yield _done_event(ImportResult(stage=ImportStage.DESCRIPTION, recipe=result, metadata=meta), cache_key=url)
                 return
         except Exception as exc:
             log.warning("Gemini description stage failed: %s", exc)
@@ -144,9 +153,9 @@ async def run_import_stream(url: str) -> AsyncGenerator[dict[str, Any], None]:
     for link in metadata.linked_urls[:3]:
         yield _stage_event("checking_links", f"Checking linked page…")
         try:
-            result = await _try_linked_url(link)
+            result = await _try_linked_url(link, model=model)
             if result and _is_complete(result):
-                yield _done_event(ImportResult(stage=ImportStage.LINK, recipe=result, metadata=meta))
+                yield _done_event(ImportResult(stage=ImportStage.LINK, recipe=result, metadata=meta), cache_key=url)
                 return
         except Exception as exc:
             log.warning("Link stage failed for %s: %s", link, exc)
@@ -157,10 +166,10 @@ async def run_import_stream(url: str) -> AsyncGenerator[dict[str, Any], None]:
         transcript = await scraper.fetch_transcript(url)
         if transcript.strip():
             yield _stage_event("analyzing_transcript", "Analyzing transcript with Gemini…")
-            result = await gemini_svc.extract_recipe(transcript, source_hint="video transcript")
+            result = await gemini_svc.extract_recipe(transcript, source_hint="video transcript", model=model)
             log.debug("Transcript extraction result: title=%r components=%d", result.title, len(result.components))
             # Last resort — return whatever Gemini found, even if partial
-            yield _done_event(ImportResult(stage=ImportStage.TRANSCRIPT, recipe=result, metadata=meta))
+            yield _done_event(ImportResult(stage=ImportStage.TRANSCRIPT, recipe=result, metadata=meta), cache_key=url)
             return
     except Exception as exc:
         log.warning("Transcription stage failed: %s", exc)
@@ -172,9 +181,9 @@ async def run_import_stream(url: str) -> AsyncGenerator[dict[str, Any], None]:
     ))
 
 
-async def run_import(url: str) -> ImportResult:
+async def run_import(url: str, model: str = "gemini-2.5-flash") -> ImportResult:
     result: ImportResult | None = None
-    async for event in run_import_stream(url):
+    async for event in run_import_stream(url, model=model):
         if event["type"] == "done":
             result = ImportResult.model_validate(event["result"])
     assert result is not None

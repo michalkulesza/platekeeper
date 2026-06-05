@@ -11,7 +11,7 @@ from api.models import RecipeExtraction
 
 log = logging.getLogger(__name__)
 
-_MODEL = "gemini-2.5-flash"
+_DEFAULT_MODEL = "gemini-2.5-flash"
 
 _SYSTEM = """\
 You are a recipe extraction assistant. Given text from a social media caption,
@@ -28,6 +28,12 @@ For ingredients, always try to separate qty/unit/name/note. Examples:
 
 For multi-component recipes (e.g. "for the sauce:", "for the marinade:"),
 create a separate component for each section.
+
+servings: extract from the text if stated. If not stated, estimate a reasonable
+serving count based on the ingredient quantities and dish type.
+
+kcal_per_serving: extract from the text if stated. If not stated, estimate based
+on the ingredients and typical preparation. Provide a realistic round number.
 """
 
 
@@ -35,12 +41,12 @@ def _build_client() -> genai.Client:
     return genai.Client(api_key=settings.gemini_api_key)
 
 
-async def extract_recipe(text: str, source_hint: str = "") -> RecipeExtraction:
+async def extract_recipe(text: str, source_hint: str = "", model: str = _DEFAULT_MODEL) -> RecipeExtraction:
     prompt = f"Source: {source_hint}\n\n{text}" if source_hint else text
 
     client = _build_client()
     response = client.models.generate_content(
-        model=_MODEL,
+        model=model,
         contents=prompt,
         config=types.GenerateContentConfig(
             system_instruction=_SYSTEM,

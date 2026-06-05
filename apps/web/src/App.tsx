@@ -1,5 +1,5 @@
 import { FormEvent, useState, useRef } from "react";
-import { streamImport, ImportResult, RecipeComponent, StageEvent } from "./api/client";
+import { streamImport, ImportResult, RecipeComponent, StageEvent, GeminiModel, MODELS } from "./api/client";
 import AdUnit from "./components/AdUnit";
 
 // ── Progress list ────────────────────────────────────────────────────────────
@@ -116,8 +116,12 @@ function RecipeResult({ result }: { result: ImportResult }) {
         )}
         <div>
           <h2 style={{ margin: "0 0 4px" }}>{recipe.title ?? "Untitled"}</h2>
-          {recipe.servings && (
-            <p style={{ margin: "0 0 4px", color: "#555", fontSize: 14 }}>Serves {recipe.servings}</p>
+          {(recipe.servings || recipe.kcal_per_serving) && (
+            <p style={{ margin: "0 0 4px", color: "#555", fontSize: 14 }}>
+              {recipe.servings && `Serves ${recipe.servings}`}
+              {recipe.servings && recipe.kcal_per_serving && " · "}
+              {recipe.kcal_per_serving && `${recipe.kcal_per_serving} kcal/serving`}
+            </p>
           )}
           {metadata.creator_handle && (
             <p style={{ margin: "0 0 4px", color: "#555", fontSize: 13 }}>@{metadata.creator_handle}</p>
@@ -137,7 +141,8 @@ function RecipeResult({ result }: { result: ImportResult }) {
 // ── Main app ─────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [url, setUrl] = useState("");
+  const [url, setUrl] = useState("https://www.instagram.com/p/DVJyPzIDbzo/");
+  const [model, setModel] = useState<GeminiModel>("gemini-2.5-flash");
   const [loading, setLoading] = useState(false);
   const [steps, setSteps] = useState<StepState[]>([]);
   const [result, setResult] = useState<ImportResult | null>(null);
@@ -155,7 +160,7 @@ export default function App() {
     setResult(null);
     setSteps([]);
 
-    cancelRef.current = streamImport(url, {
+    cancelRef.current = streamImport(url, model, {
       onStage(stage) {
         setSteps((prev) => {
           // Mark previous active step as done, append new active step
@@ -183,7 +188,23 @@ export default function App() {
     <main style={{ maxWidth: 680, margin: "48px auto", padding: "0 24px", fontFamily: "system-ui, sans-serif" }}>
       <h1 style={{ margin: "0 0 32px", fontSize: 28 }}>PlateKeeper</h1>
 
-      <form onSubmit={handleSubmit} style={{ display: "flex", gap: 8 }}>
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <span style={{ fontSize: 13, color: "#555" }}>Model:</span>
+          {MODELS.map((m) => (
+            <label key={m} style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
+              <input
+                type="radio"
+                name="model"
+                value={m}
+                checked={model === m}
+                onChange={() => setModel(m)}
+              />
+              {m}
+            </label>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
         <input
           type="url"
           value={url}
@@ -214,6 +235,7 @@ export default function App() {
         >
           {loading ? "Importing…" : "Import"}
         </button>
+        </div>
       </form>
 
       <ProgressList steps={steps} />

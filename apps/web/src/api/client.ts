@@ -16,6 +16,7 @@ export interface RecipeComponent {
 export interface RecipeGroup {
   title: string | null;
   servings: number | null;
+  kcal_per_serving: number | null;
   components: RecipeComponent[];
 }
 
@@ -45,9 +46,12 @@ export interface StreamCallbacks {
   onError: (error: string) => void;
 }
 
-export function streamImport(url: string, callbacks: StreamCallbacks): () => void {
+export const MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"] as const;
+export type GeminiModel = typeof MODELS[number];
+
+export function streamImport(url: string, model: GeminiModel, callbacks: StreamCallbacks): () => void {
   const source = new EventSource(
-    `/api/imports/stream?url=${encodeURIComponent(url)}`
+    `/api/imports/stream?url=${encodeURIComponent(url)}&model=${encodeURIComponent(model)}`
   );
 
   source.onmessage = (event) => {
