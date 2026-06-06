@@ -304,7 +304,7 @@ export default function MealPlanPage({ recipes, preferences }: MealPlanPageProps
           <h1 className="text-xl font-bold">Meal Plan</h1>
         </div>
 
-        <div ref={calendarRef} className="pk-cal pb-2 px-1 flex justify-center">
+        <div ref={calendarRef} className="pk-cal pb-2 px-1">
           <I18nProvider locale={calendarLocale}>
             <Calendar
               aria-label="Meal plan calendar"
@@ -312,7 +312,7 @@ export default function MealPlanPage({ recipes, preferences }: MealPlanPageProps
               onChange={handleCalendarChange}
               onFocusChange={handleFocusChange}
               classNames={{
-                base: "shadow-none w-full max-w-none bg-transparent rounded-none",
+                base: "shadow-none w-full max-w-none bg-transparent rounded-none flex flex-col items-center",
                 headerWrapper: "px-3 pt-0 pb-2",
                 header: "text-sm font-bold tracking-tight",
                 prevButton: "w-8 h-8 min-w-0 text-default-500 hover:text-default-800 transition-colors",
