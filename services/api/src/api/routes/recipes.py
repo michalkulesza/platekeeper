@@ -18,6 +18,9 @@ _CSV_FIELDS = ["title", "servings", "kcal_per_serving", "thumbnail_url", "creato
 
 
 async def _set_tags(session: AsyncSession, recipe: Recipe, tag_ids: list[uuid.UUID], user_id: uuid.UUID) -> None:
+    # Explicitly load the tags collection so assignment never triggers a lazy-load
+    # in async context (MissingGreenlet).
+    await session.refresh(recipe, attribute_names=["tags"])
     if not tag_ids:
         recipe.tags = []
         return
