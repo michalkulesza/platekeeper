@@ -92,13 +92,14 @@ function RecipeThumb({ src, alt, className = "" }: { src: string; alt: string; c
 // ── DayRow ────────────────────────────────────────────────────────────────────
 
 function DayRow({
-  day, year, month, entry, isToday, setRef, onAdd, onTap,
+  day, year, month, entry, isToday, isSelected, setRef, onAdd, onTap,
 }: {
   day: number;
   year: number;
   month: number;
   entry?: MealPlanEntry;
   isToday: boolean;
+  isSelected: boolean;
   setRef: (el: HTMLDivElement | null) => void;
   onAdd: () => void;
   onTap: () => void;
@@ -106,24 +107,27 @@ function DayRow({
   const date = new Date(year, month - 1, day);
   const dayName = SHORT_DAYS[date.getDay()];
   const thumb = proxyUrl(entry?.recipe.thumbnail_url);
+  const highlighted = isToday || isSelected;
 
   return (
     <div
       ref={setRef}
-      className={`flex items-center gap-3 px-4 py-3 border-b border-divider transition-colors ${
-        isToday ? "bg-primary/5" : ""
-      }`}
+      className={`flex items-center gap-3 py-3 border-b border-divider border-l-[3px] transition-colors ${
+        isSelected
+          ? "border-l-primary bg-primary/10 pl-[13px] pr-4"
+          : "border-l-transparent pl-[13px] pr-4"
+      } ${isToday && !isSelected ? "bg-primary/5" : ""}`}
     >
       {/* Date column */}
-      <div className={`w-12 shrink-0 text-center ${isToday ? "text-primary" : "text-default-500"}`}>
+      <div className={`w-12 shrink-0 text-center ${highlighted ? "text-primary" : "text-default-500"}`}>
         <p className="text-[10px] font-semibold uppercase tracking-wide">{dayName}</p>
-        <p className={`text-2xl font-bold leading-tight ${isToday ? "text-primary" : "text-default-800"}`}>
+        <p className={`text-2xl font-bold leading-tight ${highlighted ? "text-primary" : "text-default-800"}`}>
           {day}
         </p>
       </div>
 
       {/* Vertical divider */}
-      <div className={`w-px self-stretch ${isToday ? "bg-primary/30" : "bg-divider"}`} />
+      <div className={`w-px self-stretch ${highlighted ? "bg-primary/30" : "bg-divider"}`} />
 
       {/* Content */}
       {entry ? (
@@ -353,6 +357,10 @@ export default function MealPlanPage({ recipes, preferences }: MealPlanPageProps
               day === todayDate.day &&
               viewMonth === todayDate.month &&
               viewYear === todayDate.year;
+            const isSelected =
+              day === selectedDate.day &&
+              viewMonth === selectedDate.month &&
+              viewYear === selectedDate.year;
 
             return (
               <DayRow
@@ -362,6 +370,7 @@ export default function MealPlanPage({ recipes, preferences }: MealPlanPageProps
                 month={viewMonth}
                 entry={entry}
                 isToday={isToday}
+                isSelected={isSelected}
                 setRef={(el) => {
                   if (el) dayRefs.current.set(day, el);
                   else dayRefs.current.delete(day);
