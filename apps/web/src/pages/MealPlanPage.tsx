@@ -53,10 +53,11 @@ function injectDots(container: HTMLElement | null, planned: Set<string>) {
       bottom: "3px",
       left: "50%",
       transform: "translateX(-50%)",
-      width: "4px",
-      height: "4px",
+      width: "5px",
+      height: "5px",
       borderRadius: "50%",
       background: "hsl(var(--heroui-primary))",
+      opacity: "0.85",
       pointerEvents: "none",
     });
     (btn as HTMLElement).style.position = "relative";
@@ -112,7 +113,7 @@ function DayRow({
       ref={setRef}
       className={`flex items-center gap-3 py-3 border-b border-divider border-l-[3px] transition-colors ${
         isSelected ? "border-l-primary bg-primary/10" : "border-l-transparent"
-      } ${isToday && !isSelected ? "bg-primary/5" : ""} pl-[13px] pr-4`}
+      } pl-[13px] pr-4`}
     >
       {/* Date column */}
       <div className={`w-12 shrink-0 text-center ${isToday || isSelected ? "text-primary" : "text-default-500"}`}>
