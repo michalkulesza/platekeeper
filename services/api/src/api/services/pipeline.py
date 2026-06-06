@@ -72,6 +72,10 @@ def _jsonld_to_extraction(data: dict) -> RecipeExtraction:
     )
 
 
+def _is_social_url(url: str) -> bool:
+    return "tiktok.com" in url or "instagram.com" in url
+
+
 def _strip_html(html: str) -> str:
     soup = BeautifulSoup(html, "html.parser")
     for tag in soup(["script", "style", "nav", "header", "footer", "aside"]):
@@ -79,7 +83,7 @@ def _strip_html(html: str) -> str:
     return soup.get_text(separator="\n", strip=True)[:8000]
 
 
-async def _try_linked_url(url: str, model: str = "gemini-2.5-flash") -> RecipeExtraction | None:
+async def _try_linked_url(url: str, model: str = "gemini-2.5-flash-lite") -> RecipeExtraction | None:
     try:
         async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
             r = await client.get(url, headers={"User-Agent": "Mozilla/5.0"})
@@ -111,11 +115,56 @@ def _done_event(result: ImportResult, cache_key: str | None = None) -> dict[str,
     return {"type": "done", "result": result.model_dump()}
 
 
-async def run_import_stream(url: str, model: str = "gemini-2.5-flash") -> AsyncGenerator[dict[str, Any], None]:
+async def run_import_stream(url: str, model: str = "gemini-2.5-flash-lite") -> AsyncGenerator[dict[str, Any], None]:
     cached = cache_svc.get(url)
     if cached is not None:
         log.debug("Cache hit for %s", url)
         yield _done_event(cached)
+        return
+
+    if not _is_social_url(url):
+        yield _stage_event("fetching_page", "Fetching recipe page…")
+        try:
+            async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+                r = await client.get(url, headers={"User-Agent": "Mozilla/5.0"})
+                r.raise_for_status()
+                html = r.text
+        except Exception as exc:
+            yield _done_event(ImportResult(
+                stage=ImportStage.FAILED,
+                metadata=ImportMetadata(source_url=url),
+                error=f"Could not fetch page: {exc}",
+            ))
+            return
+
+        soup = BeautifulSoup(html, "html.parser")
+        og_tag = soup.find("meta", attrs={"property": "og:image"})
+        thumbnail_url: str | None = og_tag.get("content") if og_tag else None  # type: ignore[union-attr]
+        meta = ImportMetadata(source_url=url, thumbnail_url=thumbnail_url)
+
+        jsonld = _extract_jsonld_recipe(html)
+        if jsonld and _is_complete(jsonld):
+            yield _done_event(ImportResult(stage=ImportStage.LINK, recipe=jsonld, metadata=meta), cache_key=url)
+            return
+
+        yield _stage_event("analyzing_page", "Analyzing page with Gemini…")
+        page_text = _strip_html(html)
+        try:
+            result = await gemini_svc.extract_recipe(page_text, source_hint="webpage", model=model)
+            if _is_complete(result):
+                yield _done_event(ImportResult(stage=ImportStage.TRANSCRIPT, recipe=result, metadata=meta), cache_key=url)
+            else:
+                yield _done_event(ImportResult(
+                    stage=ImportStage.FAILED,
+                    metadata=meta,
+                    error="Could not extract a recipe from this page.",
+                ))
+        except Exception as exc:
+            yield _done_event(ImportResult(
+                stage=ImportStage.FAILED,
+                metadata=meta,
+                error=f"Gemini extraction failed: {exc}",
+            ))
         return
 
     yield _stage_event("fetching_metadata", "Fetching reel metadata…")
@@ -181,7 +230,7 @@ async def run_import_stream(url: str, model: str = "gemini-2.5-flash") -> AsyncG
     ))
 
 
-async def run_import(url: str, model: str = "gemini-2.5-flash") -> ImportResult:
+async def run_import(url: str, model: str = "gemini-2.5-flash-lite") -> ImportResult:
     result: ImportResult | None = None
     async for event in run_import_stream(url, model=model):
         if event["type"] == "done":

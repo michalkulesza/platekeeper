@@ -7,10 +7,8 @@ import {
   ModalFooter,
   Button,
   Input,
-  RadioGroup,
-  Radio,
 } from "@heroui/react";
-import { streamImport, saveRecipe, ImportResult, RecipeComponent, StageEvent, GeminiModel, MODELS } from "../api/client";
+import { streamImport, saveRecipe, ImportResult, RecipeComponent, StageEvent } from "../api/client";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -302,8 +300,7 @@ interface AddRecipeModalProps {
 }
 
 export default function AddRecipeModal({ isOpen, onClose, onSaved }: AddRecipeModalProps) {
-  const [url, setUrl] = useState("https://www.instagram.com/p/DYKxw6XMQgi/");
-  const [model, setModel] = useState<GeminiModel>("gemini-2.5-flash-lite");
+  const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [progressSteps, setProgressSteps] = useState<StepState[]>([]);
@@ -313,7 +310,7 @@ export default function AddRecipeModal({ isOpen, onClose, onSaved }: AddRecipeMo
 
   function reset() {
     cancelRef.current?.();
-    setUrl("https://www.instagram.com/p/DYKxw6XMQgi/");
+    setUrl("");
     setLoading(false);
     setSaving(false);
     setProgressSteps([]);
@@ -364,7 +361,7 @@ export default function AddRecipeModal({ isOpen, onClose, onSaved }: AddRecipeMo
     setEditable(null);
     setProgressSteps([]);
 
-    cancelRef.current = streamImport(url, model, {
+    cancelRef.current = streamImport(url, {
       onStage(stage) {
         setProgressSteps((prev) => {
           const updated = prev.map((s) =>
@@ -400,22 +397,10 @@ export default function AddRecipeModal({ isOpen, onClose, onSaved }: AddRecipeMo
         <ModalBody>
           {!parsed && (
             <form id="import-form" onSubmit={handleSubmit} className="flex flex-col gap-3">
-              <RadioGroup
-                label="Model"
-                orientation="horizontal"
-                value={model}
-                onValueChange={(v) => setModel(v as GeminiModel)}
-                size="sm"
-              >
-                {MODELS.map((m) => (
-                  <Radio key={m} value={m}>{m}</Radio>
-                ))}
-              </RadioGroup>
-
               <div className="flex gap-2 items-end">
                 <Input
                   label="Recipe URL"
-                  placeholder="Instagram or TikTok reel URL"
+                  placeholder="Instagram, TikTok, or any recipe page URL"
                   type="url"
                   value={url}
                   onValueChange={setUrl}

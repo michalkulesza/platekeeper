@@ -46,9 +46,6 @@ export interface StreamCallbacks {
   onError: (error: string) => void;
 }
 
-export const MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"] as const;
-export type GeminiModel = typeof MODELS[number];
-
 // ── Recipe save / list ────────────────────────────────────────────────────────
 
 export interface SaveComponent {
@@ -123,9 +120,9 @@ export async function listRecipes(): Promise<RecipeOut[]> {
   return res.json() as Promise<RecipeOut[]>;
 }
 
-export function streamImport(url: string, model: GeminiModel, callbacks: StreamCallbacks): () => void {
+export function streamImport(url: string, callbacks: StreamCallbacks): () => void {
   const source = new EventSource(
-    `/api/imports/stream?url=${encodeURIComponent(url)}&model=${encodeURIComponent(model)}`
+    `/api/imports/stream?url=${encodeURIComponent(url)}&model=gemini-2.5-flash-lite`
   );
 
   source.onmessage = (event) => {
