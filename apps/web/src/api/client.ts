@@ -114,6 +114,19 @@ export async function deleteRecipe(id: string): Promise<void> {
   }
 }
 
+export interface RecipeStats {
+  total_recipes: number;
+  total_ingredients: number;
+  avg_kcal: number | null;
+  with_kcal: number;
+}
+
+export async function fetchStats(): Promise<RecipeStats> {
+  const res = await fetch("/api/recipes/stats", { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to load stats");
+  return res.json() as Promise<RecipeStats>;
+}
+
 export async function listRecipes(): Promise<RecipeOut[]> {
   const res = await fetch("/api/recipes", { credentials: "include" });
   if (!res.ok) throw new Error("Failed to load recipes");

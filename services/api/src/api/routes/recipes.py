@@ -91,6 +91,33 @@ async def list_recipes(
     return [RecipeOut.model_validate(r) for r in result.scalars().all()]
 
 
+@router.get("/stats")
+async def recipe_stats(
+    user: User = Depends(current_active_user),
+    session: AsyncSession = Depends(get_async_session),
+) -> dict:
+    result = await session.execute(
+        select(Recipe).where(Recipe.user_id == user.id)
+    )
+    recipes = result.scalars().all()
+
+    total = len(recipes)
+    total_ingredients = sum(
+        len(comp.get("ingredients", []))
+        for r in recipes
+        for comp in (r.components or [])
+    )
+    kcal_values = [r.kcal_per_serving for r in recipes if r.kcal_per_serving is not None]
+    avg_kcal = round(sum(kcal_values) / len(kcal_values)) if kcal_values else None
+
+    return {
+        "total_recipes": total,
+        "total_ingredients": total_ingredients,
+        "avg_kcal": avg_kcal,
+        "with_kcal": len(kcal_values),
+    }
+
+
 @router.get("/export")
 async def export_recipes(
     user: User = Depends(current_active_user),
