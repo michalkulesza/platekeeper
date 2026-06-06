@@ -29,9 +29,17 @@ function proxyUrl(url: string | null | undefined): string | null {
 }
 
 function parseCellAriaLabel(label: string): string | null {
-  // "Saturday, June 7, 2025" → "2025-06-07"
   const withoutDay = label.replace(/^[A-Za-z]+,\s*/, "");
-  const d = new Date(withoutDay);
+
+  // en-US: "June 7, 2025"
+  let d = new Date(withoutDay);
+
+  // en-GB: "7 June 2025" — new Date() can't parse this, so reorder manually
+  if (isNaN(d.getTime())) {
+    const gb = withoutDay.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/);
+    if (gb) d = new Date(`${gb[2]} ${gb[1]}, ${gb[3]}`);
+  }
+
   if (isNaN(d.getTime())) return null;
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
