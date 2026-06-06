@@ -2,8 +2,11 @@ import { useRef, useState } from "react";
 import { Button } from "@heroui/react";
 import PageHeader from "../components/PageHeader";
 import { exportRecipes, importRecipes } from "../api/client";
+import { useAuth } from "../context/AuthContext";
 
 export default function SettingsPage() {
+  const { user, logout } = useAuth();
+  const [loggingOut, setLoggingOut] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<string | null>(null);
@@ -39,10 +42,32 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleLogout() {
+    setLoggingOut(true);
+    await logout();
+  }
+
   return (
     <>
       <PageHeader title="Settings" />
       <div className="max-w-md mx-auto px-4 py-8 flex flex-col gap-6">
+
+        <section className="flex flex-col gap-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-default-400">Account</h2>
+          <div className="flex flex-col gap-2 rounded-xl border border-divider p-4">
+            {user?.email && <p className="text-xs text-default-400">{user.email}</p>}
+            <Button
+              size="sm"
+              variant="flat"
+              color="danger"
+              onPress={handleLogout}
+              isLoading={loggingOut}
+              className="self-start"
+            >
+              Log out
+            </Button>
+          </div>
+        </section>
 
         <section className="flex flex-col gap-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-default-400">Data</h2>
