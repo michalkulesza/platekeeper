@@ -11,31 +11,48 @@ import SettingsPage from "./pages/SettingsPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import { AuthProvider } from "./context/AuthContext";
-import { listTags, Tag } from "./api/client";
+import { fetchStats, listRecipes, listTags, RecipeOut, RecipeStats, Tag } from "./api/client";
 
 function AppShell() {
   const [modalOpen, setModalOpen] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
   const [allTags, setAllTags] = useState<Tag[]>([]);
+  const [recipes, setRecipes] = useState<RecipeOut[]>([]);
+  const [recipesLoading, setRecipesLoading] = useState(true);
+  const [stats, setStats] = useState<RecipeStats | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     listTags().then(setAllTags).catch(() => {});
+    fetchStats().then(setStats).catch(() => null);
+    setRecipesLoading(true);
+    listRecipes().then(setRecipes).finally(() => setRecipesLoading(false));
   }, []);
 
   function handleTagCreated(tag: Tag) {
-    setAllTags((prev) =>
-      [...prev, tag].sort((a, b) => a.name.localeCompare(b.name))
-    );
+    setAllTags((prev) => [...prev, tag].sort((a, b) => a.name.localeCompare(b.name)));
+  }
+
+  function handleRecipeUpdated(updated: RecipeOut) {
+    setRecipes((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+  }
+
+  function handleRecipeDeleted(id: string) {
+    setRecipes((prev) => prev.filter((r) => r.id !== id));
+    fetchStats().then(setStats).catch(() => null);
+  }
+
+  function handleRecipeSaved() {
+    listRecipes().then(setRecipes).catch(() => null);
+    fetchStats().then(setStats).catch(() => null);
+  }
+
+  function handleStatsRefresh() {
+    fetchStats().then(setStats).catch(() => null);
   }
 
   function openAddRecipe() {
     navigate("/");
     setModalOpen(true);
-  }
-
-  function handleRecipeSaved() {
-    setRefreshKey((k) => k + 1);
   }
 
   return (
@@ -47,15 +64,21 @@ function AppShell() {
             element={
               <RecipesPage
                 onAddRecipe={openAddRecipe}
-                refreshKey={refreshKey}
+                recipes={recipes}
+                loading={recipesLoading}
                 allTags={allTags}
                 onTagCreated={handleTagCreated}
+                onRecipeUpdated={handleRecipeUpdated}
+                onRecipeDeleted={handleRecipeDeleted}
               />
             }
           />
           <Route path="/plan" element={<MealPlanPage />} />
           <Route path="/shopping" element={<ShoppingListPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
+          <Route
+            path="/settings"
+            element={<SettingsPage stats={stats} onStatsRefresh={handleStatsRefresh} />}
+          />
         </Routes>
       </div>
       <BottomNav onAddRecipe={openAddRecipe} />

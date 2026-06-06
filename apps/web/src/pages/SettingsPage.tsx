@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Avatar, Button } from "@heroui/react";
 import PageHeader from "../components/PageHeader";
-import { exportRecipes, importRecipes, fetchStats, type RecipeStats } from "../api/client";
+import { exportRecipes, importRecipes, type RecipeStats } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 
 function StatCard({ value, label }: { value: string | number | null; label: string }) {
@@ -15,19 +15,19 @@ function StatCard({ value, label }: { value: string | number | null; label: stri
   );
 }
 
-export default function SettingsPage() {
+interface SettingsPageProps {
+  stats: RecipeStats | null;
+  onStatsRefresh: () => void;
+}
+
+export default function SettingsPage({ stats, onStatsRefresh }: SettingsPageProps) {
   const { user, logout } = useAuth();
   const [loggingOut, setLoggingOut] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [stats, setStats] = useState<RecipeStats | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    fetchStats().then(setStats).catch(() => null);
-  }, []);
 
   async function handleLogout() {
     setLoggingOut(true);
@@ -55,7 +55,7 @@ export default function SettingsPage() {
     try {
       const { imported } = await importRecipes(file);
       setImportResult(`Imported ${imported} recipe${imported !== 1 ? "s" : ""}`);
-      fetchStats().then(setStats).catch(() => null);
+      onStatsRefresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Import failed");
     } finally {
@@ -87,16 +87,11 @@ export default function SettingsPage() {
         </div>
 
         {/* Stats */}
-        {stats && (
-          <div className="flex gap-2">
-            <StatCard value={stats.total_recipes} label="Recipes" />
-            <StatCard value={stats.total_ingredients} label="Ingredients" />
-            <StatCard
-              value={stats.avg_kcal ? `${stats.avg_kcal}` : null}
-              label="Avg kcal"
-            />
-          </div>
-        )}
+        <div className="flex gap-2">
+          <StatCard value={stats?.total_recipes ?? null} label="Recipes" />
+          <StatCard value={stats?.total_ingredients ?? null} label="Ingredients" />
+          <StatCard value={stats?.avg_kcal ?? null} label="Avg kcal" />
+        </div>
 
         {/* Account */}
         <section className="flex flex-col gap-3">

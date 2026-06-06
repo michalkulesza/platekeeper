@@ -1,13 +1,16 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import PageHeader from "../components/PageHeader";
 import RecipeDetailModal from "../components/RecipeDetailModal";
-import { listRecipes, RecipeOut, Tag } from "../api/client";
+import { RecipeOut, Tag } from "../api/client";
 
 interface RecipesPageProps {
   onAddRecipe: () => void;
-  refreshKey?: number;
+  recipes: RecipeOut[];
+  loading: boolean;
   allTags: Tag[];
   onTagCreated: (tag: Tag) => void;
+  onRecipeUpdated: (r: RecipeOut) => void;
+  onRecipeDeleted: (id: string) => void;
 }
 
 function RecipeCard({
@@ -81,9 +84,15 @@ function RecipeCard({
   );
 }
 
-export default function RecipesPage({ onAddRecipe, refreshKey, allTags, onTagCreated }: RecipesPageProps) {
-  const [recipes, setRecipes] = useState<RecipeOut[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function RecipesPage({
+  onAddRecipe,
+  recipes,
+  loading,
+  allTags,
+  onTagCreated,
+  onRecipeUpdated,
+  onRecipeDeleted,
+}: RecipesPageProps) {
   const [selected, setSelected] = useState<RecipeOut | null>(null);
   const [filterTag, setFilterTag] = useState<Tag | null>(null);
 
@@ -92,21 +101,14 @@ export default function RecipesPage({ onAddRecipe, refreshKey, allTags, onTagCre
     : recipes;
 
   function handleUpdated(updated: RecipeOut) {
-    setRecipes((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+    onRecipeUpdated(updated);
     setSelected(updated);
   }
 
   function handleDeleted(id: string) {
-    setRecipes((prev) => prev.filter((r) => r.id !== id));
+    onRecipeDeleted(id);
     setSelected(null);
   }
-
-  useEffect(() => {
-    setLoading(true);
-    listRecipes()
-      .then(setRecipes)
-      .finally(() => setLoading(false));
-  }, [refreshKey]);
 
   return (
     <>
