@@ -115,21 +115,6 @@ def _strip_html(html: str) -> str:
     return container.get_text(separator="\n", strip=True)[:4000]
 
 
-async def _estimate_kcal(recipe: RecipeExtraction, model: str) -> int | None:
-    lines = [f"Recipe: {recipe.title or 'unknown dish'}"]
-    if recipe.servings:
-        lines.append(f"Servings: {recipe.servings}")
-    lines.append("Ingredients:")
-    for comp in recipe.components:
-        for ing in comp.ingredients:
-            lines.append("- " + " ".join(filter(None, [ing.qty, ing.unit, ing.name, ing.note])))
-    try:
-        result = await gemini_svc.extract_recipe("\n".join(lines), source_hint="kcal estimation", model=model)
-        return result.kcal_per_serving
-    except Exception as exc:
-        log.warning("kcal estimation failed: %s", exc)
-        return None
-
 
 async def _try_linked_url(url: str, model: str = "gemini-2.5-flash-lite") -> RecipeExtraction | None:
     try:
@@ -192,11 +177,7 @@ async def run_import_stream(url: str, model: str = "gemini-2.5-flash-lite") -> A
         meta = ImportMetadata(source_url=url, thumbnail_url=thumbnail_url, creator_handle=domain)
 
         jsonld = _extract_jsonld_recipe(html)
-        if jsonld and _is_complete(jsonld):
-            if jsonld.kcal_per_serving is None:
-                yield _stage_event("estimating_kcal", "Estimating calories…")
-                kcal = await _estimate_kcal(jsonld, model)
-                jsonld = jsonld.model_copy(update={"kcal_per_serving": kcal})
+        if jsonld and _is_complete(jsonld) and jsonld.kcal_per_serving is not None:
             yield _done_event(ImportResult(stage=ImportStage.LINK, recipe=jsonld, metadata=meta), cache_key=url)
             return
 
@@ -204,7 +185,11 @@ async def run_import_stream(url: str, model: str = "gemini-2.5-flash-lite") -> A
         page_text = _strip_html(html)
         try:
             result = await gemini_svc.extract_recipe(page_text, source_hint="webpage", model=model)
-            if _is_complete(result):
+            if jsonld and _is_complete(jsonld):
+                # JSON-LD had the recipe but no kcal — take kcal from Gemini, keep structured data
+                jsonld = jsonld.model_copy(update={"kcal_per_serving": result.kcal_per_serving})
+                yield _done_event(ImportResult(stage=ImportStage.LINK, recipe=jsonld, metadata=meta), cache_key=url)
+            elif _is_complete(result):
                 yield _done_event(ImportResult(stage=ImportStage.TRANSCRIPT, recipe=result, metadata=meta), cache_key=url)
             else:
                 yield _done_event(ImportResult(
