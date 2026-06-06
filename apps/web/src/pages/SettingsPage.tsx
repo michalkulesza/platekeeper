@@ -1,22 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Button } from "@heroui/react";
+import { Avatar, Button } from "@heroui/react";
 import PageHeader from "../components/PageHeader";
 import { exportRecipes, importRecipes, fetchStats, type RecipeStats } from "../api/client";
 import { useAuth } from "../context/AuthContext";
-
-function Avatar({ name }: { name: string }) {
-  const initials = name
-    .split(/[@.\s]/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0].toUpperCase())
-    .join("");
-  return (
-    <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xl font-bold shrink-0">
-      {initials}
-    </div>
-  );
-}
 
 function StatCard({ value, label }: { value: string | number | null; label: string }) {
   return (
@@ -87,7 +73,11 @@ export default function SettingsPage() {
 
         {/* Profile */}
         <div className="flex items-center gap-4">
-          <Avatar name={displayName} />
+          <Avatar
+            src="https://heroui-assets.nyc3.cdn.digitaloceanspaces.com/avatars/purple.jpg"
+            name={displayName}
+            size="lg"
+          />
           <div className="min-w-0">
             {user?.nickname && (
               <p className="font-semibold text-base truncate">{user.nickname}</p>
