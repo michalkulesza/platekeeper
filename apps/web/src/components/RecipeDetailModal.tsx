@@ -481,9 +481,13 @@ export default function RecipeDetailModal({
           )}
           {mode === "editing" && (
             <div className="flex items-center gap-2 pt-0.5">
-              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-warning text-warning-foreground">
-                ✎ Editing
-              </span>
+              <button
+                type="button"
+                onClick={cancelMode}
+                className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-warning text-warning-foreground hover:bg-warning-400 transition-colors"
+              >
+                ✎ Editing — tap to cancel
+              </button>
             </div>
           )}
           {mode === "confirming" && (
