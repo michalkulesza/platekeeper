@@ -74,24 +74,6 @@ function ProgressList({ steps }: { steps: StepState[] }) {
   );
 }
 
-// ── Image with skeleton ───────────────────────────────────────────────────────
-
-function Thumbnail({ url }: { url: string }) {
-  const [loaded, setLoaded] = useState(false);
-  return (
-    <div className="relative w-16 h-16 rounded-lg shrink-0 overflow-hidden bg-default-100">
-      {!loaded && (
-        <div className="absolute inset-0 animate-pulse bg-default-200 rounded-lg" />
-      )}
-      <img
-        src={url}
-        alt="thumbnail"
-        onLoad={() => setLoaded(true)}
-        className={`w-full h-full object-cover transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
-      />
-    </div>
-  );
-}
 
 // ── Inline editable field ─────────────────────────────────────────────────────
 
@@ -150,6 +132,8 @@ function EditableRecipeView({
   onChange: (r: EditableRecipe) => void;
 }) {
   const [isAdapted, setIsAdapted] = useState(false);
+  const [showImgInput, setShowImgInput] = useState(false);
+  const [imgDraft, setImgDraft] = useState("");
 
   function setTitle(title: string) { onChange({ ...recipe, title }); }
   function setServings(servings: string) { onChange({ ...recipe, servings }); }
@@ -177,6 +161,17 @@ function EditableRecipeView({
     onChange({ ...recipe, components });
   }
 
+  function openImgEditor() {
+    setImgDraft(recipe.thumbnail_url ?? "");
+    setShowImgInput(true);
+  }
+
+  function commitImg() {
+    const trimmed = imgDraft.trim();
+    onChange({ ...recipe, thumbnail_url: trimmed || null });
+    setShowImgInput(false);
+  }
+
   const proxyUrl = recipe.thumbnail_url
     ? `/api/proxy/image?url=${encodeURIComponent(recipe.thumbnail_url)}`
     : null;
@@ -187,8 +182,21 @@ function EditableRecipeView({
   return (
     <div className="mt-4 border-t border-divider pt-4">
       {/* Header */}
-      <div className="flex gap-3 items-start mb-3">
-        {proxyUrl && <Thumbnail url={proxyUrl} />}
+      <div className="flex gap-3 items-start mb-2">
+        <button
+          type="button"
+          onClick={openImgEditor}
+          className="relative w-16 h-16 rounded-lg shrink-0 overflow-hidden bg-default-100 group cursor-pointer"
+        >
+          {proxyUrl ? (
+            <img src={proxyUrl} alt="thumbnail" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-default-300 text-2xl">🖼</div>
+          )}
+          <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <span className="text-white text-[10px] font-semibold uppercase tracking-wide">Edit</span>
+          </div>
+        </button>
         <div className="flex-1 min-w-0">
           <EditLine
             value={recipe.title}
@@ -198,6 +206,21 @@ function EditableRecipeView({
           />
         </div>
       </div>
+      {showImgInput && (
+        <input
+          type="url"
+          value={imgDraft}
+          onChange={(e) => setImgDraft(e.target.value)}
+          onBlur={commitImg}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") { e.preventDefault(); commitImg(); }
+            if (e.key === "Escape") setShowImgInput(false);
+          }}
+          placeholder="Image URL"
+          autoFocus
+          className="w-full text-sm border-b border-primary focus:outline-none bg-transparent mb-2"
+        />
+      )}
 
       {/* Pills */}
       <div className="flex flex-col gap-2 mb-4">

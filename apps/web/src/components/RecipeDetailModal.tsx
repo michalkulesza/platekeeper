@@ -62,6 +62,7 @@ interface EditState {
   title: string;
   servings: string;
   kcal: string;
+  thumbnail_url: string | null;
   components: SaveComponent[];
 }
 
@@ -70,6 +71,7 @@ function toEditState(r: RecipeOut): EditState {
     title: r.title,
     servings: r.servings?.toString() ?? "",
     kcal: r.kcal_per_serving?.toString() ?? "",
+    thumbnail_url: r.thumbnail_url,
     components: (r.components as SaveComponent[]).map((c) => ({
       ...c,
       ingredients: [...c.ingredients],
@@ -183,6 +185,8 @@ export default function RecipeDetailModal({
   const [draft, setDraft] = useState<EditState | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showImgInput, setShowImgInput] = useState(false);
+  const [imgDraft, setImgDraft] = useState("");
 
   useEffect(() => {
     if (recipe) {
@@ -195,9 +199,21 @@ export default function RecipeDetailModal({
   if (!recipe || !draft) return null;
   const r = recipe; // narrowed non-null reference for closures
 
-  const proxyUrl = r.thumbnail_url
-    ? `/api/proxy/image?url=${encodeURIComponent(r.thumbnail_url)}`
+  const displayThumb = mode === "editing" ? draft.thumbnail_url : r.thumbnail_url;
+  const proxyUrl = displayThumb
+    ? `/api/proxy/image?url=${encodeURIComponent(displayThumb)}`
     : null;
+
+  function openImgEditor() {
+    setImgDraft(draft?.thumbnail_url ?? "");
+    setShowImgInput(true);
+  }
+
+  function commitImg() {
+    const trimmed = imgDraft.trim();
+    setDraft((d) => d ? { ...d, thumbnail_url: trimmed || null } : d);
+    setShowImgInput(false);
+  }
 
   const components = mode === "editing" ? draft.components : (r.components as SaveComponent[]);
   const single = components.length === 1;
@@ -239,7 +255,7 @@ export default function RecipeDetailModal({
         title: draft.title,
         servings: draft.servings !== "" ? Number(draft.servings) : null,
         kcal_per_serving: draft.kcal !== "" ? Number(draft.kcal) : null,
-        thumbnail_url: r.thumbnail_url,
+        thumbnail_url: draft.thumbnail_url,
         creator_handle: r.creator_handle,
         components: draft.components,
       });
@@ -270,6 +286,7 @@ export default function RecipeDetailModal({
   function cancelMode() {
     if (mode === "editing") setDraft(toEditState(r));
     setMode("view");
+    setShowImgInput(false);
     setError(null);
   }
 
@@ -287,12 +304,25 @@ export default function RecipeDetailModal({
 
           {/* Title row */}
           <div className="flex gap-3 items-start w-full">
-            {proxyUrl && (
-              <img
-                src={proxyUrl}
-                alt={r.title}
-                className="w-14 h-14 rounded-lg object-cover shrink-0"
-              />
+            {mode === "editing" ? (
+              <button
+                type="button"
+                onClick={openImgEditor}
+                className="relative w-14 h-14 rounded-lg shrink-0 overflow-hidden bg-default-100 group cursor-pointer"
+              >
+                {proxyUrl ? (
+                  <img src={proxyUrl} alt={r.title} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-default-300 text-2xl">🖼</div>
+                )}
+                <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <span className="text-white text-[10px] font-semibold uppercase tracking-wide">Edit</span>
+                </div>
+              </button>
+            ) : (
+              proxyUrl && (
+                <img src={proxyUrl} alt={r.title} className="w-14 h-14 rounded-lg object-cover shrink-0" />
+              )
             )}
             <div className="flex-1 min-w-0">
               {mode === "editing" ? (
@@ -312,6 +342,23 @@ export default function RecipeDetailModal({
               )}
             </div>
           </div>
+
+          {/* Image URL input */}
+          {mode === "editing" && showImgInput && (
+            <input
+              type="url"
+              value={imgDraft}
+              onChange={(e) => setImgDraft(e.target.value)}
+              onBlur={commitImg}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") { e.preventDefault(); commitImg(); }
+                if (e.key === "Escape") setShowImgInput(false);
+              }}
+              placeholder="Image URL"
+              autoFocus
+              className="w-full text-sm border-b border-primary focus:outline-none bg-transparent font-normal"
+            />
+          )}
 
           {/* Serves / kcal pills */}
           {(draft.servings !== "" || draft.kcal !== "" || r.servings != null || r.kcal_per_serving != null) && (
