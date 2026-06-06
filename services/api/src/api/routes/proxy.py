@@ -44,5 +44,5 @@ async def proxy_image(url: str) -> StreamingResponse:
     return StreamingResponse(
         stream(),
         media_type=content_type,
-        headers={"Cache-Control": "public, max-age=86400, immutable"},
+        headers={"Cache-Control": "public, max-age=31536000, immutable"},
     )
