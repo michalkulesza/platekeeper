@@ -190,6 +190,19 @@ export default function MealPlanPage({ recipes, preferences }: MealPlanPageProps
 
   const dayRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const calendarRef = useRef<HTMLDivElement>(null);
+  const stickyRef = useRef<HTMLDivElement>(null);
+
+  function scrollToDay(day: number) {
+    const el = dayRefs.current.get(day);
+    if (!el) return;
+    const stickyBottom = stickyRef.current?.getBoundingClientRect().bottom ?? 0;
+    const bottomNavHeight = 72; // 4.5rem bottom nav
+    const visibleHeight = window.innerHeight - stickyBottom - bottomNavHeight;
+    const elRect = el.getBoundingClientRect();
+    const targetScroll =
+      window.scrollY + elRect.top - stickyBottom - (visibleHeight - elRect.height) / 2;
+    window.scrollTo({ top: Math.max(0, targetScroll), behavior: "smooth" });
+  }
 
   // Fetch entries when month changes
   useEffect(() => {
@@ -212,7 +225,7 @@ export default function MealPlanPage({ recipes, preferences }: MealPlanPageProps
   useEffect(() => {
     const timer = setTimeout(() => {
       if (todayDate.year === viewYear && todayDate.month === viewMonth) {
-        dayRefs.current.get(todayDate.day)?.scrollIntoView({ behavior: "smooth", block: "start" });
+        scrollToDay(todayDate.day);
       }
     }, 500);
     return () => clearTimeout(timer);
@@ -242,9 +255,8 @@ export default function MealPlanPage({ recipes, preferences }: MealPlanPageProps
       setViewYear(date.year);
       setViewMonth(date.month);
     }
-    setTimeout(() => {
-      dayRefs.current.get(date.day)?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 150);
+    // Delay gives React time to render the new month's rows before we measure
+    setTimeout(() => scrollToDay(date.day), 150);
   }
 
   function handleFocusChange(date: CalendarDate) {
@@ -297,6 +309,7 @@ export default function MealPlanPage({ recipes, preferences }: MealPlanPageProps
 
       {/* ── Sticky header + calendar ─────────────────────────────────────────── */}
       <div
+        ref={stickyRef}
         className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-divider"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
