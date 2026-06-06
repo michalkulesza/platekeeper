@@ -98,7 +98,9 @@ def _strip_html(html: str) -> str:
     for tag in soup(_NOISE_TAGS):
         tag.decompose()
 
-    for el in soup.find_all(True):
+    for el in list(soup.find_all(True)):
+        if not el.attrs:
+            continue
         combined = " ".join(el.get("class") or []).lower() + " " + (el.get("id") or "").lower()
         if any(p in combined for p in _NOISE_ATTRS):
             el.decompose()
