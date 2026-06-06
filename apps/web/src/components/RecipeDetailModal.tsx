@@ -8,7 +8,17 @@ import {
   Button,
   addToast,
 } from "@heroui/react";
-import { RecipeOut, SaveComponent, deleteRecipe, updateRecipe } from "../api/client";
+import {
+  RecipeOut,
+  SaveComponent,
+  Tag,
+  addTagToRecipe,
+  createTag,
+  deleteRecipe,
+  removeTagFromRecipe,
+  updateRecipe,
+} from "../api/client";
+import TagRow from "./TagRow";
 
 // ── EditLine ──────────────────────────────────────────────────────────────────
 
@@ -171,6 +181,8 @@ function EditComponent({
 
 interface RecipeDetailModalProps {
   recipe: RecipeOut | null;
+  allTags: Tag[];
+  onTagCreated: (tag: Tag) => void;
   onClose: () => void;
   onUpdated?: (r: RecipeOut) => void;
   onDeleted?: (id: string) => void;
@@ -178,12 +190,15 @@ interface RecipeDetailModalProps {
 
 export default function RecipeDetailModal({
   recipe,
+  allTags,
+  onTagCreated,
   onClose,
   onUpdated,
   onDeleted,
 }: RecipeDetailModalProps) {
   const [mode, setMode] = useState<Mode>("view");
   const [draft, setDraft] = useState<EditState | null>(null);
+  const [localTags, setLocalTags] = useState<Tag[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showImgInput, setShowImgInput] = useState(false);
@@ -192,13 +207,14 @@ export default function RecipeDetailModal({
   useEffect(() => {
     if (recipe) {
       setDraft(toEditState(recipe));
+      setLocalTags(recipe.tags ?? []);
       setMode("view");
       setError(null);
     }
   }, [recipe?.id]);
 
   if (!recipe || !draft) return null;
-  const r = recipe; // narrowed non-null reference for closures
+  const r = recipe;
 
   const displayThumb = mode === "editing" ? draft.thumbnail_url : r.thumbnail_url;
   const proxyUrl = displayThumb
@@ -212,14 +228,13 @@ export default function RecipeDetailModal({
 
   function commitImg() {
     const trimmed = imgDraft.trim();
-    setDraft((d) => d ? { ...d, thumbnail_url: trimmed || null } : d);
+    setDraft((d) => (d ? { ...d, thumbnail_url: trimmed || null } : d));
     setShowImgInput(false);
   }
 
   const components = mode === "editing" ? draft.components : (r.components as SaveComponent[]);
   const single = components.length === 1;
 
-  // Header background per mode
   const headerBg =
     mode === "editing"
       ? "bg-warning-100 transition-colors duration-200"
@@ -231,7 +246,9 @@ export default function RecipeDetailModal({
     setDraft((d) => {
       if (!d) return d;
       const comps = d.components.map((c, ci2) =>
-        ci2 !== ci ? c : { ...c, ingredients: c.ingredients.map((v, ii2) => ii2 === ii ? val : v) }
+        ci2 !== ci
+          ? c
+          : { ...c, ingredients: c.ingredients.map((v, ii2) => (ii2 === ii ? val : v)) }
       );
       return { ...d, components: comps };
     });
@@ -241,10 +258,35 @@ export default function RecipeDetailModal({
     setDraft((d) => {
       if (!d) return d;
       const comps = d.components.map((c, ci2) =>
-        ci2 !== ci ? c : { ...c, steps: c.steps.map((s, si2) => si2 === si ? val : s) }
+        ci2 !== ci ? c : { ...c, steps: c.steps.map((s, si2) => (si2 === si ? val : s)) }
       );
       return { ...d, components: comps };
     });
+  }
+
+  async function handleTagAdd(tag: Tag) {
+    setLocalTags((prev) => [...prev, tag]);
+    try {
+      await addTagToRecipe(r.id, tag.id);
+    } catch {
+      setLocalTags((prev) => prev.filter((t) => t.id !== tag.id));
+    }
+  }
+
+  async function handleTagRemove(tagId: string) {
+    setLocalTags((prev) => prev.filter((t) => t.id !== tagId));
+    try {
+      await removeTagFromRecipe(r.id, tagId);
+    } catch {
+      const removed = allTags.find((t) => t.id === tagId);
+      if (removed) setLocalTags((prev) => [...prev, removed]);
+    }
+  }
+
+  async function handleTagCreate(name: string): Promise<Tag> {
+    const tag = await createTag(name);
+    onTagCreated(tag);
+    return tag;
   }
 
   async function handleSave() {
@@ -259,6 +301,7 @@ export default function RecipeDetailModal({
         thumbnail_url: draft.thumbnail_url,
         creator_handle: r.creator_handle,
         components: draft.components,
+        tag_ids: localTags.map((t) => t.id),
       });
       addToast({ title: "Recipe updated", color: "success", timeout: 3000 });
       onUpdated?.(updated);
@@ -331,7 +374,7 @@ export default function RecipeDetailModal({
               {mode === "editing" ? (
                 <EditLine
                   value={draft.title}
-                  onChange={(v) => setDraft((d) => d ? { ...d, title: v } : d)}
+                  onChange={(v) => setDraft((d) => (d ? { ...d, title: v } : d))}
                   className="text-base font-bold leading-snug"
                   multiline
                 />
@@ -362,6 +405,15 @@ export default function RecipeDetailModal({
               className="w-full text-sm border-b border-primary focus:outline-none bg-transparent font-normal"
             />
           )}
+
+          {/* Tags — always visible */}
+          <TagRow
+            tags={localTags}
+            allTags={allTags}
+            onAdd={handleTagAdd}
+            onRemove={handleTagRemove}
+            onCreateTag={handleTagCreate}
+          />
 
           {/* Serves / kcal pills */}
           {(draft.servings !== "" || draft.kcal !== "" || r.servings != null || r.kcal_per_serving != null) && (

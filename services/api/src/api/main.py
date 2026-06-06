@@ -4,12 +4,15 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_users.exceptions import UserAlreadyExists
+from sqlalchemy import select
 
 from api.config import settings
 from api.database import Base, async_session_maker, engine
+from api.models import Tag
 from api.routes.imports import router as imports_router
 from api.routes.proxy import router as proxy_router
 from api.routes.recipes import router as recipes_router
+from api.routes.tags import router as tags_router
 from api.users import (
     UserCreate,
     UserManager,
@@ -22,6 +25,19 @@ from fastapi_users.db import SQLAlchemyUserDatabase
 from api.users import User
 
 logging.basicConfig(level=logging.DEBUG)
+
+_DEFAULT_TAGS = [
+    # Diet
+    "Vegetarian", "Vegan", "Gluten-Free", "Dairy-Free", "Keto", "Low-Carb",
+    # Meal type
+    "Breakfast", "Lunch", "Dinner", "Snack", "Dessert", "Drink",
+    # Method
+    "Quick", "Grilled", "Baked", "One-Pot",
+    # Other
+    "High-Protein", "Comfort Food",
+    # Cuisine
+    "Italian", "Asian",
+]
 
 
 async def _seed_demo_user() -> None:
@@ -41,11 +57,22 @@ async def _seed_demo_user() -> None:
             pass
 
 
+async def _seed_default_tags() -> None:
+    async with async_session_maker() as session:
+        existing = await session.execute(select(Tag).where(Tag.is_default.is_(True)))
+        existing_names = {t.name for t in existing.scalars().all()}
+        for name in _DEFAULT_TAGS:
+            if name not in existing_names:
+                session.add(Tag(name=name, is_default=True, user_id=None))
+        await session.commit()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     await _seed_demo_user()
+    await _seed_default_tags()
     yield
 
 
@@ -62,6 +89,7 @@ app.add_middleware(
 app.include_router(imports_router, prefix="/api")
 app.include_router(proxy_router, prefix="/api")
 app.include_router(recipes_router, prefix="/api")
+app.include_router(tags_router, prefix="/api")
 
 app.include_router(
     fastapi_users_instance.get_auth_router(auth_backend),

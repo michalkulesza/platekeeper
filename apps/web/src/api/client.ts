@@ -13,10 +13,17 @@ export interface RecipeComponent {
   steps: string[];
 }
 
+export interface Tag {
+  id: string;
+  name: string;
+  is_default: boolean;
+}
+
 export interface RecipeGroup {
   title: string | null;
   servings: number | null;
   kcal_per_serving: number | null;
+  tags: string[];
   components: RecipeComponent[];
 }
 
@@ -62,6 +69,7 @@ export interface RecipeSaveRequest {
   thumbnail_url: string | null;
   creator_handle: string | null;
   components: SaveComponent[];
+  tag_ids: string[];
 }
 
 export interface RecipeOut {
@@ -73,6 +81,7 @@ export interface RecipeOut {
   creator_handle: string | null;
   components: SaveComponent[];
   created_at: string;
+  tags: Tag[];
 }
 
 export async function saveRecipe(data: RecipeSaveRequest): Promise<RecipeOut> {
@@ -158,6 +167,44 @@ export async function importRecipes(file: File): Promise<{ imported: number }> {
     throw new Error(typeof err.detail === "string" ? err.detail : "Import failed");
   }
   return res.json() as Promise<{ imported: number }>;
+}
+
+// ── Tags ──────────────────────────────────────────────────────────────────────
+
+export async function listTags(): Promise<Tag[]> {
+  const res = await fetch("/api/tags", { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to load tags");
+  return res.json() as Promise<Tag[]>;
+}
+
+export async function createTag(name: string): Promise<Tag> {
+  const res = await fetch("/api/tags", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ name }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { detail?: unknown };
+    throw new Error(typeof err.detail === "string" ? err.detail : "Failed to create tag");
+  }
+  return res.json() as Promise<Tag>;
+}
+
+export async function addTagToRecipe(recipeId: string, tagId: string): Promise<void> {
+  const res = await fetch(`/api/recipes/${recipeId}/tags/${tagId}`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to add tag");
+}
+
+export async function removeTagFromRecipe(recipeId: string, tagId: string): Promise<void> {
+  const res = await fetch(`/api/recipes/${recipeId}/tags/${tagId}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to remove tag");
 }
 
 export function streamImport(url: string, callbacks: StreamCallbacks): () => void {

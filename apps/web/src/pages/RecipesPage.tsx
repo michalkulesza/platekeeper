@@ -1,14 +1,24 @@
 import { useEffect, useState } from "react";
 import PageHeader from "../components/PageHeader";
 import RecipeDetailModal from "../components/RecipeDetailModal";
-import { listRecipes, RecipeOut } from "../api/client";
+import { listRecipes, RecipeOut, Tag } from "../api/client";
 
 interface RecipesPageProps {
   onAddRecipe: () => void;
   refreshKey?: number;
+  allTags: Tag[];
+  onTagCreated: (tag: Tag) => void;
 }
 
-function RecipeCard({ recipe, onClick }: { recipe: RecipeOut; onClick: () => void }) {
+function RecipeCard({
+  recipe,
+  onClick,
+  onTagClick,
+}: {
+  recipe: RecipeOut;
+  onClick: () => void;
+  onTagClick: (tag: Tag) => void;
+}) {
   const proxyUrl = recipe.thumbnail_url
     ? `/api/proxy/image?url=${encodeURIComponent(recipe.thumbnail_url)}`
     : null;
@@ -30,7 +40,7 @@ function RecipeCard({ recipe, onClick }: { recipe: RecipeOut; onClick: () => voi
         {recipe.creator_handle && (
           <p className="text-xs text-default-400 mt-0.5">@{recipe.creator_handle}</p>
         )}
-        <div className="flex gap-2 mt-1.5">
+        <div className="flex gap-2 mt-1.5 flex-wrap">
           {recipe.servings != null && (
             <span className="text-xs text-primary font-medium bg-primary/10 px-2 py-0.5 rounded-full">
               {recipe.servings} servings
@@ -42,18 +52,47 @@ function RecipeCard({ recipe, onClick }: { recipe: RecipeOut; onClick: () => voi
             </span>
           )}
         </div>
+        {recipe.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {recipe.tags.map((tag) => (
+              <span
+                key={tag.id}
+                role="button"
+                tabIndex={0}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTagClick(tag);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.stopPropagation();
+                    onTagClick(tag);
+                  }
+                }}
+                className="text-xs font-medium px-2 py-0.5 rounded-full bg-secondary/15 text-secondary-700 cursor-pointer hover:bg-secondary/25 transition-colors"
+              >
+                {tag.name}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </button>
   );
 }
 
-export default function RecipesPage({ onAddRecipe, refreshKey }: RecipesPageProps) {
+export default function RecipesPage({ onAddRecipe, refreshKey, allTags, onTagCreated }: RecipesPageProps) {
   const [recipes, setRecipes] = useState<RecipeOut[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<RecipeOut | null>(null);
+  const [filterTag, setFilterTag] = useState<Tag | null>(null);
+
+  const displayed = filterTag
+    ? recipes.filter((r) => r.tags.some((t) => t.id === filterTag.id))
+    : recipes;
 
   function handleUpdated(updated: RecipeOut) {
-    setRecipes((prev) => prev.map((r) => r.id === updated.id ? updated : r));
+    setRecipes((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
     setSelected(updated);
   }
 
@@ -72,13 +111,32 @@ export default function RecipesPage({ onAddRecipe, refreshKey }: RecipesPageProp
   return (
     <>
       <PageHeader title="Recipes" />
+
+      {filterTag && (
+        <div className="flex items-center gap-2 px-4 mt-3">
+          <span className="text-xs text-default-500">Filtered by:</span>
+          <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-secondary/20 text-secondary-700">
+            {filterTag.name}
+            <button
+              type="button"
+              onClick={() => setFilterTag(null)}
+              className="ml-0.5 text-secondary-400 hover:text-secondary-700"
+              aria-label="Clear filter"
+            >
+              ×
+            </button>
+          </span>
+          <span className="text-xs text-default-400">{displayed.length} recipe{displayed.length !== 1 ? "s" : ""}</span>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex flex-col gap-3 px-4 mt-4">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-20 rounded-xl bg-default-100 animate-pulse" />
           ))}
         </div>
-      ) : recipes.length === 0 ? (
+      ) : displayed.length === 0 && recipes.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-default-400 px-4 text-center">
           <p className="text-lg">No recipes yet.</p>
           <p className="text-sm mt-1">
@@ -89,15 +147,34 @@ export default function RecipesPage({ onAddRecipe, refreshKey }: RecipesPageProp
             button to import one.
           </p>
         </div>
+      ) : displayed.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-24 text-default-400 px-4 text-center">
+          <p className="text-lg">No recipes with this tag.</p>
+          <button onClick={() => setFilterTag(null)} className="text-sm text-primary mt-1">
+            Clear filter
+          </button>
+        </div>
       ) : (
         <div className="flex flex-col gap-3 px-4 mt-4">
-          {recipes.map((r) => (
-            <RecipeCard key={r.id} recipe={r} onClick={() => setSelected(r)} />
+          {displayed.map((r) => (
+            <RecipeCard
+              key={r.id}
+              recipe={r}
+              onClick={() => setSelected(r)}
+              onTagClick={setFilterTag}
+            />
           ))}
         </div>
       )}
 
-      <RecipeDetailModal recipe={selected} onClose={() => setSelected(null)} onUpdated={handleUpdated} onDeleted={handleDeleted} />
+      <RecipeDetailModal
+        recipe={selected}
+        allTags={allTags}
+        onTagCreated={onTagCreated}
+        onClose={() => setSelected(null)}
+        onUpdated={handleUpdated}
+        onDeleted={handleDeleted}
+      />
     </>
   );
 }

@@ -9,7 +9,16 @@ import {
   Input,
   addToast,
 } from "@heroui/react";
-import { streamImport, saveRecipe, ImportResult, RecipeComponent, StageEvent } from "../api/client";
+import {
+  streamImport,
+  saveRecipe,
+  createTag,
+  ImportResult,
+  RecipeComponent,
+  StageEvent,
+  Tag,
+} from "../api/client";
+import TagRow from "./TagRow";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -32,6 +41,7 @@ interface EditableRecipe {
   creator_handle: string | null;
   stage: string;
   components: EditableComponent[];
+  suggestedTagNames: string[];
 }
 
 function toEditable(result: ImportResult): EditableRecipe {
@@ -43,6 +53,7 @@ function toEditable(result: ImportResult): EditableRecipe {
     thumbnail_url: metadata.thumbnail_url,
     creator_handle: metadata.creator_handle,
     stage,
+    suggestedTagNames: recipe?.tags ?? [],
     components: (recipe?.components ?? []).map((c: RecipeComponent) => ({
       name: c.name ?? c.role,
       yield_note: c.yield_note ?? "",
@@ -74,7 +85,6 @@ function ProgressList({ steps }: { steps: StepState[] }) {
     </ul>
   );
 }
-
 
 // ── Inline editable field ─────────────────────────────────────────────────────
 
@@ -127,10 +137,20 @@ const currentUsername = () => localStorage.getItem("pk_username") || "you";
 
 function EditableRecipeView({
   recipe,
+  selectedTags,
+  allTags,
   onChange,
+  onTagAdd,
+  onTagRemove,
+  onTagCreate,
 }: {
   recipe: EditableRecipe;
+  selectedTags: Tag[];
+  allTags: Tag[];
   onChange: (r: EditableRecipe) => void;
+  onTagAdd: (tag: Tag) => void;
+  onTagRemove: (tagId: string) => void;
+  onTagCreate: (name: string) => Promise<Tag>;
 }) {
   const [isAdapted, setIsAdapted] = useState(false);
   const [showImgInput, setShowImgInput] = useState(false);
@@ -145,7 +165,7 @@ function EditableRecipeView({
     const components = recipe.components.map((c, ci2) =>
       ci2 !== ci ? c : {
         ...c,
-        ingredients: c.ingredients.map((ing, ii2) => ii2 === ii ? val : ing),
+        ingredients: c.ingredients.map((ing, ii2) => (ii2 === ii ? val : ing)),
       }
     );
     onChange({ ...recipe, components });
@@ -156,7 +176,7 @@ function EditableRecipeView({
     const components = recipe.components.map((c, ci2) =>
       ci2 !== ci ? c : {
         ...c,
-        steps: c.steps.map((s, si2) => si2 === si ? val : s),
+        steps: c.steps.map((s, si2) => (si2 === si ? val : s)),
       }
     );
     onChange({ ...recipe, components });
@@ -207,6 +227,7 @@ function EditableRecipeView({
           />
         </div>
       </div>
+
       {showImgInput && (
         <input
           type="url"
@@ -222,6 +243,17 @@ function EditableRecipeView({
           className="w-full text-sm border-b border-primary focus:outline-none bg-transparent mb-2"
         />
       )}
+
+      {/* Tags */}
+      <div className="mb-3">
+        <TagRow
+          tags={selectedTags}
+          allTags={allTags}
+          onAdd={onTagAdd}
+          onRemove={onTagRemove}
+          onCreateTag={onTagCreate}
+        />
+      </div>
 
       {/* Pills */}
       <div className="flex flex-col gap-2 mb-4">
@@ -321,14 +353,17 @@ interface AddRecipeModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSaved?: () => void;
+  allTags: Tag[];
+  onTagCreated: (tag: Tag) => void;
 }
 
-export default function AddRecipeModal({ isOpen, onClose, onSaved }: AddRecipeModalProps) {
+export default function AddRecipeModal({ isOpen, onClose, onSaved, allTags, onTagCreated }: AddRecipeModalProps) {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [progressSteps, setProgressSteps] = useState<StepState[]>([]);
   const [editable, setEditable] = useState<EditableRecipe | null>(null);
+  const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [error, setError] = useState<string | null>(null);
   const cancelRef = useRef<(() => void) | null>(null);
 
@@ -339,7 +374,14 @@ export default function AddRecipeModal({ isOpen, onClose, onSaved }: AddRecipeMo
     setSaving(false);
     setProgressSteps([]);
     setEditable(null);
+    setSelectedTags([]);
     setError(null);
+  }
+
+  async function handleTagCreate(name: string): Promise<Tag> {
+    const tag = await createTag(name);
+    onTagCreated(tag);
+    return tag;
   }
 
   async function handleSave() {
@@ -354,6 +396,7 @@ export default function AddRecipeModal({ isOpen, onClose, onSaved }: AddRecipeMo
         thumbnail_url: editable.thumbnail_url,
         creator_handle: editable.creator_handle,
         components: editable.components,
+        tag_ids: selectedTags.map((t) => t.id),
       });
       addToast({ title: "Recipe saved", color: "success", timeout: 3000 });
       onSaved?.();
@@ -384,6 +427,7 @@ export default function AddRecipeModal({ isOpen, onClose, onSaved }: AddRecipeMo
     setLoading(true);
     setError(null);
     setEditable(null);
+    setSelectedTags([]);
     setProgressSteps([]);
 
     cancelRef.current = streamImport(url, {
@@ -400,7 +444,15 @@ export default function AddRecipeModal({ isOpen, onClose, onSaved }: AddRecipeMo
           prev.map((s) => (s.status === "active" ? { ...s, status: "done" as const } : s))
         );
         if (res.recipe) {
-          setEditable(toEditable(res));
+          const editableRecipe = toEditable(res);
+          setEditable(editableRecipe);
+          // Pre-select tags suggested by Gemini
+          const suggested = allTags.filter((t) =>
+            editableRecipe.suggestedTagNames.some(
+              (name) => name.toLowerCase() === t.name.toLowerCase()
+            )
+          );
+          setSelectedTags(suggested);
         } else {
           setError(res.error ?? "Import failed");
         }
@@ -463,7 +515,15 @@ export default function AddRecipeModal({ isOpen, onClose, onSaved }: AddRecipeMo
           )}
 
           {editable && (
-            <EditableRecipeView recipe={editable} onChange={setEditable} />
+            <EditableRecipeView
+              recipe={editable}
+              selectedTags={selectedTags}
+              allTags={allTags}
+              onChange={setEditable}
+              onTagAdd={(tag) => setSelectedTags((prev) => [...prev, tag])}
+              onTagRemove={(id) => setSelectedTags((prev) => prev.filter((t) => t.id !== id))}
+              onTagCreate={handleTagCreate}
+            />
           )}
         </ModalBody>
         <ModalFooter>

@@ -34,6 +34,9 @@ serving count based on the ingredient quantities and dish type.
 
 kcal_per_serving: extract from the text if stated. If not stated, estimate based
 on the ingredients and typical preparation. Provide a realistic round number.
+
+tags: if a list of available tags is provided, assign only those that clearly apply
+to this recipe. Use only tags from the provided list — never invent new ones.
 """
 
 
@@ -41,8 +44,19 @@ def _build_client() -> genai.Client:
     return genai.Client(api_key=settings.gemini_api_key)
 
 
-async def extract_recipe(text: str, source_hint: str = "", model: str = _DEFAULT_MODEL) -> RecipeExtraction:
-    prompt = f"Source: {source_hint}\n\n{text}" if source_hint else text
+async def extract_recipe(
+    text: str,
+    source_hint: str = "",
+    model: str = _DEFAULT_MODEL,
+    available_tags: list[str] | None = None,
+) -> RecipeExtraction:
+    parts = []
+    if source_hint:
+        parts.append(f"Source: {source_hint}")
+    if available_tags:
+        parts.append(f"Available tags: {', '.join(available_tags)}")
+    parts.append(text)
+    prompt = "\n\n".join(parts)
 
     client = _build_client()
     response = client.models.generate_content(
