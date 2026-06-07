@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ToastProvider } from "@heroui/react";
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import BottomNav from "./components/BottomNav";
@@ -10,10 +10,12 @@ import ShoppingListPage from "./pages/ShoppingListPage";
 import SettingsPage from "./pages/SettingsPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import { HouseholdProvider } from "./context/HouseholdContext";
 import { fetchStats, getPreferences, listRecipes, listTags, RecipeOut, RecipeStats, Tag, UserPreferences } from "./api/client";
 
 function AppShell() {
+  const { user } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
   const [allTags, setAllTags] = useState<Tag[]>([]);
   const [recipes, setRecipes] = useState<RecipeOut[]>([]);
@@ -22,12 +24,25 @@ function AppShell() {
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
+  function refetchAll() {
     listTags().then(setAllTags).catch(() => {});
     fetchStats().then(setStats).catch(() => null);
-    getPreferences().then(setPreferences).catch(() => null);
     setRecipesLoading(true);
     listRecipes().then(setRecipes).finally(() => setRecipesLoading(false));
+  }
+
+  useEffect(() => {
+    refetchAll();
+    getPreferences().then(setPreferences).catch(() => null);
+  }, [user?.active_household_id]);
+
+  // Separate effect so preferences don't re-fetch on context switch
+  useEffect(() => {
+    getPreferences().then(setPreferences).catch(() => null);
+  }, []);
+
+  const handleContextSwitch = useCallback(() => {
+    refetchAll();
   }, []);
 
   function handleTagCreated(tag: Tag) {
@@ -58,40 +73,42 @@ function AppShell() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="pb-[calc(4.5rem+env(safe-area-inset-bottom))]">
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <RecipesPage
-                onAddRecipe={openAddRecipe}
-                recipes={recipes}
-                loading={recipesLoading}
-                allTags={allTags}
-                onTagCreated={handleTagCreated}
-                onRecipeUpdated={handleRecipeUpdated}
-                onRecipeDeleted={handleRecipeDeleted}
-              />
-            }
-          />
-          <Route path="/plan" element={<MealPlanPage recipes={recipes} preferences={preferences} />} />
-          <Route path="/shopping" element={<ShoppingListPage />} />
-          <Route
-            path="/settings"
-            element={<SettingsPage stats={stats} onStatsRefresh={handleStatsRefresh} preferences={preferences} onPreferencesChange={setPreferences} />}
-          />
-        </Routes>
+    <HouseholdProvider onContextSwitch={handleContextSwitch}>
+      <div className="min-h-screen bg-background">
+        <div className="pb-[calc(4.5rem+env(safe-area-inset-bottom))]">
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <RecipesPage
+                  onAddRecipe={openAddRecipe}
+                  recipes={recipes}
+                  loading={recipesLoading}
+                  allTags={allTags}
+                  onTagCreated={handleTagCreated}
+                  onRecipeUpdated={handleRecipeUpdated}
+                  onRecipeDeleted={handleRecipeDeleted}
+                />
+              }
+            />
+            <Route path="/plan" element={<MealPlanPage recipes={recipes} preferences={preferences} allTags={allTags} onTagCreated={handleTagCreated} onRecipeUpdated={handleRecipeUpdated} onRecipeDeleted={handleRecipeDeleted} />} />
+            <Route path="/shopping" element={<ShoppingListPage />} />
+            <Route
+              path="/settings"
+              element={<SettingsPage stats={stats} onStatsRefresh={handleStatsRefresh} preferences={preferences} onPreferencesChange={setPreferences} />}
+            />
+          </Routes>
+        </div>
+        <BottomNav onAddRecipe={openAddRecipe} />
+        <AddRecipeModal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          onSaved={handleRecipeSaved}
+          allTags={allTags}
+          onTagCreated={handleTagCreated}
+        />
       </div>
-      <BottomNav onAddRecipe={openAddRecipe} />
-      <AddRecipeModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSaved={handleRecipeSaved}
-        allTags={allTags}
-        onTagCreated={handleTagCreated}
-      />
-    </div>
+    </HouseholdProvider>
   );
 }
 

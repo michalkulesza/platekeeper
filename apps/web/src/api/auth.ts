@@ -5,6 +5,7 @@ export interface AuthUser {
   is_active: boolean;
   is_verified: boolean;
   is_superuser: boolean;
+  active_household_id: string | null;
 }
 
 export interface RegisterData {

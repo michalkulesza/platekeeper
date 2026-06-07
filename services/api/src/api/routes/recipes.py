@@ -5,11 +5,12 @@ import uuid
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
-from sqlalchemy import or_, select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.database import get_async_session
 from api.models import Recipe, RecipeOut, RecipeSaveRequest, Tag
+from api.routes.context import get_active_household_id
 from api.users import User, current_active_user
 
 router = APIRouter(prefix="/recipes", tags=["recipes"])
@@ -17,29 +18,64 @@ router = APIRouter(prefix="/recipes", tags=["recipes"])
 _CSV_FIELDS = ["title", "servings", "kcal_per_serving", "thumbnail_url", "creator_handle", "components"]
 
 
-async def _set_tags(session: AsyncSession, recipe: Recipe, tag_ids: list[uuid.UUID], user_id: uuid.UUID) -> None:
-    # Explicitly load the tags collection so assignment never triggers a lazy-load
-    # in async context (MissingGreenlet).
+def _recipe_filter(user_id: uuid.UUID, household_id: uuid.UUID | None):
+    if household_id is not None:
+        return Recipe.household_id == household_id
+    return and_(
+        Recipe.user_id == user_id,
+        or_(Recipe.household_id.is_(None), Recipe.shared_to_personal.is_(True)),
+    )
+
+
+def _recipe_write_filter(user_id: uuid.UUID, household_id: uuid.UUID | None, recipe_id: uuid.UUID):
+    if household_id is not None:
+        return and_(Recipe.id == recipe_id, Recipe.household_id == household_id)
+    return and_(
+        Recipe.id == recipe_id,
+        Recipe.user_id == user_id,
+        or_(Recipe.household_id.is_(None), Recipe.shared_to_personal.is_(True)),
+    )
+
+
+async def _set_tags(
+    session: AsyncSession,
+    recipe: Recipe,
+    tag_ids: list[uuid.UUID],
+    user_id: uuid.UUID,
+    household_id: uuid.UUID | None,
+) -> None:
     await session.refresh(recipe, attribute_names=["tags"])
     if not tag_ids:
         recipe.tags = []
         return
-    result = await session.execute(
-        select(Tag).where(
-            Tag.id.in_(tag_ids),
-            or_(Tag.is_default.is_(True), Tag.user_id == user_id),
+    if household_id is not None:
+        tag_filter = or_(Tag.is_default.is_(True), Tag.household_id == household_id)
+    else:
+        tag_filter = or_(
+            Tag.is_default.is_(True),
+            and_(Tag.user_id == user_id, Tag.household_id.is_(None)),
         )
+    result = await session.execute(
+        select(Tag).where(Tag.id.in_(tag_ids), tag_filter)
     )
     recipe.tags = list(result.scalars().all())
+
+
+def _build_recipe_out(recipe: Recipe) -> RecipeOut:
+    out = RecipeOut.model_validate(recipe)
+    if recipe.household_id is not None and recipe.author is not None:
+        out.added_by = recipe.author.nickname or recipe.author.email
+    return out
 
 
 @router.get("/stats")
 async def recipe_stats(
     user: User = Depends(current_active_user),
     session: AsyncSession = Depends(get_async_session),
+    household_id: uuid.UUID | None = Depends(get_active_household_id),
 ) -> dict:
     result = await session.execute(
-        select(Recipe).where(Recipe.user_id == user.id)
+        select(Recipe).where(_recipe_filter(user.id, household_id))
     )
     recipes = result.scalars().all()
 
@@ -64,9 +100,12 @@ async def recipe_stats(
 async def export_recipes(
     user: User = Depends(current_active_user),
     session: AsyncSession = Depends(get_async_session),
+    household_id: uuid.UUID | None = Depends(get_active_household_id),
 ) -> StreamingResponse:
     result = await session.execute(
-        select(Recipe).where(Recipe.user_id == user.id).order_by(Recipe.created_at.desc())
+        select(Recipe)
+        .where(_recipe_filter(user.id, household_id))
+        .order_by(Recipe.created_at.desc())
     )
     recipes = result.scalars().all()
 
@@ -95,14 +134,15 @@ async def import_recipes(
     file: UploadFile = File(...),
     user: User = Depends(current_active_user),
     session: AsyncSession = Depends(get_async_session),
+    household_id: uuid.UUID | None = Depends(get_active_household_id),
 ) -> dict:
     content = await file.read()
     try:
-        text = content.decode("utf-8-sig")
+        raw = content.decode("utf-8-sig")
     except UnicodeDecodeError:
         raise HTTPException(status_code=400, detail="File must be UTF-8 encoded")
 
-    reader = csv.DictReader(io.StringIO(text))
+    reader = csv.DictReader(io.StringIO(raw))
     if not reader.fieldnames or "title" not in reader.fieldnames:
         raise HTTPException(status_code=400, detail="Invalid CSV: missing required columns")
 
@@ -115,6 +155,8 @@ async def import_recipes(
 
         recipe = Recipe(
             user_id=user.id,
+            household_id=household_id,
+            shared_to_personal=True,
             title=row.get("title") or "Untitled",
             servings=int(row["servings"]) if row.get("servings") else None,
             kcal_per_serving=int(row["kcal_per_serving"]) if row.get("kcal_per_serving") else None,
@@ -133,11 +175,14 @@ async def import_recipes(
 async def list_recipes(
     user: User = Depends(current_active_user),
     session: AsyncSession = Depends(get_async_session),
+    household_id: uuid.UUID | None = Depends(get_active_household_id),
 ) -> list[RecipeOut]:
     result = await session.execute(
-        select(Recipe).where(Recipe.user_id == user.id).order_by(Recipe.created_at.desc())
+        select(Recipe)
+        .where(_recipe_filter(user.id, household_id))
+        .order_by(Recipe.created_at.desc())
     )
-    return [RecipeOut.model_validate(r) for r in result.scalars().all()]
+    return [_build_recipe_out(r) for r in result.scalars().all()]
 
 
 @router.post("", response_model=RecipeOut, status_code=201)
@@ -145,9 +190,12 @@ async def save_recipe(
     body: RecipeSaveRequest,
     user: User = Depends(current_active_user),
     session: AsyncSession = Depends(get_async_session),
+    household_id: uuid.UUID | None = Depends(get_active_household_id),
 ) -> RecipeOut:
     recipe = Recipe(
         user_id=user.id,
+        household_id=household_id,
+        shared_to_personal=body.shared_to_personal if household_id is not None else True,
         title=body.title,
         servings=body.servings,
         kcal_per_serving=body.kcal_per_serving,
@@ -158,10 +206,10 @@ async def save_recipe(
     )
     session.add(recipe)
     await session.flush()
-    await _set_tags(session, recipe, body.tag_ids, user.id)
+    await _set_tags(session, recipe, body.tag_ids, user.id, household_id)
     await session.commit()
     await session.refresh(recipe)
-    return RecipeOut.model_validate(recipe)
+    return _build_recipe_out(recipe)
 
 
 @router.put("/{recipe_id}", response_model=RecipeOut)
@@ -170,9 +218,10 @@ async def update_recipe(
     body: RecipeSaveRequest,
     user: User = Depends(current_active_user),
     session: AsyncSession = Depends(get_async_session),
+    household_id: uuid.UUID | None = Depends(get_active_household_id),
 ) -> RecipeOut:
     result = await session.execute(
-        select(Recipe).where(Recipe.id == recipe_id, Recipe.user_id == user.id)
+        select(Recipe).where(_recipe_write_filter(user.id, household_id, recipe_id))
     )
     recipe = result.scalar_one_or_none()
     if recipe is None:
@@ -185,11 +234,13 @@ async def update_recipe(
     recipe.creator_handle = body.creator_handle
     recipe.source_url = body.source_url
     recipe.components = [c.model_dump() for c in body.components]
-    await _set_tags(session, recipe, body.tag_ids, user.id)
+    if household_id is not None:
+        recipe.shared_to_personal = body.shared_to_personal
+    await _set_tags(session, recipe, body.tag_ids, user.id, household_id)
 
     await session.commit()
     await session.refresh(recipe)
-    return RecipeOut.model_validate(recipe)
+    return _build_recipe_out(recipe)
 
 
 @router.post("/{recipe_id}/tags/{tag_id}", status_code=204)
@@ -198,24 +249,30 @@ async def add_tag_to_recipe(
     tag_id: uuid.UUID,
     user: User = Depends(current_active_user),
     session: AsyncSession = Depends(get_async_session),
+    household_id: uuid.UUID | None = Depends(get_active_household_id),
 ) -> None:
     recipe_result = await session.execute(
-        select(Recipe).where(Recipe.id == recipe_id, Recipe.user_id == user.id)
+        select(Recipe).where(_recipe_write_filter(user.id, household_id, recipe_id))
     )
     recipe = recipe_result.scalar_one_or_none()
     if recipe is None:
         raise HTTPException(status_code=404, detail="Recipe not found")
 
-    tag_result = await session.execute(
-        select(Tag).where(
-            Tag.id == tag_id,
-            or_(Tag.is_default.is_(True), Tag.user_id == user.id),
+    if household_id is not None:
+        tag_filter = or_(Tag.is_default.is_(True), Tag.household_id == household_id)
+    else:
+        tag_filter = or_(
+            Tag.is_default.is_(True),
+            and_(Tag.user_id == user.id, Tag.household_id.is_(None)),
         )
+    tag_result = await session.execute(
+        select(Tag).where(Tag.id == tag_id, tag_filter)
     )
     tag = tag_result.scalar_one_or_none()
     if tag is None:
         raise HTTPException(status_code=404, detail="Tag not found")
 
+    await session.refresh(recipe, attribute_names=["tags"])
     if tag not in recipe.tags:
         recipe.tags.append(tag)
         await session.commit()
@@ -227,9 +284,10 @@ async def remove_tag_from_recipe(
     tag_id: uuid.UUID,
     user: User = Depends(current_active_user),
     session: AsyncSession = Depends(get_async_session),
+    household_id: uuid.UUID | None = Depends(get_active_household_id),
 ) -> None:
     recipe_result = await session.execute(
-        select(Recipe).where(Recipe.id == recipe_id, Recipe.user_id == user.id)
+        select(Recipe).where(_recipe_write_filter(user.id, household_id, recipe_id))
     )
     recipe = recipe_result.scalar_one_or_none()
     if recipe is None:
@@ -244,9 +302,10 @@ async def delete_recipe(
     recipe_id: uuid.UUID,
     user: User = Depends(current_active_user),
     session: AsyncSession = Depends(get_async_session),
+    household_id: uuid.UUID | None = Depends(get_active_household_id),
 ) -> None:
     result = await session.execute(
-        select(Recipe).where(Recipe.id == recipe_id, Recipe.user_id == user.id)
+        select(Recipe).where(_recipe_write_filter(user.id, household_id, recipe_id))
     )
     recipe = result.scalar_one_or_none()
     if recipe is None:

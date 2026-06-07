@@ -8,6 +8,8 @@ from fastapi_users import schemas
 from sqlalchemy import String
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import ForeignKey
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 
 from api.config import settings
 from api.database import Base, get_async_session
@@ -16,10 +18,16 @@ from api.database import Base, get_async_session
 class User(SQLAlchemyBaseUserTableUUID, Base):
     __tablename__ = "users"
     nickname: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    active_household_id: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("households.id", ondelete="SET NULL"),
+        nullable=True,
+    )
 
 
 class UserRead(schemas.BaseUser[uuid.UUID]):
     nickname: str | None = None
+    active_household_id: uuid.UUID | None = None
 
 
 class UserCreate(schemas.BaseUserCreate):

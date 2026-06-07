@@ -9,6 +9,7 @@ from sqlalchemy import select
 from api.config import settings
 from api.database import Base, async_session_maker, engine
 from api.models import Tag
+from api.routes.households import router as households_router
 from api.routes.imports import router as imports_router
 from api.routes.meal_plan import router as meal_plan_router
 from api.routes.preferences import router as preferences_router
@@ -88,6 +89,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(households_router, prefix="/api")
 app.include_router(imports_router, prefix="/api")
 app.include_router(meal_plan_router, prefix="/api")
 app.include_router(preferences_router, prefix="/api")

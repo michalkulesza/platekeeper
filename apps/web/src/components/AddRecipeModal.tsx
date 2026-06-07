@@ -7,6 +7,7 @@ import {
   ModalFooter,
   Button,
   Input,
+  Switch,
   addToast,
 } from "@heroui/react";
 import {
@@ -19,6 +20,7 @@ import {
   Tag,
 } from "../api/client";
 import TagRow from "./TagRow";
+import { useHousehold } from "../context/HouseholdContext";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -375,12 +377,14 @@ interface AddRecipeModalProps {
 }
 
 export default function AddRecipeModal({ isOpen, onClose, onSaved, allTags, onTagCreated }: AddRecipeModalProps) {
+  const { activeHouseholdId } = useHousehold();
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [progressSteps, setProgressSteps] = useState<StepState[]>([]);
   const [editable, setEditable] = useState<EditableRecipe | null>(null);
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
+  const [sharedToPersonal, setSharedToPersonal] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const cancelRef = useRef<(() => void) | null>(null);
 
@@ -392,6 +396,7 @@ export default function AddRecipeModal({ isOpen, onClose, onSaved, allTags, onTa
     setProgressSteps([]);
     setEditable(null);
     setSelectedTags([]);
+    setSharedToPersonal(true);
     setError(null);
   }
 
@@ -415,6 +420,7 @@ export default function AddRecipeModal({ isOpen, onClose, onSaved, allTags, onTa
         source_url: editable.source_url,
         components: editable.components,
         tag_ids: selectedTags.map((t) => t.id),
+        shared_to_personal: sharedToPersonal,
       });
       addToast({ title: "Recipe saved", color: "success", timeout: 3000 });
       onSaved?.();
@@ -544,19 +550,31 @@ export default function AddRecipeModal({ isOpen, onClose, onSaved, allTags, onTa
             />
           )}
         </ModalBody>
-        <ModalFooter>
-          <Button variant="light" onPress={handleClose} isDisabled={loading || saving}>
-            {parsed ? "Discard" : "Cancel"}
-          </Button>
-          {parsed ? (
-            <Button color="primary" onPress={handleSave} isLoading={saving}>
-              Save
-            </Button>
-          ) : (
-            <Button color="primary" type="submit" form="import-form" isLoading={loading}>
-              Import
-            </Button>
+        <ModalFooter className="flex flex-col gap-2 items-stretch">
+          {parsed && activeHouseholdId && (
+            <div className="flex items-center justify-between px-1">
+              <span className="text-sm text-default-600">Also add to my private recipes</span>
+              <Switch
+                size="sm"
+                isSelected={sharedToPersonal}
+                onValueChange={setSharedToPersonal}
+              />
+            </div>
           )}
+          <div className="flex justify-end gap-2">
+            <Button variant="light" onPress={handleClose} isDisabled={loading || saving}>
+              {parsed ? "Discard" : "Cancel"}
+            </Button>
+            {parsed ? (
+              <Button color="primary" onPress={handleSave} isLoading={saving}>
+                Save
+              </Button>
+            ) : (
+              <Button color="primary" type="submit" form="import-form" isLoading={loading}>
+                Import
+              </Button>
+            )}
+          </div>
         </ModalFooter>
       </ModalContent>
     </Modal>

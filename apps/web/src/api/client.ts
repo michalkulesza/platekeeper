@@ -17,6 +17,7 @@ export interface Tag {
   id: string;
   name: string;
   is_default: boolean;
+  household_id: string | null;
 }
 
 export interface RecipeGroup {
@@ -71,6 +72,7 @@ export interface RecipeSaveRequest {
   source_url: string | null;
   components: SaveComponent[];
   tag_ids: string[];
+  shared_to_personal?: boolean;
 }
 
 export interface RecipeOut {
@@ -84,6 +86,9 @@ export interface RecipeOut {
   components: SaveComponent[];
   created_at: string;
   tags: Tag[];
+  household_id: string | null;
+  shared_to_personal: boolean;
+  added_by: string | null;
 }
 
 export async function saveRecipe(data: RecipeSaveRequest): Promise<RecipeOut> {
@@ -286,4 +291,128 @@ export function streamImport(url: string, callbacks: StreamCallbacks): () => voi
   };
 
   return () => source.close();
+}
+
+// ── Households ────────────────────────────────────────────────────────────────
+
+export interface HouseholdOut {
+  id: string;
+  name: string;
+  color: string;
+  created_at: string;
+}
+
+export interface MemberOut {
+  user_id: string;
+  email: string;
+  nickname: string | null;
+  joined_at: string;
+}
+
+export interface InvitationOut {
+  id: string;
+  household_id: string;
+  household_name: string;
+  invited_by_email: string;
+  invited_by_nickname: string | null;
+  created_at: string;
+}
+
+export async function createHousehold(name?: string, color?: string): Promise<HouseholdOut> {
+  const res = await fetch("/api/households", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ name: name ?? null, color: color ?? "#6366f1" }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { detail?: unknown };
+    throw new Error(typeof err.detail === "string" ? err.detail : "Failed to create household");
+  }
+  return res.json() as Promise<HouseholdOut>;
+}
+
+export async function listHouseholds(): Promise<HouseholdOut[]> {
+  const res = await fetch("/api/households", { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to load households");
+  return res.json() as Promise<HouseholdOut[]>;
+}
+
+export async function updateHousehold(id: string, data: { name?: string; color?: string }): Promise<HouseholdOut> {
+  const res = await fetch(`/api/households/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { detail?: unknown };
+    throw new Error(typeof err.detail === "string" ? err.detail : "Failed to update household");
+  }
+  return res.json() as Promise<HouseholdOut>;
+}
+
+export async function leaveHousehold(id: string): Promise<void> {
+  const res = await fetch(`/api/households/${id}/leave`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { detail?: unknown };
+    throw new Error(typeof err.detail === "string" ? err.detail : "Failed to leave household");
+  }
+}
+
+export async function listMembers(householdId: string): Promise<MemberOut[]> {
+  const res = await fetch(`/api/households/${householdId}/members`, { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to load members");
+  return res.json() as Promise<MemberOut[]>;
+}
+
+export async function switchHousehold(householdId: string | null): Promise<void> {
+  const res = await fetch("/api/me/active-household", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ household_id: householdId }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { detail?: unknown };
+    throw new Error(typeof err.detail === "string" ? err.detail : "Failed to switch context");
+  }
+}
+
+export async function inviteUser(householdId: string, email: string): Promise<void> {
+  const res = await fetch(`/api/households/${householdId}/invitations`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ email }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { detail?: unknown };
+    throw new Error(typeof err.detail === "string" ? err.detail : "Failed to send invitation");
+  }
+}
+
+export async function listInvitations(): Promise<InvitationOut[]> {
+  const res = await fetch("/api/invitations", { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to load invitations");
+  return res.json() as Promise<InvitationOut[]>;
+}
+
+export async function acceptInvitation(id: string): Promise<void> {
+  const res = await fetch(`/api/invitations/${id}/accept`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to accept invitation");
+}
+
+export async function declineInvitation(id: string): Promise<void> {
+  const res = await fetch(`/api/invitations/${id}/decline`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to decline invitation");
 }

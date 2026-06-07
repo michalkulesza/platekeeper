@@ -6,6 +6,7 @@ import {
   ModalBody,
   ModalFooter,
   Button,
+  Switch,
   addToast,
 } from "@heroui/react";
 import {
@@ -19,6 +20,7 @@ import {
   updateRecipe,
 } from "../api/client";
 import TagRow from "./TagRow";
+import { useHousehold } from "../context/HouseholdContext";
 
 // ── EditLine ──────────────────────────────────────────────────────────────────
 
@@ -75,6 +77,7 @@ interface EditState {
   kcal: string;
   thumbnail_url: string | null;
   components: SaveComponent[];
+  shared_to_personal: boolean;
 }
 
 function toEditState(r: RecipeOut): EditState {
@@ -88,6 +91,7 @@ function toEditState(r: RecipeOut): EditState {
       ingredients: [...c.ingredients],
       steps: [...c.steps],
     })),
+    shared_to_personal: r.shared_to_personal ?? true,
   };
 }
 
@@ -196,6 +200,7 @@ export default function RecipeDetailModal({
   onUpdated,
   onDeleted,
 }: RecipeDetailModalProps) {
+  const { activeHouseholdId } = useHousehold();
   const [mode, setMode] = useState<Mode>("view");
   const [draft, setDraft] = useState<EditState | null>(null);
   const [localTags, setLocalTags] = useState<Tag[]>([]);
@@ -303,6 +308,7 @@ export default function RecipeDetailModal({
         source_url: r.source_url,
         components: draft.components,
         tag_ids: localTags.map((t) => t.id),
+        shared_to_personal: draft.shared_to_personal,
       });
       addToast({ title: "Recipe updated", color: "success", timeout: 3000 });
       onUpdated?.(updated);
@@ -385,6 +391,11 @@ export default function RecipeDetailModal({
               {r.creator_handle && (
                 <p className="text-xs text-default-500 mt-0.5 font-normal">
                   @{r.creator_handle}
+                </p>
+              )}
+              {r.household_id && r.added_by && (
+                <p className="text-xs text-default-400 mt-0.5 font-normal">
+                  Added by {r.added_by}
                 </p>
               )}
             </div>
@@ -528,7 +539,18 @@ export default function RecipeDetailModal({
               ))}
         </ModalBody>
 
-        <ModalFooter>
+        <ModalFooter className="flex-col gap-2 items-stretch">
+          {mode === "editing" && r.household_id && (
+            <div className="flex items-center justify-between px-1">
+              <span className="text-sm text-default-600">Also in my private recipes</span>
+              <Switch
+                size="sm"
+                isSelected={draft?.shared_to_personal ?? true}
+                onValueChange={(v) => setDraft((d) => d ? { ...d, shared_to_personal: v } : d)}
+              />
+            </div>
+          )}
+          <div className="flex justify-end gap-2">
           {mode === "editing" && (
             <>
               <Button variant="light" onPress={cancelMode} isDisabled={busy}>Cancel</Button>
@@ -544,6 +566,7 @@ export default function RecipeDetailModal({
           {mode === "view" && (
             <Button variant="light" onPress={handleClose}>Close</Button>
           )}
+          </div>
         </ModalFooter>
       </ModalContent>
     </Modal>
