@@ -153,6 +153,7 @@ async def save_recipe(
         kcal_per_serving=body.kcal_per_serving,
         thumbnail_url=body.thumbnail_url,
         creator_handle=body.creator_handle,
+        source_url=body.source_url,
         components=[c.model_dump() for c in body.components],
     )
     session.add(recipe)
@@ -182,6 +183,7 @@ async def update_recipe(
     recipe.kcal_per_serving = body.kcal_per_serving
     recipe.thumbnail_url = body.thumbnail_url
     recipe.creator_handle = body.creator_handle
+    recipe.source_url = body.source_url
     recipe.components = [c.model_dump() for c in body.components]
     await _set_tags(session, recipe, body.tag_ids, user.id)
 

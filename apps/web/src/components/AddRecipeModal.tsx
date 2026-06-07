@@ -412,6 +412,7 @@ export default function AddRecipeModal({ isOpen, onClose, onSaved, allTags, onTa
         kcal_per_serving: editable.kcal !== "" ? Number(editable.kcal) : null,
         thumbnail_url: editable.thumbnail_url,
         creator_handle: editable.creator_handle,
+        source_url: editable.source_url,
         components: editable.components,
         tag_ids: selectedTags.map((t) => t.id),
       });

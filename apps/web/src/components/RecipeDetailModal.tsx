@@ -300,6 +300,7 @@ export default function RecipeDetailModal({
         kcal_per_serving: draft.kcal !== "" ? Number(draft.kcal) : null,
         thumbnail_url: draft.thumbnail_url,
         creator_handle: r.creator_handle,
+        source_url: r.source_url,
         components: draft.components,
         tag_ids: localTags.map((t) => t.id),
       });
@@ -385,6 +386,19 @@ export default function RecipeDetailModal({
                 <p className="text-xs text-default-500 mt-0.5 font-normal">
                   @{r.creator_handle}
                 </p>
+              )}
+              {r.source_url && mode === "view" && (
+                <a
+                  href={r.source_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-default-100 text-default-500 hover:bg-default-200 hover:text-default-700 transition-colors mt-1.5"
+                >
+                  <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                  Source
+                </a>
               )}
             </div>
           </div>

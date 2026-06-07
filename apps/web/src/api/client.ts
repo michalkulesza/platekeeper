@@ -68,6 +68,7 @@ export interface RecipeSaveRequest {
   kcal_per_serving: number | null;
   thumbnail_url: string | null;
   creator_handle: string | null;
+  source_url: string | null;
   components: SaveComponent[];
   tag_ids: string[];
 }
@@ -79,6 +80,7 @@ export interface RecipeOut {
   kcal_per_serving: number | null;
   thumbnail_url: string | null;
   creator_handle: string | null;
+  source_url: string | null;
   components: SaveComponent[];
   created_at: string;
   tags: Tag[];
