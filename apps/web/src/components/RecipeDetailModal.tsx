@@ -387,19 +387,6 @@ export default function RecipeDetailModal({
                   @{r.creator_handle}
                 </p>
               )}
-              {r.source_url && mode === "view" && (
-                <a
-                  href={r.source_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-default-100 text-default-500 hover:bg-default-200 hover:text-default-700 transition-colors mt-1.5"
-                >
-                  <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                  Source
-                </a>
-              )}
             </div>
           </div>
 
@@ -484,13 +471,26 @@ export default function RecipeDetailModal({
 
           {/* Action bar */}
           {mode === "view" && (
-            <div className="flex gap-2 pt-0.5">
+            <div className="flex gap-2 pt-0.5 items-center">
               <Button size="sm" variant="flat" onPress={() => setMode("editing")}>
                 Edit
               </Button>
               <Button size="sm" variant="flat" color="danger" onPress={() => setMode("confirming")}>
                 Remove
               </Button>
+              {r.source_url && (
+                <a
+                  href={r.source_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-default-100 text-default-500 hover:bg-default-200 hover:text-default-700 transition-colors"
+                >
+                  <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                  Source
+                </a>
+              )}
             </div>
           )}
           {mode === "editing" && (
