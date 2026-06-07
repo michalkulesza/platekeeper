@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import {
   Button,
   Calendar,
@@ -86,55 +86,62 @@ const SHORT_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 // ── Export ────────────────────────────────────────────────────────────────────
 
-function exportMealPlan(entries: MealPlanEntry[], year: number, month: number) {
+async function exportMealPlan(entries: MealPlanEntry[], year: number, month: number) {
   const DAY_HEADERS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
-  // Build a map of date -> recipe title
   const byDate = new Map(entries.map((e) => [e.date, e.recipe.title]));
 
-  // Find all ISO weeks that overlap with this month
-  // ISO week starts on Monday (day 1)
+  // Collect Mondays for each week overlapping this month
   const firstDay = new Date(year, month - 1, 1);
   const lastDay = new Date(year, month, 0);
-
-  // Collect the Mondays that start each week containing a day in this month
   const weeks: Date[] = [];
   const startMonday = new Date(firstDay);
-  const dayOfWeek = startMonday.getDay(); // 0=Sun
-  const offset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-  startMonday.setDate(startMonday.getDate() + offset);
-
+  const dow = startMonday.getDay();
+  startMonday.setDate(startMonday.getDate() + (dow === 0 ? -6 : 1 - dow));
   for (let d = new Date(startMonday); d <= lastDay; d.setDate(d.getDate() + 7)) {
     weeks.push(new Date(d));
   }
 
-  // Build sheet data: header row + one row per week
-  const rows: (string | null)[][] = [DAY_HEADERS];
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet("Week Meal Planner");
 
+  // 169px ≈ 22.3 Excel character-width units (64px = 8.43 chars)
+  ws.columns = Array(7).fill(null).map(() => ({ width: 22.3 }));
+
+  const centerWrap: Partial<ExcelJS.Alignment> = {
+    horizontal: "center",
+    vertical: "middle",
+    wrapText: true,
+  };
+
+  // Header row
+  const headerRow = ws.addRow(DAY_HEADERS);
+  headerRow.height = 42;
+  headerRow.eachCell((cell) => { cell.alignment = centerWrap; });
+
+  // Data rows — one per week
   for (const monday of weeks) {
-    const row: (string | null)[] = [];
+    const rowData: (string | null)[] = [];
     for (let i = 0; i < 7; i++) {
       const d = new Date(monday);
       d.setDate(d.getDate() + i);
-      const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-      row.push(byDate.get(dateStr) ?? null);
+      const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      rowData.push(byDate.get(ds) ?? null);
     }
-    rows.push(row);
+    const row = ws.addRow(rowData);
+    row.height = 96;
+    row.eachCell({ includeEmpty: true }, (cell) => { cell.alignment = centerWrap; });
   }
 
-  const ws = XLSX.utils.aoa_to_sheet(rows);
-
-  // Column widths (21.25 each, matching reference)
-  ws["!cols"] = Array(7).fill({ wch: 20, wpx: 85 });
-
-  // Row heights: header 31.5pt, data rows 72pt
-  ws["!rows"] = rows.map((_, i) => ({ hpt: i === 0 ? 31.5 : 72 }));
-
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Week Meal Planner");
-
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
   const monthName = new Date(year, month - 1, 1).toLocaleString("en-US", { month: "long" });
-  XLSX.writeFile(wb, `meal-plan-${year}-${String(month).padStart(2, "0")}-${monthName}.xlsx`);
+  a.href = url;
+  a.download = `meal-plan-${year}-${String(month).padStart(2, "0")}-${monthName}.xlsx`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 // ── RecipeThumb ───────────────────────────────────────────────────────────────
@@ -390,7 +397,7 @@ export default function MealPlanPage({ recipes, preferences }: MealPlanPageProps
             size="sm"
             variant="flat"
             isDisabled={loading || entries.length === 0}
-            onPress={() => exportMealPlan(entries, viewYear, viewMonth)}
+            onPress={() => void exportMealPlan(entries, viewYear, viewMonth)}
           >
             Export
           </Button>
