@@ -114,13 +114,31 @@ async function exportMealPlan(entries: MealPlanEntry[], year: number, month: num
     wrapText: true,
   };
 
-  // Header row — ExcelJS height is in points; 42px * 72/96 = 31.5pt
+  const borderEdge: Partial<ExcelJS.Border> = { style: "thin", color: { argb: "FF356854" } };
+  const totalRows = 1 + weeks.length;
+
+  function outerBorder(rowIdx: number, colIdx: number): Partial<ExcelJS.Borders> {
+    return {
+      top:    rowIdx === 1          ? borderEdge : undefined,
+      bottom: rowIdx === totalRows  ? borderEdge : undefined,
+      left:   colIdx === 1          ? borderEdge : undefined,
+      right:  colIdx === 7          ? borderEdge : undefined,
+    };
+  }
+
+  // Header row
   const headerRow = ws.addRow(DAY_HEADERS);
   headerRow.height = 31.22;
-  headerRow.eachCell((cell) => { cell.alignment = centerWrap; });
+  headerRow.eachCell({ includeEmpty: true }, (cell, col) => {
+    cell.alignment = centerWrap;
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF356854" } };
+    cell.font = { name: "Times New Roman", size: 12, color: { argb: "FFFFFFFF" } };
+    cell.border = outerBorder(1, col);
+  });
 
   // Data rows — one per week
-  for (const monday of weeks) {
+  for (let wi = 0; wi < weeks.length; wi++) {
+    const monday = weeks[wi];
     const rowData: (string | null)[] = [];
     for (let i = 0; i < 7; i++) {
       const d = new Date(monday);
@@ -130,7 +148,13 @@ async function exportMealPlan(entries: MealPlanEntry[], year: number, month: num
     }
     const row = ws.addRow(rowData);
     row.height = 71.38;
-    row.eachCell({ includeEmpty: true }, (cell) => { cell.alignment = centerWrap; });
+    const bgColor = wi % 2 === 0 ? "FFFFFFFF" : "FFF6F8F9";
+    row.eachCell({ includeEmpty: true }, (cell, col) => {
+      cell.alignment = centerWrap;
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: bgColor } };
+      cell.font = { name: "Roboto", size: 10.5, color: { argb: "FF434343" } };
+      cell.border = outerBorder(wi + 2, col);
+    });
   }
 
   const buffer = await wb.xlsx.writeBuffer();
