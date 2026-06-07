@@ -238,7 +238,7 @@ function printMealPlan(entries: MealPlanEntry[], year: number, month: number) {
     background: #356854;
     color: #fff;
     font-family: 'Times New Roman', serif;
-    font-size: 16pt;
+    font-size: 12pt;
     text-align: center;
     vertical-align: middle;
     padding: 6px 4px;
