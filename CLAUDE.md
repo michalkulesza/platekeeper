@@ -1,2 +1,2 @@
 # Misc
-- after each task make a commit with message
+- after each sucessfull task make a commit with message. If not sure if feature is fully completed ask user

@@ -16,11 +16,13 @@ import { CalendarDate, getLocalTimeZone, today } from "@internationalized/date";
 import {
   type MealPlanEntry,
   type RecipeOut,
+  type Tag,
   type UserPreferences,
   deleteMealPlanEntry,
   listMealPlan,
   setMealPlanEntry,
 } from "../api/client";
+import RecipeDetailModal from "../components/RecipeDetailModal";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -380,9 +382,13 @@ function DayRow({
 interface MealPlanPageProps {
   recipes: RecipeOut[];
   preferences: UserPreferences | null;
+  allTags: Tag[];
+  onTagCreated: (tag: Tag) => void;
+  onRecipeUpdated?: (r: RecipeOut) => void;
+  onRecipeDeleted?: (id: string) => void;
 }
 
-export default function MealPlanPage({ recipes, preferences }: MealPlanPageProps) {
+export default function MealPlanPage({ recipes, preferences, allTags, onTagCreated, onRecipeUpdated, onRecipeDeleted }: MealPlanPageProps) {
   const todayDate = today(getLocalTimeZone());
 
   const [selectedDate, setSelectedDate] = useState<CalendarDate>(todayDate);
@@ -395,6 +401,7 @@ export default function MealPlanPage({ recipes, preferences }: MealPlanPageProps
   const [pickerOpen, setPickerOpen] = useState(false);
   const [targetDate, setTargetDate] = useState<string | null>(null);
   const [actionEntry, setActionEntry] = useState<MealPlanEntry | null>(null);
+  const [viewRecipe, setViewRecipe] = useState<RecipeOut | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -681,7 +688,7 @@ export default function MealPlanPage({ recipes, preferences }: MealPlanPageProps
 
       {/* ── Day action sheet ──────────────────────────────────────────────────── */}
       <Modal
-        isOpen={!!actionEntry}
+        isOpen={!!actionEntry && !viewRecipe}
         onClose={() => setActionEntry(null)}
         placement="bottom"
         size="sm"
@@ -711,6 +718,13 @@ export default function MealPlanPage({ recipes, preferences }: MealPlanPageProps
                 <Button
                   variant="flat"
                   fullWidth
+                  onPress={() => setViewRecipe(actionEntry.recipe)}
+                >
+                  View recipe
+                </Button>
+                <Button
+                  variant="flat"
+                  fullWidth
                   onPress={() => openPicker(actionEntry.date)}
                 >
                   Change recipe
@@ -730,6 +744,16 @@ export default function MealPlanPage({ recipes, preferences }: MealPlanPageProps
           )}
         </ModalContent>
       </Modal>
+
+      {/* ── Recipe detail modal ───────────────────────────────────────────────── */}
+      <RecipeDetailModal
+        recipe={viewRecipe}
+        allTags={allTags}
+        onTagCreated={onTagCreated}
+        onClose={() => setViewRecipe(null)}
+        onUpdated={onRecipeUpdated}
+        onDeleted={onRecipeDeleted}
+      />
     </div>
   );
 }

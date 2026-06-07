@@ -59,7 +59,7 @@ Status legend: ☐ todo · ◐ in progress · ☑ done
 
 ## Build phases
 
-### Phase 1 — Data model + scoping backend  ☐
+### Phase 1 — Data model + scoping backend  ☑
 - [ ] Add models: `Household`, `HouseholdMember`, `HouseholdInvitation`.
 - [ ] Add columns: `users.active_household_id`, `recipes.household_id`,
       `recipes.shared_to_personal`, `meal_plan_entries.household_id`, `tags.household_id`.
@@ -70,7 +70,7 @@ Status legend: ☐ todo · ◐ in progress · ☑ done
 - [ ] Drop & recreate dev DB; verify Personal behavior unchanged.
 - [ ] **Commit.**
 
-### Phase 2 — Household CRUD + invites + bell  ☐
+### Phase 2 — Household CRUD + invites + bell  ☑
 - [ ] `households` routes: create, get, list-mine, rename, recolor, leave (with rescue +
       auto-wipe), members list, switch-active (`PATCH active_household_id`).
 - [ ] Invitations: invite-by-email, list-mine (pending), accept, decline. Guards: self /
@@ -78,7 +78,7 @@ Status legend: ☐ todo · ◐ in progress · ☑ done
 - [ ] Leave logic: copy `shared_to_personal` recipes to Personal; auto-wipe when empty.
 - [ ] **Commit.**
 
-### Phase 3 — Frontend  ☐
+### Phase 3 — Frontend  ☑
 - [ ] API client additions + types.
 - [ ] `PageHeader` → colored band (household name subtitle + color), bell top-right.
 - [ ] Bell popover: pending invites with Accept/Decline + badge.
