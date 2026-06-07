@@ -115,7 +115,8 @@ async function exportMealPlan(entries: MealPlanEntry[], year: number, month: num
   };
 
   const borderEdge: Partial<ExcelJS.Border> = { style: "thin", color: { argb: "FF356854" } };
-  const totalRows = 1 + weeks.length;
+  const ROW_COUNT = 6;
+  const totalRows = 1 + ROW_COUNT;
 
   function outerBorder(rowIdx: number, colIdx: number): Partial<ExcelJS.Borders> {
     return {
@@ -136,15 +137,19 @@ async function exportMealPlan(entries: MealPlanEntry[], year: number, month: num
     cell.border = outerBorder(1, col);
   });
 
-  // Data rows — one per week
-  for (let wi = 0; wi < weeks.length; wi++) {
+  // Data rows — always 6
+  for (let wi = 0; wi < ROW_COUNT; wi++) {
     const monday = weeks[wi];
     const rowData: (string | null)[] = [];
     for (let i = 0; i < 7; i++) {
-      const d = new Date(monday);
-      d.setDate(d.getDate() + i);
-      const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-      rowData.push(byDate.get(ds) ?? null);
+      if (monday) {
+        const d = new Date(monday);
+        d.setDate(d.getDate() + i);
+        const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        rowData.push(byDate.get(ds) ?? null);
+      } else {
+        rowData.push(null);
+      }
     }
     const row = ws.addRow(rowData);
     row.height = 71.38;
