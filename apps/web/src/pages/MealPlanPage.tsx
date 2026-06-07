@@ -428,7 +428,7 @@ export default function MealPlanPage({ recipes, preferences }: MealPlanPageProps
             isDisabled={loading || entries.length === 0}
             onPress={() => void exportMealPlan(entries, viewYear, viewMonth)}
           >
-            Export
+            Export as xlsx
           </Button>
         </div>
 
