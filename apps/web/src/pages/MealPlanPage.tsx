@@ -30,7 +30,10 @@ function proxyUrl(url: string | null | undefined): string | null {
 }
 
 function parseCellAriaLabel(label: string): string | null {
-  const withoutDay = label.replace(/^[A-Za-z]+,\s*/, "");
+  // Strip leading prefixes like "Today, " or "Saturday, "
+  let withoutDay = label.replace(/^([A-Za-z]+,\s*)+/, "");
+  // Strip trailing text after the year (e.g. " selected", " unavailable")
+  withoutDay = withoutDay.replace(/(\d{4}).*$/, "$1");
 
   // en-US: "June 7, 2025"
   let d = new Date(withoutDay);
@@ -426,7 +429,7 @@ export default function MealPlanPage({ recipes, preferences }: MealPlanPageProps
     const planned = new Set(entries.map((e) => e.date));
     const timer = setTimeout(() => injectDots(calendarRef.current, planned), 60);
     return () => clearTimeout(timer);
-  }, [entries, viewYear, viewMonth]);
+  }, [entries, viewYear, viewMonth, selectedDate]);
 
   // Auto-scroll to today on first load
   useEffect(() => {
