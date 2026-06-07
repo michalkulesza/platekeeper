@@ -116,7 +116,7 @@ async function exportMealPlan(entries: MealPlanEntry[], year: number, month: num
 
   // Header row — ExcelJS height is in points; 42px * 72/96 = 31.5pt
   const headerRow = ws.addRow(DAY_HEADERS);
-  headerRow.height = 26.02;
+  headerRow.height = 31.22;
   headerRow.eachCell((cell) => { cell.alignment = centerWrap; });
 
   // Data rows — one per week
@@ -129,7 +129,7 @@ async function exportMealPlan(entries: MealPlanEntry[], year: number, month: num
       rowData.push(byDate.get(ds) ?? null);
     }
     const row = ws.addRow(rowData);
-    row.height = 59.48;
+    row.height = 71.38;
     row.eachCell({ includeEmpty: true }, (cell) => { cell.alignment = centerWrap; });
   }
 
