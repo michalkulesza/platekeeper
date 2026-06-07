@@ -47,17 +47,14 @@ async def _seed_demo_user() -> None:
     async with async_session_maker() as session:
         user_db = SQLAlchemyUserDatabase(session, User)
         manager = UserManager(user_db)
-        try:
-            await manager.create(
-                UserCreate(
-                    email="demo@demo.com",
-                    password="demo",
-                    nickname="justahacker",
-                    is_verified=True,
-                )
-            )
-        except UserAlreadyExists:
-            pass
+        for user_data in [
+            UserCreate(email="demo@demo.com", password="demo", nickname="justahacker", is_verified=True),
+            UserCreate(email="alt@demo.com", password="demo", nickname="Demo Alt", is_verified=True),
+        ]:
+            try:
+                await manager.create(user_data)
+            except UserAlreadyExists:
+                pass
 
 
 async def _seed_default_tags() -> None:
