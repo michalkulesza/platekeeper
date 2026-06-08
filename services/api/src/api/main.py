@@ -10,6 +10,7 @@ from sqlalchemy import select
 from api.config import settings
 from api.database import Base, async_session_maker, engine
 from api.models import Tag
+from api.routes.allergens import router as allergens_router
 from api.routes.households import router as households_router
 from api.routes.imports import router as imports_router
 from api.routes.meal_plan import router as meal_plan_router
@@ -72,9 +73,10 @@ async def _seed_default_tags() -> None:
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        await conn.execute(text(
-            "ALTER TABLE recipes ADD COLUMN IF NOT EXISTS position INTEGER"
-        ))
+        await conn.execute(text("ALTER TABLE recipes ADD COLUMN IF NOT EXISTS position INTEGER"))
+        await conn.execute(text("ALTER TABLE households ADD COLUMN IF NOT EXISTS allergens JSONB"))
+        await conn.execute(text("ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS auto_substitute BOOLEAN NOT NULL DEFAULT FALSE"))
+        await conn.execute(text("ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS personal_allergens JSONB"))
     await _seed_demo_user()
     await _seed_default_tags()
     yield
@@ -90,6 +92,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(allergens_router, prefix="/api")
 app.include_router(households_router, prefix="/api")
 app.include_router(imports_router, prefix="/api")
 app.include_router(meal_plan_router, prefix="/api")

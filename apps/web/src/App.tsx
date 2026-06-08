@@ -92,6 +92,7 @@ function AppShell() {
                     onTagCreated={handleTagCreated}
                     onRecipeUpdated={handleRecipeUpdated}
                     onRecipeDeleted={handleRecipeDeleted}
+                    preferences={preferences}
                   />
                 }
               />
@@ -125,6 +126,7 @@ function AppShell() {
           onSaved={handleRecipeSaved}
           allTags={allTags}
           onTagCreated={handleTagCreated}
+          preferences={preferences}
         />
       </div>
     </HouseholdProvider>

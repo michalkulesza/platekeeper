@@ -1,10 +1,10 @@
 import { useRef, useState } from "react";
-import { Button, Modal, ModalBackdrop, ModalBody, ModalContainer, ModalDialog, ModalFooter, ModalHeader, toast } from "@heroui/react";
+import { Button, Modal, ModalBackdrop, ModalBody, ModalContainer, ModalDialog, ModalFooter, ModalHeader, Switch, toast } from "@heroui/react";
 import PageHeader from "../components/PageHeader";
 import {
-  exportRecipes, importRecipes, updatePreferences,
+  exportRecipes, importRecipes, updatePreferences, updateHouseholdAllergens, streamReanalyze,
   createHousehold, leaveHousehold, listMembers, updateHousehold, inviteUser,
-  type RecipeStats, type UserPreferences, type MemberOut, type HouseholdOut,
+  type AllergenData, type RecipeStats, type UserPreferences, type MemberOut, type HouseholdOut,
 } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { useHousehold } from "../context/HouseholdContext";
@@ -30,11 +30,155 @@ const PRESET_COLORS = [
   "#6366f1", "#ec4899", "#14b8a6", "#f59e0b", "#22c55e", "#ef4444", "#8b5cf6", "#06b6d4",
 ];
 
+const BIG_14 = [
+  { key: "celery", label: "Celery" },
+  { key: "gluten", label: "Gluten (wheat, rye, barley)" },
+  { key: "crustaceans", label: "Crustaceans" },
+  { key: "eggs", label: "Eggs" },
+  { key: "fish", label: "Fish" },
+  { key: "lupin", label: "Lupin" },
+  { key: "milk", label: "Milk / Dairy" },
+  { key: "molluscs", label: "Molluscs" },
+  { key: "mustard", label: "Mustard" },
+  { key: "peanuts", label: "Peanuts" },
+  { key: "sesame", label: "Sesame" },
+  { key: "soybeans", label: "Soybeans" },
+  { key: "sulphites", label: "Sulphur dioxide / Sulphites" },
+  { key: "tree nuts", label: "Tree nuts" },
+];
+
 interface SettingsPageProps {
   stats: RecipeStats | null;
   onStatsRefresh: () => void;
   preferences: UserPreferences | null;
   onPreferencesChange: (prefs: UserPreferences) => void;
+}
+
+// ── Allergen section ──────────────────────────────────────────────────────────
+
+function AllergenSection({
+  allergens,
+  scopeLabel,
+  onSave,
+}: {
+  allergens: AllergenData;
+  scopeLabel: string;
+  onSave: (data: AllergenData) => Promise<void>;
+}) {
+  const [predefined, setPredefined] = useState<string[]>(allergens.predefined ?? []);
+  const [custom, setCustom] = useState<string[]>(allergens.custom ?? []);
+  const [tagInput, setTagInput] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [reanalyzing, setReanalyzing] = useState(false);
+  const [reanalyzeProgress, setReanalyzeProgress] = useState<{ done: number; total: number } | null>(null);
+
+  function togglePredefined(key: string) {
+    setPredefined((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+    );
+  }
+
+  function addCustomTag() {
+    const tag = tagInput.trim().toLowerCase();
+    if (tag && !custom.includes(tag)) {
+      setCustom((prev) => [...prev, tag]);
+    }
+    setTagInput("");
+  }
+
+  function removeCustomTag(tag: string) {
+    setCustom((prev) => prev.filter((t) => t !== tag));
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await onSave({ predefined, custom });
+      toast.success("Allergens saved", { timeout: 2000 });
+    } catch (e) {
+      toast.danger(e instanceof Error ? e.message : "Failed to save", { timeout: 3000 });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handleReanalyze() {
+    setReanalyzing(true);
+    setReanalyzeProgress({ done: 0, total: 0 });
+    streamReanalyze({
+      onStart: (total) => setReanalyzeProgress({ done: 0, total }),
+      onProgress: (done, total) => setReanalyzeProgress({ done, total }),
+      onComplete: (analyzed) => {
+        setReanalyzing(false);
+        setReanalyzeProgress(null);
+        toast.success(`Re-analyzed ${analyzed} recipe${analyzed !== 1 ? "s" : ""}`, { timeout: 3000 });
+      },
+      onError: (msg) => {
+        setReanalyzing(false);
+        setReanalyzeProgress(null);
+        toast.danger(msg, { timeout: 3000 });
+      },
+    });
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <p className="text-xs text-zinc-400">{scopeLabel}</p>
+
+      <div className="grid grid-cols-1 gap-2">
+        {BIG_14.map(({ key, label }) => (
+          <label key={key} className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={predefined.includes(key)}
+              onChange={() => togglePredefined(key)}
+              className="w-4 h-4 rounded border-zinc-300 accent-primary"
+            />
+            <span className="text-sm">{label}</span>
+          </label>
+        ))}
+      </div>
+
+      {/* Custom tags */}
+      <div className="flex flex-col gap-2">
+        <p className="text-xs font-medium text-zinc-500">Custom allergens</p>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="e.g. nightshades"
+            value={tagInput}
+            onChange={(e) => setTagInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustomTag(); } }}
+            className="flex-1 px-3 py-1.5 text-sm rounded-lg border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+          <Button size="sm" variant="secondary" onPress={addCustomTag}>Add</Button>
+        </div>
+        {custom.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {custom.map((tag) => (
+              <span key={tag} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-zinc-100 text-zinc-600">
+                {tag}
+                <button type="button" onClick={() => removeCustomTag(tag)} className="text-zinc-400 hover:text-zinc-700 ml-0.5">×</button>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="flex gap-2 flex-wrap">
+        <Button size="sm" variant="primary" onPress={handleSave} isDisabled={saving}>
+          {saving ? "Saving…" : "Save allergens"}
+        </Button>
+        <Button size="sm" variant="secondary" onPress={handleReanalyze} isDisabled={reanalyzing}>
+          {reanalyzing
+            ? reanalyzeProgress && reanalyzeProgress.total > 0
+              ? `Analyzing… ${reanalyzeProgress.done}/${reanalyzeProgress.total}`
+              : "Starting…"
+            : "Re-analyze all recipes"}
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 // ── Create Household modal ────────────────────────────────────────────────────
@@ -307,7 +451,7 @@ function ManageHouseholdModal({ household, isOpen, onClose, onChanged }: {
 
 export default function SettingsPage({ stats, onStatsRefresh, preferences, onPreferencesChange }: SettingsPageProps) {
   const { user, logout } = useAuth();
-  const { households, activeHouseholdId, refetchHouseholds } = useHousehold();
+  const { households, activeHouseholdId, activeHousehold, refetchHouseholds } = useHousehold();
   const [loggingOut, setLoggingOut] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -353,6 +497,24 @@ export default function SettingsPage({ stats, onStatsRefresh, preferences, onPre
       if (fileRef.current) fileRef.current.value = "";
     }
   }
+
+  async function handleSaveAllergens(data: { predefined: string[]; custom: string[] }) {
+    if (activeHousehold) {
+      await updateHouseholdAllergens(activeHousehold.id, data);
+      refetchHouseholds();
+    } else {
+      const updated = await updatePreferences({ personal_allergens: data });
+      onPreferencesChange(updated);
+    }
+  }
+
+  const allergenScopeLabel = activeHousehold
+    ? `Applied to ${activeHousehold.name}`
+    : "Applied to your personal recipes";
+
+  const currentAllergens: { predefined: string[]; custom: string[] } = activeHousehold?.allergens
+    ?? preferences?.personal_allergens
+    ?? { predefined: [], custom: [] };
 
   return (
     <>
@@ -420,6 +582,19 @@ export default function SettingsPage({ stats, onStatsRefresh, preferences, onPre
           )}
         </section>
 
+        {/* Allergies & Intolerances */}
+        <section className="flex flex-col gap-3">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Allergies & Intolerances</h2>
+          <div className="rounded-xl border border-zinc-200 p-4">
+            <AllergenSection
+              key={activeHouseholdId ?? "personal"}
+              allergens={currentAllergens}
+              scopeLabel={allergenScopeLabel}
+              onSave={handleSaveAllergens}
+            />
+          </div>
+        </section>
+
         {/* Account */}
         <section className="flex flex-col gap-3">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Account</h2>
@@ -438,7 +613,7 @@ export default function SettingsPage({ stats, onStatsRefresh, preferences, onPre
         {/* Preferences */}
         <section className="flex flex-col gap-3">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Preferences</h2>
-          <div className="rounded-xl border border-zinc-200 p-4">
+          <div className="rounded-xl border border-zinc-200 p-4 flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium" htmlFor="week-start">Week starts on</label>
               <select
@@ -456,6 +631,21 @@ export default function SettingsPage({ stats, onStatsRefresh, preferences, onPre
                   <option key={opt.key} value={opt.key}>{opt.label}</option>
                 ))}
               </select>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <p className="text-sm font-medium">Auto-apply substitutes</p>
+                <p className="text-xs text-zinc-400">Automatically replace flagged ingredients when importing</p>
+              </div>
+              <Switch
+                size="sm"
+                isSelected={preferences?.auto_substitute ?? false}
+                onChange={(v) => {
+                  updatePreferences({ auto_substitute: v })
+                    .then(onPreferencesChange)
+                    .catch(() => {});
+                }}
+              />
             </div>
           </div>
         </section>

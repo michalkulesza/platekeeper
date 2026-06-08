@@ -13,6 +13,23 @@ from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from api.database import Base
 
 
+# ── Allergen helpers ──────────────────────────────────────────────────────────
+
+class AllergenData(BaseModel):
+    predefined: list[str] = []
+    custom: list[str] = []
+
+    def all_allergens(self) -> list[str]:
+        return self.predefined + self.custom
+
+
+class AllergenFlag(BaseModel):
+    allergen: str | None = None
+    substitute: str | None = None
+    substitute_applied: bool = False
+    original_display: str | None = None
+
+
 # ── Association table ─────────────────────────────────────────────────────────
 
 recipe_tags_table = Table(
@@ -32,6 +49,7 @@ class Household(Base):
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     color: Mapped[str] = mapped_column(String(20), nullable=False, default="#6366f1")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    allergens: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
 
 class HouseholdMember(Base):
@@ -118,6 +136,8 @@ class Ingredient(BaseModel):
     unit: str | None = None
     name: str
     note: str | None = None
+    allergen: str | None = None
+    substitute: str | None = None
 
 
 class RecipeComponent(BaseModel):
@@ -184,6 +204,7 @@ class SaveComponent(BaseModel):
     yield_note: str
     ingredients: list[str]
     steps: list[str]
+    ingredient_flags: list[AllergenFlag] | None = None
 
 
 class RecipeSaveRequest(BaseModel):
@@ -276,13 +297,19 @@ class UserPreferences(Base):
         PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
     )
     week_start_day: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    auto_substitute: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    personal_allergens: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
 
 class UserPreferencesOut(BaseModel):
     model_config = {"from_attributes": True}
 
     week_start_day: int
+    auto_substitute: bool = False
+    personal_allergens: dict | None = None
 
 
 class UserPreferencesUpdate(BaseModel):
-    week_start_day: int
+    week_start_day: int | None = None
+    auto_substitute: bool | None = None
+    personal_allergens: dict | None = None

@@ -13,7 +13,7 @@ import {
 import PageHeader from "../components/PageHeader";
 import RecipeDetailModal from "../components/RecipeDetailModal";
 import RecipesTable from "../components/RecipesTable";
-import { RecipeOut, Tag, deleteRecipe } from "../api/client";
+import { RecipeOut, Tag, UserPreferences, deleteRecipe } from "../api/client";
 import { useHousehold } from "../context/HouseholdContext";
 
 function RecipeThumb({ src, alt }: { src: string; alt: string }) {
@@ -98,6 +98,7 @@ interface RecipesPageProps {
   onTagCreated: (tag: Tag) => void;
   onRecipeUpdated: (r: RecipeOut) => void;
   onRecipeDeleted: (id: string) => void;
+  preferences: UserPreferences | null;
 }
 
 function RecipeCard({
@@ -213,8 +214,15 @@ export default function RecipesPage({
   onTagCreated,
   onRecipeUpdated,
   onRecipeDeleted,
+  preferences,
 }: RecipesPageProps) {
-  const { activeHouseholdId } = useHousehold();
+  const { activeHouseholdId, activeHousehold } = useHousehold();
+
+  const activeAllergens: string[] = activeHousehold?.allergens
+    ? [...(activeHousehold.allergens.predefined ?? []), ...(activeHousehold.allergens.custom ?? [])]
+    : preferences?.personal_allergens
+    ? [...(preferences.personal_allergens.predefined ?? []), ...(preferences.personal_allergens.custom ?? [])]
+    : [];
   const [selected, setSelected] = useState<RecipeOut | null>(null);
   const [openInEdit, setOpenInEdit] = useState(false);
   const [filterTag, setFilterTag] = useState<Tag | null>(null);
@@ -454,6 +462,7 @@ export default function RecipesPage({
         onUpdated={handleUpdated}
         onDeleted={handleModalDeleted}
         initialMode={openInEdit ? "editing" : "view"}
+        activeAllergens={activeAllergens}
       />
 
       {/* Delete confirmation modal */}

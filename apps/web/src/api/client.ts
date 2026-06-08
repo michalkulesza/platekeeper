@@ -1,8 +1,22 @@
+export interface AllergenData {
+  predefined: string[];
+  custom: string[];
+}
+
+export interface AllergenFlag {
+  allergen: string | null;
+  substitute: string | null;
+  substitute_applied: boolean;
+  original_display: string | null;
+}
+
 export interface Ingredient {
   qty: string | null;
   unit: string | null;
   name: string;
   note: string | null;
+  allergen?: string | null;
+  substitute?: string | null;
 }
 
 export interface RecipeComponent {
@@ -61,6 +75,7 @@ export interface SaveComponent {
   yield_note: string;
   ingredients: string[];
   steps: string[];
+  ingredient_flags?: AllergenFlag[];
 }
 
 export interface RecipeSaveRequest {
@@ -279,6 +294,8 @@ export async function deleteMealPlanEntry(date: string): Promise<void> {
 
 export interface UserPreferences {
   week_start_day: number; // 0=Sun 1=Mon 6=Sat
+  auto_substitute: boolean;
+  personal_allergens: AllergenData | null;
 }
 
 export async function getPreferences(): Promise<UserPreferences> {
@@ -287,7 +304,7 @@ export async function getPreferences(): Promise<UserPreferences> {
   return res.json() as Promise<UserPreferences>;
 }
 
-export async function updatePreferences(data: UserPreferences): Promise<UserPreferences> {
+export async function updatePreferences(data: Partial<UserPreferences>): Promise<UserPreferences> {
   const res = await fetch("/api/preferences", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -296,6 +313,63 @@ export async function updatePreferences(data: UserPreferences): Promise<UserPref
   });
   if (!res.ok) throw new Error("Failed to update preferences");
   return res.json() as Promise<UserPreferences>;
+}
+
+export async function updateHouseholdAllergens(householdId: string, allergens: AllergenData): Promise<HouseholdOut> {
+  const res = await fetch(`/api/households/${householdId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ allergens }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { detail?: unknown };
+    throw new Error(typeof err.detail === "string" ? err.detail : "Failed to update allergens");
+  }
+  return res.json() as Promise<HouseholdOut>;
+}
+
+export interface ReanalyzeProgress {
+  type: "start" | "progress" | "complete";
+  total?: number;
+  done?: number;
+  analyzed?: number;
+}
+
+export function streamReanalyze(callbacks: {
+  onStart: (total: number) => void;
+  onProgress: (done: number, total: number) => void;
+  onComplete: (analyzed: number) => void;
+  onError: (msg: string) => void;
+}): () => void {
+  let aborted = false;
+  fetch("/api/allergens/reanalyze", { method: "POST", credentials: "include" }).then(async (res) => {
+    if (!res.ok || !res.body) {
+      callbacks.onError("Failed to start re-analysis");
+      return;
+    }
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    while (!aborted) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) {
+        const data = line.replace(/^data: /, "").trim();
+        if (!data) continue;
+        try {
+          const event = JSON.parse(data) as ReanalyzeProgress;
+          if (event.type === "start") callbacks.onStart(event.total ?? 0);
+          else if (event.type === "progress") callbacks.onProgress(event.done ?? 0, event.total ?? 0);
+          else if (event.type === "complete") callbacks.onComplete(event.analyzed ?? 0);
+        } catch { /* ignore */ }
+      }
+    }
+  }).catch(() => callbacks.onError("Connection error"));
+  return () => { aborted = true; };
 }
 
 export function streamImport(url: string, callbacks: StreamCallbacks): () => void {
@@ -328,6 +402,7 @@ export interface HouseholdOut {
   name: string;
   color: string;
   created_at: string;
+  allergens: AllergenData | null;
 }
 
 export interface MemberOut {

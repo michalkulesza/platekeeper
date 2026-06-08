@@ -19,7 +19,7 @@ async def get_preferences(
     )
     prefs = result.scalar_one_or_none()
     if prefs is None:
-        return UserPreferencesOut(week_start_day=1)
+        return UserPreferencesOut(week_start_day=1, auto_substitute=False, personal_allergens=None)
     return UserPreferencesOut.model_validate(prefs)
 
 
@@ -34,10 +34,20 @@ async def update_preferences(
     )
     prefs = result.scalar_one_or_none()
     if prefs is None:
-        prefs = UserPreferences(user_id=user.id, week_start_day=body.week_start_day)
+        prefs = UserPreferences(
+            user_id=user.id,
+            week_start_day=body.week_start_day if body.week_start_day is not None else 1,
+            auto_substitute=body.auto_substitute if body.auto_substitute is not None else False,
+            personal_allergens=body.personal_allergens,
+        )
         session.add(prefs)
     else:
-        prefs.week_start_day = body.week_start_day
+        if body.week_start_day is not None:
+            prefs.week_start_day = body.week_start_day
+        if body.auto_substitute is not None:
+            prefs.auto_substitute = body.auto_substitute
+        if body.personal_allergens is not None:
+            prefs.personal_allergens = body.personal_allergens
 
     await session.commit()
     await session.refresh(prefs)

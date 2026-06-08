@@ -17,11 +17,13 @@ import {
   createTag,
   listPersonalRecipes,
   linkRecipeToHousehold,
+  AllergenFlag,
   ImportResult,
   RecipeComponent,
   RecipeOut,
   StageEvent,
   Tag,
+  UserPreferences,
 } from "../api/client";
 import TagRow from "./TagRow";
 import { useHousehold } from "../context/HouseholdContext";
@@ -37,6 +39,7 @@ interface EditableComponent {
   yield_note: string;
   ingredients: string[];
   steps: string[];
+  ingredient_flags: (AllergenFlag | null)[];
 }
 
 interface EditableRecipe {
@@ -51,7 +54,7 @@ interface EditableRecipe {
   suggestedTagNames: string[];
 }
 
-function toEditable(result: ImportResult): EditableRecipe {
+function toEditable(result: ImportResult, autoSubstitute: boolean): EditableRecipe {
   const { recipe, metadata, stage } = result;
   return {
     title: recipe?.title ?? "",
@@ -65,12 +68,96 @@ function toEditable(result: ImportResult): EditableRecipe {
     components: (recipe?.components ?? []).map((c: RecipeComponent) => ({
       name: c.name ?? c.role,
       yield_note: c.yield_note ?? "",
-      ingredients: c.ingredients.map((ing) =>
-        [ing.qty, ing.unit, ing.name, ing.note ? `(${ing.note})` : null].filter(Boolean).join(" ")
-      ),
+      ingredients: c.ingredients.map((ing) => {
+        const useSub = autoSubstitute && !!ing.allergen && !!ing.substitute;
+        const nameToUse = useSub ? ing.substitute! : ing.name;
+        return [ing.qty, ing.unit, nameToUse, ing.note ? `(${ing.note})` : null].filter(Boolean).join(" ");
+      }),
       steps: c.steps,
+      ingredient_flags: c.ingredients.map((ing) => ({
+        allergen: ing.allergen ?? null,
+        substitute: ing.substitute ?? null,
+        substitute_applied: autoSubstitute && !!ing.allergen && !!ing.substitute,
+        original_display: null,
+      })),
     })),
   };
+}
+
+// ── Allergen popover ──────────────────────────────────────────────────────────
+
+function AllergenPopover({
+  flag,
+  activeAllergens,
+  onReplace,
+  onRestore,
+}: {
+  flag: AllergenFlag;
+  activeAllergens: string[];
+  onReplace: () => void;
+  onRestore: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  const isActive = flag.allergen && activeAllergens.map((a) => a.toLowerCase()).includes(flag.allergen.toLowerCase());
+  if (!isActive) return null;
+
+  return (
+    <div className="relative shrink-0" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="text-amber-500 hover:text-amber-600 text-xs leading-none mt-1"
+        title={`Contains ${flag.allergen}`}
+      >
+        ⚠️
+      </button>
+      {open && (
+        <div className="absolute left-0 top-6 z-50 bg-white border border-zinc-200 rounded-xl shadow-lg p-3 min-w-[220px] text-sm">
+          {flag.substitute_applied && flag.original_display ? (
+            <>
+              <p className="text-zinc-600 mb-2">
+                Originally <strong className="text-zinc-800">{flag.original_display}</strong>,
+                replaced with <strong className="text-zinc-800">{flag.substitute}</strong> due to {flag.allergen}.
+              </p>
+              <Button size="sm" variant="secondary" onPress={() => { onRestore(); setOpen(false); }}>
+                Restore original
+              </Button>
+            </>
+          ) : flag.substitute ? (
+            <>
+              <p className="text-zinc-600 mb-2">
+                Contains <strong className="text-zinc-800">{flag.allergen}</strong>.
+                Suggested substitute: <strong className="text-zinc-800">{flag.substitute}</strong>.
+              </p>
+              <div className="flex gap-2">
+                <Button size="sm" variant="primary" onPress={() => { onReplace(); setOpen(false); }}>
+                  Replace
+                </Button>
+                <Button size="sm" variant="tertiary" onPress={() => setOpen(false)}>
+                  Keep original
+                </Button>
+              </div>
+            </>
+          ) : (
+            <p className="text-zinc-600">
+              Contains <strong className="text-zinc-800">{flag.allergen}</strong>. No substitute available.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ── Progress list ────────────────────────────────────────────────────────────
@@ -147,6 +234,7 @@ function EditableRecipeView({
   recipe,
   selectedTags,
   allTags,
+  activeAllergens,
   onChange,
   onTagAdd,
   onTagRemove,
@@ -155,6 +243,7 @@ function EditableRecipeView({
   recipe: EditableRecipe;
   selectedTags: Tag[];
   allTags: Tag[];
+  activeAllergens: string[];
   onChange: (r: EditableRecipe) => void;
   onTagAdd: (tag: Tag) => void;
   onTagRemove: (tagId: string) => void;
@@ -175,6 +264,44 @@ function EditableRecipeView({
         ...c,
         ingredients: c.ingredients.map((ing, ii2) => (ii2 === ii ? val : ing)),
       }
+    );
+    onChange({ ...recipe, components });
+  }
+
+  function handleReplace(ci: number, ii: number) {
+    const comp = recipe.components[ci];
+    const flag = comp.ingredient_flags[ii];
+    if (!flag?.substitute) return;
+    const originalDisplay = comp.ingredients[ii];
+    const newIngredients = comp.ingredients.map((ing, idx) =>
+      idx === ii ? flag.substitute! : ing
+    );
+    const newFlags = comp.ingredient_flags.map((f, idx) =>
+      idx === ii
+        ? { ...f!, substitute_applied: true, original_display: originalDisplay }
+        : f
+    );
+    const components = recipe.components.map((c, ci2) =>
+      ci2 !== ci ? c : { ...c, ingredients: newIngredients, ingredient_flags: newFlags }
+    );
+    onChange({ ...recipe, components });
+  }
+
+  function handleRestore(ci: number, ii: number) {
+    const comp = recipe.components[ci];
+    const flag = comp.ingredient_flags[ii];
+    if (!flag?.original_display) return;
+    const originalDisplay = flag.original_display;
+    const newIngredients = comp.ingredients.map((ing, idx) =>
+      idx === ii ? originalDisplay : ing
+    );
+    const newFlags = comp.ingredient_flags.map((f, idx) =>
+      idx === ii
+        ? { ...f!, substitute_applied: false, original_display: null }
+        : f
+    );
+    const components = recipe.components.map((c, ci2) =>
+      ci2 !== ci ? c : { ...c, ingredients: newIngredients, ingredient_flags: newFlags }
     );
     onChange({ ...recipe, components });
   }
@@ -341,12 +468,23 @@ function EditableRecipeView({
             <>
               <p className="text-xs font-semibold uppercase text-zinc-400 mb-1">Ingredients</p>
               <ul className="space-y-1 mb-3">
-                {comp.ingredients.map((ing, ii) => (
-                  <li key={ii} className="flex items-start gap-2 text-sm">
-                    <span className="text-zinc-300 mt-1.5 shrink-0">·</span>
-                    <EditLine value={ing} onChange={(v) => setIngredient(ci, ii, v)} />
-                  </li>
-                ))}
+                {comp.ingredients.map((ing, ii) => {
+                  const flag = comp.ingredient_flags[ii];
+                  return (
+                    <li key={ii} className="flex items-start gap-2 text-sm">
+                      <span className="text-zinc-300 mt-1.5 shrink-0">·</span>
+                      {flag && (
+                        <AllergenPopover
+                          flag={flag}
+                          activeAllergens={activeAllergens}
+                          onReplace={() => handleReplace(ci, ii)}
+                          onRestore={() => handleRestore(ci, ii)}
+                        />
+                      )}
+                      <EditLine value={ing} onChange={(v) => setIngredient(ci, ii, v)} />
+                    </li>
+                  );
+                })}
               </ul>
             </>
           )}
@@ -378,10 +516,11 @@ interface AddRecipeModalProps {
   onSaved?: () => void;
   allTags: Tag[];
   onTagCreated: (tag: Tag) => void;
+  preferences: UserPreferences | null;
 }
 
-export default function AddRecipeModal({ isOpen, onClose, onSaved, allTags, onTagCreated }: AddRecipeModalProps) {
-  const { activeHouseholdId } = useHousehold();
+export default function AddRecipeModal({ isOpen, onClose, onSaved, allTags, onTagCreated, preferences }: AddRecipeModalProps) {
+  const { activeHouseholdId, activeHousehold } = useHousehold();
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -394,6 +533,14 @@ export default function AddRecipeModal({ isOpen, onClose, onSaved, allTags, onTa
   const [personalRecipes, setPersonalRecipes] = useState<RecipeOut[]>([]);
   const [librarySearch, setLibrarySearch] = useState("");
   const [linking, setLinking] = useState(false);
+
+  const activeAllergens: string[] = activeHousehold?.allergens
+    ? [...(activeHousehold.allergens.predefined ?? []), ...(activeHousehold.allergens.custom ?? [])]
+    : preferences?.personal_allergens
+    ? [...(preferences.personal_allergens.predefined ?? []), ...(preferences.personal_allergens.custom ?? [])]
+    : [];
+
+  const autoSubstitute = preferences?.auto_substitute ?? false;
 
   useEffect(() => {
     if (isOpen && activeHouseholdId) {
@@ -448,7 +595,15 @@ export default function AddRecipeModal({ isOpen, onClose, onSaved, allTags, onTa
         thumbnail_url: editable.thumbnail_url,
         creator_handle: editable.creator_handle,
         source_url: editable.source_url,
-        components: editable.components,
+        components: editable.components.map((c) => ({
+          name: c.name,
+          yield_note: c.yield_note,
+          ingredients: c.ingredients,
+          steps: c.steps,
+          ingredient_flags: c.ingredient_flags.map((f) =>
+            f ?? { allergen: null, substitute: null, substitute_applied: false, original_display: null }
+          ),
+        })),
         tag_ids: selectedTags.map((t) => t.id),
         shared_to_personal: sharedToPersonal,
       });
@@ -498,7 +653,7 @@ export default function AddRecipeModal({ isOpen, onClose, onSaved, allTags, onTa
           prev.map((s) => (s.status === "active" ? { ...s, status: "done" as const } : s))
         );
         if (res.recipe) {
-          const editableRecipe = toEditable(res);
+          const editableRecipe = toEditable(res, autoSubstitute);
           setEditable(editableRecipe);
           const suggested = allTags.filter((t) =>
             editableRecipe.suggestedTagNames.some(
@@ -628,6 +783,7 @@ export default function AddRecipeModal({ isOpen, onClose, onSaved, allTags, onTa
                   recipe={editable}
                   selectedTags={selectedTags}
                   allTags={allTags}
+                  activeAllergens={activeAllergens}
                   onChange={setEditable}
                   onTagAdd={(tag) => setSelectedTags((prev) => [...prev, tag])}
                   onTagRemove={(id) => setSelectedTags((prev) => prev.filter((t) => t.id !== id))}

@@ -12,6 +12,7 @@ import {
   toast,
 } from "@heroui/react";
 import {
+  AllergenFlag,
   RecipeOut,
   SaveComponent,
   Tag,
@@ -23,6 +24,82 @@ import {
 } from "../api/client";
 import TagRow from "./TagRow";
 import { useHousehold } from "../context/HouseholdContext";
+
+// ── Allergen popover ──────────────────────────────────────────────────────────
+
+function AllergenPopover({
+  flag,
+  activeAllergens,
+  onReplace,
+  onRestore,
+}: {
+  flag: AllergenFlag;
+  activeAllergens: string[];
+  onReplace: () => void;
+  onRestore: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  const isActive = flag.allergen && activeAllergens.map((a) => a.toLowerCase()).includes(flag.allergen.toLowerCase());
+  if (!isActive) return null;
+
+  return (
+    <div className="relative shrink-0" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="text-amber-500 hover:text-amber-600 text-xs leading-none mt-1"
+        title={`Contains ${flag.allergen}`}
+      >
+        ⚠️
+      </button>
+      {open && (
+        <div className="absolute left-0 top-6 z-50 bg-white border border-zinc-200 rounded-xl shadow-lg p-3 min-w-[220px] text-sm">
+          {flag.substitute_applied && flag.original_display ? (
+            <>
+              <p className="text-zinc-600 mb-2">
+                Originally <strong className="text-zinc-800">{flag.original_display}</strong>,
+                replaced with <strong className="text-zinc-800">{flag.substitute}</strong> due to {flag.allergen}.
+              </p>
+              <Button size="sm" variant="secondary" onPress={() => { onRestore(); setOpen(false); }}>
+                Restore original
+              </Button>
+            </>
+          ) : flag.substitute ? (
+            <>
+              <p className="text-zinc-600 mb-2">
+                Contains <strong className="text-zinc-800">{flag.allergen}</strong>.
+                Suggested substitute: <strong className="text-zinc-800">{flag.substitute}</strong>.
+              </p>
+              <div className="flex gap-2">
+                <Button size="sm" variant="primary" onPress={() => { onReplace(); setOpen(false); }}>
+                  Replace
+                </Button>
+                <Button size="sm" variant="tertiary" onPress={() => setOpen(false)}>
+                  Keep original
+                </Button>
+              </div>
+            </>
+          ) : (
+            <p className="text-zinc-600">
+              Contains <strong className="text-zinc-800">{flag.allergen}</strong>. No substitute available.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ── EditLine ──────────────────────────────────────────────────────────────────
 
@@ -92,6 +169,7 @@ function toEditState(r: RecipeOut): EditState {
       ...c,
       ingredients: [...c.ingredients],
       steps: [...c.steps],
+      ingredient_flags: c.ingredient_flags ? [...c.ingredient_flags] : undefined,
     })),
     shared_to_personal: r.shared_to_personal ?? true,
   };
@@ -99,7 +177,19 @@ function toEditState(r: RecipeOut): EditState {
 
 // ── View: component section ───────────────────────────────────────────────────
 
-function ViewComponent({ comp, single }: { comp: SaveComponent; single: boolean }) {
+function ViewComponent({
+  comp,
+  single,
+  activeAllergens,
+  onReplaceIngredient,
+  onRestoreIngredient,
+}: {
+  comp: SaveComponent;
+  single: boolean;
+  activeAllergens: string[];
+  onReplaceIngredient: (ii: number) => void;
+  onRestoreIngredient: (ii: number) => void;
+}) {
   return (
     <div className="mb-5">
       {!single && (
@@ -109,12 +199,23 @@ function ViewComponent({ comp, single }: { comp: SaveComponent; single: boolean 
         <>
           <p className="text-xs font-semibold uppercase text-zinc-400 mb-1">Ingredients</p>
           <ul className="space-y-1 mb-3">
-            {comp.ingredients.map((ing, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm">
-                <span className="text-zinc-300 mt-1 shrink-0">·</span>
-                <span>{ing}</span>
-              </li>
-            ))}
+            {comp.ingredients.map((ing, i) => {
+              const flag = comp.ingredient_flags?.[i];
+              return (
+                <li key={i} className="flex items-start gap-2 text-sm">
+                  <span className="text-zinc-300 mt-1 shrink-0">·</span>
+                  {flag && (
+                    <AllergenPopover
+                      flag={flag}
+                      activeAllergens={activeAllergens}
+                      onReplace={() => onReplaceIngredient(i)}
+                      onRestore={() => onRestoreIngredient(i)}
+                    />
+                  )}
+                  <span>{ing}</span>
+                </li>
+              );
+            })}
           </ul>
         </>
       )}
@@ -193,6 +294,7 @@ interface RecipeDetailModalProps {
   onUpdated?: (r: RecipeOut) => void;
   onDeleted?: (id: string) => void;
   initialMode?: Mode;
+  activeAllergens?: string[];
 }
 
 export default function RecipeDetailModal({
@@ -203,6 +305,7 @@ export default function RecipeDetailModal({
   onUpdated,
   onDeleted,
   initialMode,
+  activeAllergens = [],
 }: RecipeDetailModalProps) {
   const { activeHouseholdId } = useHousehold();
   const [mode, setMode] = useState<Mode>("view");
@@ -323,6 +426,82 @@ export default function RecipeDetailModal({
       setError(err instanceof Error ? err.message : "Failed to save");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function handleReplaceIngredient(ci: number, ii: number) {
+    const comp = (r.components as SaveComponent[])[ci];
+    const flag = comp.ingredient_flags?.[ii];
+    if (!flag?.substitute) return;
+    const originalDisplay = comp.ingredients[ii];
+
+    const newComponents = (r.components as SaveComponent[]).map((c, cIdx) => {
+      if (cIdx !== ci) return c;
+      const newIngredients = c.ingredients.map((ing, iIdx) =>
+        iIdx === ii ? flag.substitute! : ing
+      );
+      const newFlags = (c.ingredient_flags ?? []).map((f, fIdx) =>
+        fIdx === ii
+          ? { ...f, substitute_applied: true, original_display: originalDisplay }
+          : f
+      );
+      return { ...c, ingredients: newIngredients, ingredient_flags: newFlags };
+    });
+
+    try {
+      const updated = await updateRecipe(r.id, {
+        title: r.title,
+        servings: r.servings,
+        kcal_per_serving: r.kcal_per_serving,
+        thumbnail_url: r.thumbnail_url,
+        creator_handle: r.creator_handle,
+        source_url: r.source_url,
+        components: newComponents,
+        tag_ids: localTags.map((t) => t.id),
+        shared_to_personal: r.shared_to_personal,
+      });
+      onUpdated?.(updated);
+      setDraft(toEditState(updated));
+    } catch (err) {
+      toast.danger(err instanceof Error ? err.message : "Failed to apply substitute", { timeout: 3000 });
+    }
+  }
+
+  async function handleRestoreIngredient(ci: number, ii: number) {
+    const comp = (r.components as SaveComponent[])[ci];
+    const flag = comp.ingredient_flags?.[ii];
+    if (!flag?.original_display) return;
+    const originalDisplay = flag.original_display;
+
+    const newComponents = (r.components as SaveComponent[]).map((c, cIdx) => {
+      if (cIdx !== ci) return c;
+      const newIngredients = c.ingredients.map((ing, iIdx) =>
+        iIdx === ii ? originalDisplay : ing
+      );
+      const newFlags = (c.ingredient_flags ?? []).map((f, fIdx) =>
+        fIdx === ii
+          ? { ...f, substitute_applied: false, original_display: null }
+          : f
+      );
+      return { ...c, ingredients: newIngredients, ingredient_flags: newFlags };
+    });
+
+    try {
+      const updated = await updateRecipe(r.id, {
+        title: r.title,
+        servings: r.servings,
+        kcal_per_serving: r.kcal_per_serving,
+        thumbnail_url: r.thumbnail_url,
+        creator_handle: r.creator_handle,
+        source_url: r.source_url,
+        components: newComponents,
+        tag_ids: localTags.map((t) => t.id),
+        shared_to_personal: r.shared_to_personal,
+      });
+      onUpdated?.(updated);
+      setDraft(toEditState(updated));
+    } catch (err) {
+      toast.danger(err instanceof Error ? err.message : "Failed to restore ingredient", { timeout: 3000 });
     }
   }
 
@@ -567,7 +746,14 @@ export default function RecipeDetailModal({
                     />
                   ))
                 : components.map((comp, ci) => (
-                    <ViewComponent key={ci} comp={comp as SaveComponent} single={single} />
+                    <ViewComponent
+                      key={ci}
+                      comp={comp as SaveComponent}
+                      single={single}
+                      activeAllergens={activeAllergens}
+                      onReplaceIngredient={(ii) => handleReplaceIngredient(ci, ii)}
+                      onRestoreIngredient={(ii) => handleRestoreIngredient(ci, ii)}
+                    />
                   ))}
             </ModalBody>
 

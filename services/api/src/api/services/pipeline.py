@@ -118,7 +118,7 @@ def _strip_html(html: str) -> str:
 
 
 
-async def _try_linked_url(url: str, model: str = "gemini-2.5-flash-lite", available_tags: list[str] | None = None) -> RecipeExtraction | None:
+async def _try_linked_url(url: str, model: str = "gemini-2.5-flash-lite", available_tags: list[str] | None = None, allergens: list[str] | None = None) -> RecipeExtraction | None:
     try:
         async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
             r = await client.get(url, headers={"User-Agent": "Mozilla/5.0"})
@@ -136,7 +136,7 @@ async def _try_linked_url(url: str, model: str = "gemini-2.5-flash-lite", availa
     if len(page_text) < 50:
         return None
 
-    result = await gemini_svc.extract_recipe(page_text, source_hint="webpage", model=model, available_tags=available_tags)
+    result = await gemini_svc.extract_recipe(page_text, source_hint="webpage", model=model, available_tags=available_tags, allergens=allergens)
     return result if _is_complete(result) else None
 
 
@@ -150,7 +150,7 @@ def _done_event(result: ImportResult, cache_key: str | None = None) -> dict[str,
     return {"type": "done", "result": result.model_dump()}
 
 
-async def run_import_stream(url: str, model: str = "gemini-2.5-flash-lite", available_tags: list[str] | None = None) -> AsyncGenerator[dict[str, Any], None]:
+async def run_import_stream(url: str, model: str = "gemini-2.5-flash-lite", available_tags: list[str] | None = None, allergens: list[str] | None = None) -> AsyncGenerator[dict[str, Any], None]:
     cached = cache_svc.get(url)
     if cached is not None:
         log.debug("Cache hit for %s", url)
@@ -186,7 +186,7 @@ async def run_import_stream(url: str, model: str = "gemini-2.5-flash-lite", avai
         yield _stage_event("analyzing_page", "Analyzing page with Gemini…")
         page_text = _strip_html(html)
         try:
-            result = await gemini_svc.extract_recipe(page_text, source_hint="webpage", model=model, available_tags=available_tags)
+            result = await gemini_svc.extract_recipe(page_text, source_hint="webpage", model=model, available_tags=available_tags, allergens=allergens)
             if jsonld and _is_complete(jsonld):
                 # JSON-LD had the recipe but no kcal — take kcal from Gemini, keep structured data
                 jsonld = jsonld.model_copy(update={"kcal_per_serving": result.kcal_per_serving})
@@ -230,7 +230,7 @@ async def run_import_stream(url: str, model: str = "gemini-2.5-flash-lite", avai
         yield _stage_event("checking_description", "Checking caption with Gemini…")
         try:
             result = await gemini_svc.extract_recipe(
-                metadata.description, source_hint="instagram/tiktok caption", model=model, available_tags=available_tags
+                metadata.description, source_hint="instagram/tiktok caption", model=model, available_tags=available_tags, allergens=allergens
             )
             if _is_complete(result):
                 yield _done_event(ImportResult(stage=ImportStage.DESCRIPTION, recipe=result, metadata=meta), cache_key=url)
@@ -242,7 +242,7 @@ async def run_import_stream(url: str, model: str = "gemini-2.5-flash-lite", avai
     for link in metadata.linked_urls[:3]:
         yield _stage_event("checking_links", f"Checking linked page…")
         try:
-            result = await _try_linked_url(link, model=model, available_tags=available_tags)
+            result = await _try_linked_url(link, model=model, available_tags=available_tags, allergens=allergens)
             if result and _is_complete(result):
                 yield _done_event(ImportResult(stage=ImportStage.LINK, recipe=result, metadata=meta), cache_key=url)
                 return
@@ -255,7 +255,7 @@ async def run_import_stream(url: str, model: str = "gemini-2.5-flash-lite", avai
         transcript = await scraper.fetch_transcript(url)
         if transcript.strip():
             yield _stage_event("analyzing_transcript", "Analyzing transcript with Gemini…")
-            result = await gemini_svc.extract_recipe(transcript, source_hint="video transcript", model=model, available_tags=available_tags)
+            result = await gemini_svc.extract_recipe(transcript, source_hint="video transcript", model=model, available_tags=available_tags, allergens=allergens)
             log.debug("Transcript extraction result: title=%r components=%d", result.title, len(result.components))
             # Last resort — return whatever Gemini found, even if partial
             yield _done_event(ImportResult(stage=ImportStage.TRANSCRIPT, recipe=result, metadata=meta), cache_key=url)

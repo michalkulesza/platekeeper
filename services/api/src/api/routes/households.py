@@ -31,6 +31,7 @@ class HouseholdCreate(BaseModel):
 class HouseholdUpdate(BaseModel):
     name: str | None = None
     color: str | None = None
+    allergens: dict | None = None
 
 
 class HouseholdOut(BaseModel):
@@ -39,6 +40,7 @@ class HouseholdOut(BaseModel):
     name: str
     color: str
     created_at: datetime
+    allergens: dict | None = None
 
 
 class MemberOut(BaseModel):
@@ -182,6 +184,8 @@ async def update_household(
             household.name = stripped
     if body.color is not None and body.color in PRESET_COLORS:
         household.color = body.color
+    if body.allergens is not None:
+        household.allergens = body.allergens
 
     await session.commit()
     await session.refresh(household)

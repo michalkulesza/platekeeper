@@ -5,6 +5,7 @@ import logging
 
 from google import genai
 from google.genai import types
+from pydantic import BaseModel
 
 from api.config import settings
 from api.models import RecipeExtraction
@@ -37,6 +38,24 @@ on the ingredients and typical preparation. Provide a realistic round number.
 
 tags: if a list of available tags is provided, assign only those that clearly apply
 to this recipe. Use only tags from the provided list — never invent new ones.
+
+allergens: if a list of allergens is provided, check each ingredient against it.
+For each ingredient set:
+- "allergen": the exact allergen name from the list if the ingredient contains it, else null
+- "substitute": a single best substitute ingredient name if allergen found, else null
+Only flag allergens from the provided list — never flag others.
+"""
+
+_ALLERGEN_SYSTEM = """\
+You are an allergen detection assistant. Given a numbered list of ingredients and
+a list of allergens to check, identify which ingredients contain each allergen
+and suggest a substitute.
+
+For each ingredient return (in the same order):
+- allergen: the exact allergen name from the provided list if found, else null
+- substitute: a single best substitute ingredient (just the name, no qty/unit), else null
+
+Return exactly as many entries as there are input ingredients, in the same order.
 """
 
 
@@ -49,12 +68,15 @@ async def extract_recipe(
     source_hint: str = "",
     model: str = _DEFAULT_MODEL,
     available_tags: list[str] | None = None,
+    allergens: list[str] | None = None,
 ) -> RecipeExtraction:
     parts = []
     if source_hint:
         parts.append(f"Source: {source_hint}")
     if available_tags:
         parts.append(f"Available tags: {', '.join(available_tags)}")
+    if allergens:
+        parts.append(f"Allergens to check: {', '.join(allergens)}")
     parts.append(text)
     prompt = "\n\n".join(parts)
 
@@ -73,3 +95,46 @@ async def extract_recipe(
     log.debug("Gemini raw response (%s): %s", source_hint, raw[:500])
     data = json.loads(raw)
     return RecipeExtraction.model_validate(data)
+
+
+class _IngredientFlag(BaseModel):
+    allergen: str | None = None
+    substitute: str | None = None
+
+
+class _AllergenAnalysisResult(BaseModel):
+    results: list[_IngredientFlag]
+
+
+async def analyze_allergens(
+    ingredients: list[str],
+    allergens: list[str],
+    model: str = _DEFAULT_MODEL,
+) -> list[_IngredientFlag]:
+    if not ingredients or not allergens:
+        return [_IngredientFlag() for _ in ingredients]
+
+    numbered = "\n".join(f"{i + 1}. {ing}" for i, ing in enumerate(ingredients))
+    prompt = f"Allergens to check: {', '.join(allergens)}\n\nIngredients:\n{numbered}"
+
+    client = _build_client()
+    response = client.models.generate_content(
+        model=model,
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            system_instruction=_ALLERGEN_SYSTEM,
+            response_mime_type="application/json",
+            response_schema=_AllergenAnalysisResult,
+        ),
+    )
+
+    raw = response.text
+    log.debug("Gemini allergen analysis raw: %s", raw[:500])
+    data = json.loads(raw)
+    result = _AllergenAnalysisResult.model_validate(data)
+
+    # Ensure same length as input (pad or truncate)
+    flags = result.results
+    while len(flags) < len(ingredients):
+        flags.append(_IngredientFlag())
+    return flags[:len(ingredients)]

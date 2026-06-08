@@ -23,6 +23,7 @@ import {
 } from "../api/client";
 import RecipeDetailModal from "../components/RecipeDetailModal";
 import PageHeader from "../components/PageHeader";
+import { useHousehold } from "../context/HouseholdContext";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -466,6 +467,13 @@ interface MealPlanPageProps {
 }
 
 export default function MealPlanPage({ recipes, preferences, allTags, onTagCreated, onRecipeUpdated, onRecipeDeleted }: MealPlanPageProps) {
+  const { activeHousehold } = useHousehold();
+  const activeAllergens: string[] = activeHousehold?.allergens
+    ? [...(activeHousehold.allergens.predefined ?? []), ...(activeHousehold.allergens.custom ?? [])]
+    : preferences?.personal_allergens
+    ? [...(preferences.personal_allergens.predefined ?? []), ...(preferences.personal_allergens.custom ?? [])]
+    : [];
+
   const todayDate = today(getLocalTimeZone());
 
   const [viewYear, setViewYear] = useState(todayDate.year);
@@ -827,6 +835,7 @@ export default function MealPlanPage({ recipes, preferences, allTags, onTagCreat
         onClose={() => setViewRecipe(null)}
         onUpdated={onRecipeUpdated}
         onDeleted={onRecipeDeleted}
+        activeAllergens={activeAllergens}
       />
     </div>
   );
