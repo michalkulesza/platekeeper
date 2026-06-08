@@ -357,7 +357,7 @@ export default function SettingsPage({ stats, onStatsRefresh, preferences, onPre
   return (
     <>
       <PageHeader title="Settings" />
-      <div className="max-w-md mx-auto px-4 py-6 flex flex-col gap-6">
+      <div className="px-4 py-6 flex flex-col gap-6">
 
         {/* Profile */}
         <div className="flex items-center gap-4">
