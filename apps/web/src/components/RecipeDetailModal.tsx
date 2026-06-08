@@ -353,70 +353,88 @@ export default function RecipeDetailModal({
     <Modal isOpen={!!recipe} onClose={handleClose} size="lg" scrollBehavior="inside">
       <ModalContent>
         {/* ── Sticky header ── */}
-        <ModalHeader className={`flex-col gap-2 pb-3 ${headerBg}`}>
+        <ModalHeader className="flex-col gap-0 p-0">
 
-          {/* Title row */}
-          <div className="flex gap-3 items-start w-full">
-            {mode === "editing" ? (
-              <button
-                type="button"
-                onClick={openImgEditor}
-                className="relative w-14 h-14 rounded-lg shrink-0 overflow-hidden bg-default-100 group cursor-pointer"
-              >
-                {proxyUrl ? (
-                  <img src={proxyUrl} alt={r.title} className="w-full h-full object-cover" />
+          {/* Hero image (or solid colour in edit/confirm mode) */}
+          {proxyUrl ? (
+            <div className="relative w-full h-48 shrink-0 overflow-hidden">
+              <img src={proxyUrl} alt={r.title} className="absolute inset-0 w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
+
+              {/* Edit-image button (editing only) */}
+              {mode === "editing" && (
+                <button
+                  type="button"
+                  onClick={openImgEditor}
+                  className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/40 text-white text-xs font-semibold hover:bg-black/60 transition-colors backdrop-blur-sm"
+                >
+                  Edit image
+                </button>
+              )}
+
+              {/* Title + author over gradient */}
+              <div className="absolute bottom-0 inset-x-0 px-5 pb-4 pt-8">
+                {mode === "editing" ? (
+                  <EditLine
+                    value={draft.title}
+                    onChange={(v) => setDraft((d) => (d ? { ...d, title: v } : d))}
+                    className="text-xl font-bold text-white leading-snug placeholder:text-white/50"
+                    multiline
+                  />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-default-300 text-2xl">🖼</div>
+                  <h2 className="text-xl font-bold text-white leading-snug">{r.title}</h2>
                 )}
-                <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <span className="text-white text-[10px] font-semibold uppercase tracking-wide">Edit</span>
-                </div>
-              </button>
-            ) : (
-              proxyUrl && (
-                <img src={proxyUrl} alt={r.title} className="w-14 h-14 rounded-lg object-cover shrink-0" />
-              )
-            )}
-            <div className="flex-1 min-w-0">
+                {r.creator_handle && (
+                  <p className="text-sm text-white/75 mt-0.5">@{r.creator_handle}</p>
+                )}
+                {r.household_id && r.added_by && (
+                  <p className="text-xs text-white/60 mt-0.5">Added by {r.added_by}</p>
+                )}
+              </div>
+            </div>
+          ) : (
+            /* No image: plain title block */
+            <div className={`px-5 pt-5 pb-1 ${headerBg}`}>
               {mode === "editing" ? (
                 <EditLine
                   value={draft.title}
                   onChange={(v) => setDraft((d) => (d ? { ...d, title: v } : d))}
-                  className="text-base font-bold leading-snug"
+                  className="text-xl font-bold leading-snug"
                   multiline
                 />
               ) : (
-                <p className="font-bold text-base leading-snug">{r.title}</p>
+                <h2 className="text-xl font-bold leading-snug">{r.title}</h2>
               )}
               {r.creator_handle && (
-                <p className="text-xs text-default-500 mt-0.5 font-normal">
-                  @{r.creator_handle}
-                </p>
+                <p className="text-sm text-default-500 mt-0.5">@{r.creator_handle}</p>
               )}
               {r.household_id && r.added_by && (
-                <p className="text-xs text-default-400 mt-0.5 font-normal">
-                  Added by {r.added_by}
-                </p>
+                <p className="text-xs text-default-400 mt-0.5">Added by {r.added_by}</p>
               )}
             </div>
-          </div>
+          )}
 
           {/* Image URL input */}
           {mode === "editing" && showImgInput && (
-            <input
-              type="url"
-              value={imgDraft}
-              onChange={(e) => setImgDraft(e.target.value)}
-              onBlur={commitImg}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") { e.preventDefault(); commitImg(); }
-                if (e.key === "Escape") setShowImgInput(false);
-              }}
-              placeholder="Image URL"
-              autoFocus
-              className="w-full text-sm border-b border-primary focus:outline-none bg-transparent font-normal"
-            />
+            <div className={`px-5 pt-2 ${headerBg}`}>
+              <input
+                type="url"
+                value={imgDraft}
+                onChange={(e) => setImgDraft(e.target.value)}
+                onBlur={commitImg}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") { e.preventDefault(); commitImg(); }
+                  if (e.key === "Escape") setShowImgInput(false);
+                }}
+                placeholder="Image URL"
+                autoFocus
+                className="w-full text-sm border-b border-primary focus:outline-none bg-transparent"
+              />
+            </div>
           )}
+
+          {/* Metadata: tags, pills, actions */}
+          <div className={`px-5 pt-3 pb-3 flex flex-col gap-2 ${headerBg}`}>
 
           {/* Tags — always visible */}
           <TagRow
@@ -514,6 +532,7 @@ export default function RecipeDetailModal({
               </span>
             </div>
           )}
+          </div>{/* end metadata block */}
         </ModalHeader>
 
         {/* ── Scrollable body ── */}
