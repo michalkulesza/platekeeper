@@ -583,7 +583,7 @@ export default function RecipeDetailModal({
             </>
           )}
           {mode === "view" && (
-            <Button variant="light" onPress={handleClose}>Close</Button>
+            <Button variant="bordered" onPress={handleClose}>Close</Button>
           )}
           </div>
         </ModalFooter>
