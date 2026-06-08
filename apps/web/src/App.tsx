@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ToastProvider } from "@heroui/react";
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import BottomNav from "./components/BottomNav";
+import Sidebar from "./components/Sidebar";
 import AddRecipeModal from "./components/AddRecipeModal";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RecipesPage from "./pages/RecipesPage";
@@ -75,31 +76,46 @@ function AppShell() {
   return (
     <HouseholdProvider onContextSwitch={handleContextSwitch}>
       <div className="min-h-screen bg-background">
-        <div className="pb-[calc(4.5rem+env(safe-area-inset-bottom))]">
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <RecipesPage
-                  onAddRecipe={openAddRecipe}
-                  recipes={recipes}
-                  loading={recipesLoading}
-                  allTags={allTags}
-                  onTagCreated={handleTagCreated}
-                  onRecipeUpdated={handleRecipeUpdated}
-                  onRecipeDeleted={handleRecipeDeleted}
-                />
-              }
-            />
-            <Route path="/plan" element={<MealPlanPage recipes={recipes} preferences={preferences} allTags={allTags} onTagCreated={handleTagCreated} onRecipeUpdated={handleRecipeUpdated} onRecipeDeleted={handleRecipeDeleted} />} />
-            <Route path="/shopping" element={<ShoppingListPage />} />
-            <Route
-              path="/settings"
-              element={<SettingsPage stats={stats} onStatsRefresh={handleStatsRefresh} preferences={preferences} onPreferencesChange={setPreferences} />}
-            />
-          </Routes>
+        {/* Centered max-width container — flex row on desktop, block on mobile */}
+        <div className="md:max-w-7xl md:mx-auto md:flex md:min-h-screen">
+          <Sidebar />
+          <div className="flex-1 min-w-0 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0">
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  <RecipesPage
+                    onAddRecipe={openAddRecipe}
+                    recipes={recipes}
+                    loading={recipesLoading}
+                    allTags={allTags}
+                    onTagCreated={handleTagCreated}
+                    onRecipeUpdated={handleRecipeUpdated}
+                    onRecipeDeleted={handleRecipeDeleted}
+                  />
+                }
+              />
+              <Route path="/plan" element={<MealPlanPage recipes={recipes} preferences={preferences} allTags={allTags} onTagCreated={handleTagCreated} onRecipeUpdated={handleRecipeUpdated} onRecipeDeleted={handleRecipeDeleted} />} />
+              <Route path="/shopping" element={<ShoppingListPage />} />
+              <Route
+                path="/settings"
+                element={<SettingsPage stats={stats} onStatsRefresh={handleStatsRefresh} preferences={preferences} onPreferencesChange={setPreferences} />}
+              />
+            </Routes>
+          </div>
         </div>
+
         <BottomNav onAddRecipe={openAddRecipe} />
+
+        {/* Desktop FAB — fixed bottom-right */}
+        <button
+          onClick={openAddRecipe}
+          className="hidden md:flex fixed bottom-8 right-8 w-14 h-14 rounded-full bg-primary text-white shadow-xl items-center justify-center text-2xl hover:scale-105 active:scale-95 transition-transform z-40"
+          aria-label="Add recipe"
+        >
+          +
+        </button>
+
         <AddRecipeModal
           isOpen={modalOpen}
           onClose={() => setModalOpen(false)}

@@ -48,7 +48,7 @@ const idle   = "text-default-400 flex flex-col items-center gap-0.5 flex-1 pt-3 
 export default function BottomNav({ onAddRecipe }: BottomNavProps) {
   return (
     <nav
-      className="fixed bottom-0 inset-x-0 z-40 bg-background/80 backdrop-blur-md border-t border-divider"
+      className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-background/80 backdrop-blur-md border-t border-divider"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="flex items-end max-w-lg mx-auto">
