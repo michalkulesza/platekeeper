@@ -1,14 +1,15 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import {
   Modal,
-  ModalContent,
+  ModalBackdrop,
+  ModalContainer,
+  ModalDialog,
   ModalHeader,
   ModalBody,
   ModalFooter,
   Button,
-  Input,
   Switch,
-  addToast,
+  toast,
 } from "@heroui/react";
 import {
   streamImport,
@@ -82,7 +83,7 @@ function ProgressList({ steps }: { steps: StepState[] }) {
         <li
           key={s.key}
           className={`flex items-center gap-2 text-sm ${
-            s.status === "active" ? "text-primary font-semibold" : "text-default-500"
+            s.status === "active" ? "text-primary font-semibold" : "text-zinc-500"
           }`}
         >
           <span className="w-4 text-center">{s.status === "done" ? "✓" : "⋯"}</span>
@@ -107,7 +108,7 @@ function EditLine({
   multiline?: boolean;
 }) {
   const base =
-    "w-full bg-transparent border-b border-transparent hover:border-default-300 focus:border-primary focus:outline-none transition-colors resize-none";
+    "w-full bg-transparent border-b border-transparent hover:border-zinc-300 focus:border-primary focus:outline-none transition-colors resize-none";
   const ref = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -208,18 +209,18 @@ function EditableRecipeView({
   const myHandle = currentUsername();
 
   return (
-    <div className="mt-4 border-t border-divider pt-4">
+    <div className="mt-4 border-t border-zinc-200 pt-4">
       {/* Header */}
       <div className="flex gap-3 items-start mb-2">
         <button
           type="button"
           onClick={openImgEditor}
-          className="relative w-16 h-16 rounded-lg shrink-0 overflow-hidden bg-default-100 group cursor-pointer"
+          className="relative w-16 h-16 rounded-lg shrink-0 overflow-hidden bg-zinc-100 group cursor-pointer"
         >
           {proxyUrl ? (
             <img src={proxyUrl} alt="thumbnail" className="w-full h-full object-cover" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-default-300 text-2xl">🖼</div>
+            <div className="w-full h-full flex items-center justify-center text-zinc-300 text-2xl">🖼</div>
           )}
           <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
             <span className="text-white text-[10px] font-semibold uppercase tracking-wide">Edit</span>
@@ -267,7 +268,7 @@ function EditableRecipeView({
         {(originalHandle || recipe.source_url) && (
           <div className="flex flex-wrap gap-2">
             {originalHandle && (
-              <span className="inline-flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-full bg-default-100 text-default-500">
+              <span className="inline-flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-full bg-zinc-100 text-zinc-500">
                 By: @{originalHandle}
               </span>
             )}
@@ -276,7 +277,7 @@ function EditableRecipeView({
                 href={recipe.source_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-default-100 text-default-500 hover:bg-default-200 hover:text-default-700 transition-colors"
+                className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-zinc-100 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-700 transition-colors"
               >
                 <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -333,16 +334,16 @@ function EditableRecipeView({
       {recipe.components.map((comp, ci) => (
         <div key={ci} className="mb-5">
           {recipe.components.length > 1 && (
-            <h3 className="text-sm font-semibold text-default-600 mb-2">{comp.name}</h3>
+            <h3 className="text-sm font-semibold text-zinc-600 mb-2">{comp.name}</h3>
           )}
 
           {comp.ingredients.length > 0 && (
             <>
-              <p className="text-xs font-semibold uppercase text-default-400 mb-1">Ingredients</p>
+              <p className="text-xs font-semibold uppercase text-zinc-400 mb-1">Ingredients</p>
               <ul className="space-y-1 mb-3">
                 {comp.ingredients.map((ing, ii) => (
                   <li key={ii} className="flex items-start gap-2 text-sm">
-                    <span className="text-default-300 mt-1.5 shrink-0">·</span>
+                    <span className="text-zinc-300 mt-1.5 shrink-0">·</span>
                     <EditLine value={ing} onChange={(v) => setIngredient(ci, ii, v)} />
                   </li>
                 ))}
@@ -352,11 +353,11 @@ function EditableRecipeView({
 
           {comp.steps.length > 0 && (
             <>
-              <p className="text-xs font-semibold uppercase text-default-400 mb-1">Steps</p>
+              <p className="text-xs font-semibold uppercase text-zinc-400 mb-1">Steps</p>
               <ol className="space-y-2">
                 {comp.steps.map((step, si) => (
                   <li key={si} className="flex items-start gap-2 text-sm">
-                    <span className="text-default-400 font-medium shrink-0">{si + 1}.</span>
+                    <span className="text-zinc-400 font-medium shrink-0">{si + 1}.</span>
                     <EditLine value={step} onChange={(v) => setStep(ci, si, v)} multiline />
                   </li>
                 ))}
@@ -418,7 +419,7 @@ export default function AddRecipeModal({ isOpen, onClose, onSaved, allTags, onTa
     setError(null);
     try {
       await linkRecipeToHousehold(id);
-      addToast({ title: "Recipe added to household", color: "success", timeout: 3000 });
+      toast.success("Recipe added to household", { timeout: 3000 });
       onSaved?.();
       reset();
       onClose();
@@ -451,7 +452,7 @@ export default function AddRecipeModal({ isOpen, onClose, onSaved, allTags, onTa
         tag_ids: selectedTags.map((t) => t.id),
         shared_to_personal: sharedToPersonal,
       });
-      addToast({ title: "Recipe saved", color: "success", timeout: 3000 });
+      toast.success("Recipe saved", { timeout: 3000 });
       onSaved?.();
       reset();
       onClose();
@@ -499,7 +500,6 @@ export default function AddRecipeModal({ isOpen, onClose, onSaved, allTags, onTa
         if (res.recipe) {
           const editableRecipe = toEditable(res);
           setEditable(editableRecipe);
-          // Pre-select tags suggested by Gemini
           const suggested = allTags.filter((t) =>
             editableRecipe.suggestedTagNames.some(
               (name) => name.toLowerCase() === t.name.toLowerCase()
@@ -521,141 +521,149 @@ export default function AddRecipeModal({ isOpen, onClose, onSaved, allTags, onTa
   const parsed = editable !== null;
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} size="lg" scrollBehavior="inside" classNames={{ base: "!rounded-xl overflow-hidden" }}>
-      <ModalContent>
-        <ModalHeader>{parsed ? "Edit Recipe" : "Import Recipe"}</ModalHeader>
-        <ModalBody>
-          {!parsed && activeHouseholdId && personalRecipes.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-default-400">From Personal Library</p>
-              <Input
-                size="sm"
-                placeholder="Search your recipes…"
-                value={librarySearch}
-                onValueChange={setLibrarySearch}
-                startContent={
-                  <svg className="w-3.5 h-3.5 text-default-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                }
-              />
-              <ul className="max-h-44 overflow-y-auto flex flex-col gap-0.5">
-                {personalRecipes
-                  .filter((r) => r.title.toLowerCase().includes(librarySearch.toLowerCase()))
-                  .map((r) => (
-                    <li key={r.id}>
-                      <button
-                        type="button"
-                        disabled={linking}
-                        onClick={() => handleLink(r.id)}
-                        className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-left text-sm hover:bg-default-100 transition-colors disabled:opacity-50"
+    <Modal isOpen={isOpen} onOpenChange={(open) => { if (!open) handleClose(); }}>
+      <ModalBackdrop isDismissable>
+        <ModalContainer size="lg" scroll="inside" className="!rounded-xl overflow-hidden">
+          <ModalDialog>
+            <ModalHeader>{parsed ? "Edit Recipe" : "Import Recipe"}</ModalHeader>
+            <ModalBody>
+              {!parsed && activeHouseholdId && personalRecipes.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">From Personal Library</p>
+                  <div className="relative">
+                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400 shrink-0 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <input
+                      type="text"
+                      placeholder="Search your recipes…"
+                      value={librarySearch}
+                      onChange={(e) => setLibrarySearch(e.target.value)}
+                      className="w-full pl-9 pr-3 py-1.5 text-sm rounded-lg border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
+                  <ul className="max-h-44 overflow-y-auto flex flex-col gap-0.5">
+                    {personalRecipes
+                      .filter((r) => r.title.toLowerCase().includes(librarySearch.toLowerCase()))
+                      .map((r) => (
+                        <li key={r.id}>
+                          <button
+                            type="button"
+                            disabled={linking}
+                            onClick={() => handleLink(r.id)}
+                            className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-left text-sm hover:bg-zinc-100 transition-colors disabled:opacity-50"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              {r.thumbnail_url && (
+                                <img
+                                  src={`/api/proxy/image?url=${encodeURIComponent(r.thumbnail_url)}`}
+                                  className="w-8 h-8 rounded object-cover shrink-0"
+                                />
+                              )}
+                              <span className="truncate font-medium">{r.title}</span>
+                            </div>
+                            <span className="text-xs text-primary shrink-0 font-semibold">Add</span>
+                          </button>
+                        </li>
+                      ))}
+                    {personalRecipes.filter((r) => r.title.toLowerCase().includes(librarySearch.toLowerCase())).length === 0 && (
+                      <li className="text-sm text-zinc-400 px-3 py-2">No matches</li>
+                    )}
+                  </ul>
+                  <div className="flex items-center gap-2 text-xs text-zinc-400 pt-1">
+                    <div className="flex-1 h-px bg-zinc-200" />
+                    <span>or import from URL</span>
+                    <div className="flex-1 h-px bg-zinc-200" />
+                  </div>
+                </div>
+              )}
+
+              {!parsed && (
+                <form id="import-form" onSubmit={handleSubmit} className="flex flex-col gap-3">
+                  <div className="flex gap-1.5 flex-wrap">
+                    {[
+                      { label: "Web", icon: "🌐" },
+                      { label: "Instagram", icon: "📸" },
+                      { label: "TikTok", icon: "🎵" },
+                    ].map(({ label, icon }) => (
+                      <span
+                        key={label}
+                        className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-zinc-100 text-zinc-500"
                       >
-                        <div className="flex items-center gap-2 min-w-0">
-                          {r.thumbnail_url && (
-                            <img
-                              src={`/api/proxy/image?url=${encodeURIComponent(r.thumbnail_url)}`}
-                              className="w-8 h-8 rounded object-cover shrink-0"
-                            />
-                          )}
-                          <span className="truncate font-medium">{r.title}</span>
-                        </div>
-                        <span className="text-xs text-primary shrink-0 font-semibold">Add</span>
-                      </button>
-                    </li>
-                  ))}
-                {personalRecipes.filter((r) => r.title.toLowerCase().includes(librarySearch.toLowerCase())).length === 0 && (
-                  <li className="text-sm text-default-400 px-3 py-2">No matches</li>
-                )}
-              </ul>
-              <div className="flex items-center gap-2 text-xs text-default-400 pt-1">
-                <div className="flex-1 h-px bg-divider" />
-                <span>or import from URL</span>
-                <div className="flex-1 h-px bg-divider" />
-              </div>
-            </div>
-          )}
+                        {icon} {label}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex gap-2 items-end">
+                    <div className="flex flex-col gap-1 flex-1">
+                      <label className="text-sm font-medium" htmlFor="recipe-url">Recipe URL</label>
+                      <input
+                        id="recipe-url"
+                        type="url"
+                        placeholder="Instagram, TikTok, or any recipe page URL"
+                        value={url}
+                        onChange={(e) => setUrl(e.target.value)}
+                        required
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      />
+                    </div>
+                    <Button type="button" variant="secondary" onPress={handlePaste} className="shrink-0 mb-0.5">
+                      Paste
+                    </Button>
+                  </div>
+                </form>
+              )}
 
-          {!parsed && (
-            <form id="import-form" onSubmit={handleSubmit} className="flex flex-col gap-3">
-              <div className="flex gap-1.5 flex-wrap">
-                {[
-                  { label: "Web", icon: "🌐" },
-                  { label: "Instagram", icon: "📸" },
-                  { label: "TikTok", icon: "🎵" },
-                ].map(({ label, icon }) => (
-                  <span
-                    key={label}
-                    className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-default-100 text-default-500"
-                  >
-                    {icon} {label}
-                  </span>
-                ))}
-              </div>
-              <div className="flex gap-2 items-end">
-                <Input
-                  label="Recipe URL"
-                  placeholder="Instagram, TikTok, or any recipe page URL"
-                  type="url"
-                  value={url}
-                  onValueChange={setUrl}
-                  isRequired
-                  className="flex-1"
+              <ProgressList steps={progressSteps} />
+
+              {error && (
+                <div className="bg-danger-50 text-danger rounded-lg p-3 text-sm mt-2">
+                  <strong>Import failed</strong>
+                  <p className="mt-1">{error}</p>
+                </div>
+              )}
+
+              {editable && (
+                <EditableRecipeView
+                  recipe={editable}
+                  selectedTags={selectedTags}
+                  allTags={allTags}
+                  onChange={setEditable}
+                  onTagAdd={(tag) => setSelectedTags((prev) => [...prev, tag])}
+                  onTagRemove={(id) => setSelectedTags((prev) => prev.filter((t) => t.id !== id))}
+                  onTagCreate={handleTagCreate}
                 />
-                <Button type="button" variant="flat" onPress={handlePaste} className="shrink-0 mb-0.5">
-                  Paste
+              )}
+            </ModalBody>
+            <ModalFooter className="flex flex-col gap-2 items-stretch">
+              {parsed && activeHouseholdId && (
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-sm text-zinc-600">Also add to my private recipes</span>
+                  <Switch
+                    size="sm"
+                    isSelected={sharedToPersonal}
+                    onChange={setSharedToPersonal}
+                  />
+                </div>
+              )}
+              <div className="flex justify-end gap-2">
+                <Button variant="tertiary" onPress={handleClose} isDisabled={loading || saving}>
+                  {parsed ? "Discard" : "Cancel"}
                 </Button>
+                {parsed ? (
+                  <Button variant="primary" onPress={handleSave} isDisabled={saving}>
+                    Save
+                  </Button>
+                ) : (
+                  <Button variant="primary" type="submit" form="import-form" isDisabled={loading}>
+                    Import
+                  </Button>
+                )}
               </div>
-            </form>
-          )}
-
-          <ProgressList steps={progressSteps} />
-
-          {error && (
-            <div className="bg-danger-50 text-danger rounded-lg p-3 text-sm mt-2">
-              <strong>Import failed</strong>
-              <p className="mt-1">{error}</p>
-            </div>
-          )}
-
-          {editable && (
-            <EditableRecipeView
-              recipe={editable}
-              selectedTags={selectedTags}
-              allTags={allTags}
-              onChange={setEditable}
-              onTagAdd={(tag) => setSelectedTags((prev) => [...prev, tag])}
-              onTagRemove={(id) => setSelectedTags((prev) => prev.filter((t) => t.id !== id))}
-              onTagCreate={handleTagCreate}
-            />
-          )}
-        </ModalBody>
-        <ModalFooter className="flex flex-col gap-2 items-stretch">
-          {parsed && activeHouseholdId && (
-            <div className="flex items-center justify-between px-1">
-              <span className="text-sm text-default-600">Also add to my private recipes</span>
-              <Switch
-                size="sm"
-                isSelected={sharedToPersonal}
-                onValueChange={setSharedToPersonal}
-              />
-            </div>
-          )}
-          <div className="flex justify-end gap-2">
-            <Button variant="light" onPress={handleClose} isDisabled={loading || saving}>
-              {parsed ? "Discard" : "Cancel"}
-            </Button>
-            {parsed ? (
-              <Button color="primary" onPress={handleSave} isLoading={saving}>
-                Save
-              </Button>
-            ) : (
-              <Button color="primary" type="submit" form="import-form" isLoading={loading}>
-                Import
-              </Button>
-            )}
-          </div>
-        </ModalFooter>
-      </ModalContent>
+            </ModalFooter>
+          </ModalDialog>
+        </ModalContainer>
+      </ModalBackdrop>
     </Modal>
   );
 }

@@ -2,10 +2,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import ExcelJS from "exceljs";
 import {
   Button,
-  Input,
   Modal,
+  ModalBackdrop,
   ModalBody,
-  ModalContent,
+  ModalContainer,
+  ModalDialog,
   ModalFooter,
   ModalHeader,
   Spinner,
@@ -41,7 +42,6 @@ async function exportMealPlan(entries: MealPlanEntry[], year: number, month: num
 
   const byDate = new Map(entries.map((e) => [e.date, e.recipe.title]));
 
-  // Collect Mondays for each week overlapping this month
   const firstDay = new Date(year, month - 1, 1);
   const lastDay = new Date(year, month, 0);
   const weeks: Date[] = [];
@@ -55,7 +55,6 @@ async function exportMealPlan(entries: MealPlanEntry[], year: number, month: num
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet("Week Meal Planner");
 
-  // 169px → 24.3 chars (observed: 22.3 renders as 155px, scaled by 169/155)
   ws.columns = Array(7).fill(null).map(() => ({ width: 24.24 }));
 
   const centerWrap: Partial<ExcelJS.Alignment> = {
@@ -77,7 +76,6 @@ async function exportMealPlan(entries: MealPlanEntry[], year: number, month: num
     };
   }
 
-  // Header row
   const headerRow = ws.addRow(DAY_HEADERS);
   headerRow.height = 31.22;
   headerRow.eachCell({ includeEmpty: true }, (cell, col) => {
@@ -87,7 +85,6 @@ async function exportMealPlan(entries: MealPlanEntry[], year: number, month: num
     cell.border = outerBorder(1, col);
   });
 
-  // Data rows — always 6
   for (let wi = 0; wi < ROW_COUNT; wi++) {
     const monday = weeks[wi];
     const rowData: (string | null)[] = [];
@@ -229,8 +226,8 @@ function printMealPlan(entries: MealPlanEntry[], year: number, month: number) {
 function RecipeThumb({ src, alt, className = "" }: { src: string; alt: string; className?: string }) {
   const [loaded, setLoaded] = useState(false);
   return (
-    <div className={`relative overflow-hidden bg-default-100 ${className}`}>
-      {!loaded && <div className="absolute inset-0 animate-pulse bg-default-200" />}
+    <div className={`relative overflow-hidden bg-zinc-100 ${className}`}>
+      {!loaded && <div className="absolute inset-0 animate-pulse bg-zinc-200" />}
       <img
         src={src}
         alt={alt}
@@ -262,26 +259,26 @@ function DayRow({
   return (
     <div
       ref={setRef}
-      className={`flex items-center gap-3 py-3 border-b border-divider border-l-[3px] transition-colors ${
+      className={`flex items-center gap-3 py-3 border-b border-zinc-200 border-l-[3px] transition-colors ${
         isSelected ? "border-l-primary bg-primary/10" : "border-l-transparent"
       } pl-[13px] pr-4`}
     >
       {/* Date column */}
-      <div className={`w-12 shrink-0 text-center ${isToday || isSelected ? "text-primary" : "text-default-500"}`}>
+      <div className={`w-12 shrink-0 text-center ${isToday || isSelected ? "text-primary" : "text-zinc-500"}`}>
         <p className="text-[10px] font-semibold uppercase tracking-wide">{dayName}</p>
         {isToday ? (
           <p className="text-2xl font-bold leading-none flex items-center justify-center mx-auto w-9 h-9 rounded-full bg-primary text-primary-foreground">
             {day}
           </p>
         ) : (
-          <p className={`text-2xl font-bold leading-tight ${isSelected ? "text-primary" : "text-default-800"}`}>
+          <p className={`text-2xl font-bold leading-tight ${isSelected ? "text-primary" : "text-zinc-800"}`}>
             {day}
           </p>
         )}
       </div>
 
       {/* Vertical divider */}
-      <div className={`w-px self-stretch ${isToday || isSelected ? "bg-primary/30" : "bg-divider"}`} />
+      <div className={`w-px self-stretch ${isToday || isSelected ? "bg-primary/30" : "bg-zinc-200"}`} />
 
       {/* Content */}
       {entry ? (
@@ -292,26 +289,26 @@ function DayRow({
           {thumb ? (
             <RecipeThumb src={thumb} alt={entry.recipe.title} className="w-12 h-12 rounded-xl shrink-0" />
           ) : (
-            <div className="w-12 h-12 rounded-xl bg-default-100 shrink-0 flex items-center justify-center text-xl">
+            <div className="w-12 h-12 rounded-xl bg-zinc-100 shrink-0 flex items-center justify-center text-xl">
               🍽
             </div>
           )}
           <div className="min-w-0 flex-1 text-left">
-            <p className="text-sm font-semibold line-clamp-2 text-default-800 leading-snug">
+            <p className="text-sm font-semibold line-clamp-2 text-zinc-800 leading-snug">
               {entry.recipe.title}
             </p>
             {entry.recipe.kcal_per_serving != null && (
-              <p className="text-xs text-default-400 mt-0.5">{entry.recipe.kcal_per_serving} kcal</p>
+              <p className="text-xs text-zinc-400 mt-0.5">{entry.recipe.kcal_per_serving} kcal</p>
             )}
           </div>
-          <svg className="w-4 h-4 text-default-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 text-zinc-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </button>
       ) : (
         <button
           onClick={onAdd}
-          className="flex-1 flex items-center gap-2 py-3 px-4 rounded-xl border border-dashed border-default-200 text-default-400 text-sm hover:border-default-400 hover:text-default-600 active:opacity-60 transition-all"
+          className="flex-1 flex items-center gap-2 py-3 px-4 rounded-xl border border-dashed border-zinc-200 text-zinc-400 text-sm hover:border-zinc-400 hover:text-zinc-600 active:opacity-60 transition-all"
         >
           <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -348,7 +345,6 @@ function DesktopCalendar({
   type Cell = { dateStr: string; day: number; isCurrentMonth: boolean; isToday: boolean };
   const cells: Cell[] = [];
 
-  // Prev month padding
   const prevMonthDays = new Date(viewYear, viewMonth - 1, 0).getDate();
   for (let i = startPad - 1; i >= 0; i--) {
     const day = prevMonthDays - i;
@@ -357,14 +353,12 @@ function DesktopCalendar({
     cells.push({ dateStr: `${y}-${String(m).padStart(2, "0")}-${String(day).padStart(2, "0")}`, day, isCurrentMonth: false, isToday: false });
   }
 
-  // Current month days
   for (let day = 1; day <= daysInMonth; day++) {
     const dateStr = `${viewYear}-${String(viewMonth).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     const isToday = day === todayDate.day && viewMonth === todayDate.month && viewYear === todayDate.year;
     cells.push({ dateStr, day, isCurrentMonth: true, isToday });
   }
 
-  // Next month padding to complete last row
   let nd = 1;
   while (cells.length % 7 !== 0) {
     const m = viewMonth === 12 ? 1 : viewMonth + 1;
@@ -380,21 +374,21 @@ function DesktopCalendar({
         <div className="flex items-center gap-2">
           <button
             onClick={onToday}
-            className="px-3 py-1.5 text-sm font-medium rounded-lg border border-default-200 hover:bg-default-100 transition-colors"
+            className="px-3 py-1.5 text-sm font-medium rounded-lg border border-zinc-200 hover:bg-zinc-100 transition-colors"
           >
             Today
           </button>
           <div className="flex">
             <button
               onClick={onPrev}
-              className="p-1.5 rounded-l-lg border border-default-200 hover:bg-default-100 transition-colors"
+              className="p-1.5 rounded-l-lg border border-zinc-200 hover:bg-zinc-100 transition-colors"
               aria-label="Previous month"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6" /></svg>
             </button>
             <button
               onClick={onNext}
-              className="p-1.5 rounded-r-lg border border-l-0 border-default-200 hover:bg-default-100 transition-colors"
+              className="p-1.5 rounded-r-lg border border-l-0 border-zinc-200 hover:bg-zinc-100 transition-colors"
               aria-label="Next month"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6" /></svg>
@@ -404,10 +398,10 @@ function DesktopCalendar({
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-7 border-l border-t border-divider rounded-xl overflow-hidden">
+      <div className="grid grid-cols-7 border-l border-t border-zinc-200 rounded-xl overflow-hidden">
         {/* Day headers */}
         {dayHeaders.map((h) => (
-          <div key={h} className="border-r border-b border-divider bg-default-50 py-2.5 text-center text-xs font-semibold uppercase tracking-wide text-default-400">
+          <div key={h} className="border-r border-b border-zinc-200 bg-zinc-50 py-2.5 text-center text-xs font-semibold uppercase tracking-wide text-zinc-400">
             {h}
           </div>
         ))}
@@ -424,16 +418,16 @@ function DesktopCalendar({
             <button
               key={dateStr}
               onClick={() => onCellClick(dateStr, entry)}
-              className={`border-r border-b border-divider p-2 text-left min-h-[110px] transition-colors group ${
-                isCurrentMonth ? "bg-background hover:bg-primary/5" : "bg-default-50/50"
+              className={`border-r border-b border-zinc-200 p-2 text-left min-h-[110px] transition-colors group ${
+                isCurrentMonth ? "bg-background hover:bg-primary/5" : "bg-zinc-50/50"
               }`}
             >
               <span className={`text-sm font-medium inline-flex items-center justify-center w-7 h-7 rounded-full ${
                 isToday
                   ? "bg-primary text-primary-foreground font-bold"
                   : isCurrentMonth
-                  ? "text-default-700"
-                  : "text-default-300"
+                  ? "text-zinc-700"
+                  : "text-zinc-300"
               }`}>
                 {day}
               </span>
@@ -445,7 +439,7 @@ function DesktopCalendar({
                   <span className="text-xs font-medium text-primary truncate">{entry.recipe.title}</span>
                 </div>
               ) : isCurrentMonth ? (
-                <div className="mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 text-default-300 text-xs">
+                <div className="mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 text-zinc-300 text-xs">
                   <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
@@ -494,7 +488,7 @@ export default function MealPlanPage({ recipes, preferences, allTags, onTagCreat
     const el = dayRefs.current.get(day);
     if (!el) return;
     const stickyBottom = stickyRef.current?.getBoundingClientRect().bottom ?? 0;
-    const bottomNavHeight = 72; // 4.5rem bottom nav
+    const bottomNavHeight = 72;
     const visibleHeight = window.innerHeight - stickyBottom - bottomNavHeight;
     const elRect = el.getBoundingClientRect();
     const targetScroll =
@@ -502,7 +496,6 @@ export default function MealPlanPage({ recipes, preferences, allTags, onTagCreat
     window.scrollTo({ top: Math.max(0, targetScroll), behavior: "smooth" });
   }
 
-  // Fetch entries when month changes
   useEffect(() => {
     setLoading(true);
     const month = `${viewYear}-${String(viewMonth).padStart(2, "0")}`;
@@ -512,7 +505,6 @@ export default function MealPlanPage({ recipes, preferences, allTags, onTagCreat
       .finally(() => setLoading(false));
   }, [viewYear, viewMonth]);
 
-  // Auto-scroll to today on first load
   useEffect(() => {
     const timer = setTimeout(() => {
       if (todayDate.year === viewYear && todayDate.month === viewMonth) {
@@ -574,7 +566,7 @@ export default function MealPlanPage({ recipes, preferences, allTags, onTagCreat
       setPickerOpen(false);
       setTargetDate(null);
     } catch {
-      // silently fail — no network error UI for now
+      // silently fail
     } finally {
       setBusy(false);
     }
@@ -602,7 +594,7 @@ export default function MealPlanPage({ recipes, preferences, allTags, onTagCreat
           <div className="flex gap-2">
             <Button
               size="sm"
-              variant="flat"
+              variant="secondary"
               isDisabled={loading || entries.length === 0}
               onPress={() => printMealPlan(entries, viewYear, viewMonth)}
             >
@@ -610,7 +602,7 @@ export default function MealPlanPage({ recipes, preferences, allTags, onTagCreat
             </Button>
             <Button
               size="sm"
-              variant="flat"
+              variant="secondary"
               isDisabled={loading || entries.length === 0}
               onPress={() => void exportMealPlan(entries, viewYear, viewMonth)}
             >
@@ -640,21 +632,21 @@ export default function MealPlanPage({ recipes, preferences, allTags, onTagCreat
       <div className="md:hidden">
         <div
           ref={stickyRef}
-          className="sticky top-14 z-20 bg-background/95 backdrop-blur-md border-b border-divider"
+          className="sticky top-14 z-20 bg-background/95 backdrop-blur-md border-b border-zinc-200"
         >
           <div className="flex items-center justify-between px-4 py-3">
             <h2 className="text-base font-semibold">{MONTH_NAMES[viewMonth - 1]} {viewYear}</h2>
             <div className="flex items-center gap-1">
               <button
                 onClick={goToToday}
-                className="px-2.5 py-1 text-xs font-medium rounded-lg border border-default-200 active:bg-default-100 transition-colors mr-1"
+                className="px-2.5 py-1 text-xs font-medium rounded-lg border border-zinc-200 active:bg-zinc-100 transition-colors mr-1"
               >
                 Today
               </button>
-              <button onClick={goToPrevMonth} className="p-1.5 rounded-lg active:bg-default-100 transition-colors" aria-label="Previous month">
+              <button onClick={goToPrevMonth} className="p-1.5 rounded-lg active:bg-zinc-100 transition-colors" aria-label="Previous month">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6" /></svg>
               </button>
-              <button onClick={goToNextMonth} className="p-1.5 rounded-lg active:bg-default-100 transition-colors" aria-label="Next month">
+              <button onClick={goToNextMonth} className="p-1.5 rounded-lg active:bg-zinc-100 transition-colors" aria-label="Next month">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6" /></svg>
               </button>
             </div>
@@ -700,132 +692,131 @@ export default function MealPlanPage({ recipes, preferences, allTags, onTagCreat
       {/* ── Recipe picker modal ───────────────────────────────────────────────── */}
       <Modal
         isOpen={pickerOpen}
-        onClose={() => { setPickerOpen(false); setTargetDate(null); }}
-        scrollBehavior="inside"
-        placement="bottom"
-        size="full"
-        classNames={{ base: "max-h-[85vh] rounded-t-2xl rounded-b-none" }}
+        onOpenChange={(open) => { if (!open) { setPickerOpen(false); setTargetDate(null); } }}
       >
-        <ModalContent>
-          <ModalHeader className="flex flex-col gap-3 pb-0">
-            <span className="text-lg">Choose a dish</span>
-            <Input
-              placeholder="Search recipes…"
-              value={searchQuery}
-              onValueChange={setSearchQuery}
-              isClearable
-              size="sm"
-              variant="bordered"
-              autoFocus
-              startContent={
-                <svg className="w-4 h-4 text-default-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-                </svg>
-              }
-            />
-          </ModalHeader>
-          <ModalBody className="pt-2 px-0">
-            {recipes.length === 0 ? (
-              <p className="text-center text-default-400 py-12 px-4">
-                No recipes yet. Add some from the Recipes tab first.
-              </p>
-            ) : filteredRecipes.length === 0 ? (
-              <p className="text-center text-default-400 py-12">No recipes match your search.</p>
-            ) : (
-              <div>
-                {filteredRecipes.map((recipe) => {
-                  const thumb = proxyUrl(recipe.thumbnail_url);
-                  return (
-                    <button
-                      key={recipe.id}
-                      onClick={() => handleAssign(recipe)}
-                      disabled={busy}
-                      className="flex items-center gap-3 px-4 py-3 w-full text-left border-b border-divider last:border-0 active:bg-default-100 transition-colors disabled:opacity-50"
-                    >
-                      {thumb ? (
-                        <RecipeThumb src={thumb} alt={recipe.title} className="w-12 h-12 rounded-xl shrink-0" />
-                      ) : (
-                        <div className="w-12 h-12 rounded-xl bg-default-100 shrink-0 flex items-center justify-center text-xl">
-                          🍽
-                        </div>
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold line-clamp-2 leading-snug">{recipe.title}</p>
-                        <div className="flex gap-2 mt-0.5">
-                          {recipe.kcal_per_serving != null && (
-                            <span className="text-xs text-default-400">{recipe.kcal_per_serving} kcal</span>
+        <ModalBackdrop isDismissable>
+          <ModalContainer placement="bottom" scroll="inside" size="full" className="max-h-[85vh] rounded-t-2xl rounded-b-none">
+            <ModalDialog>
+              <ModalHeader className="flex flex-col gap-3 pb-0">
+                <span className="text-lg">Choose a dish</span>
+                <div className="relative">
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 shrink-0 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+                  </svg>
+                  <input
+                    type="text"
+                    placeholder="Search recipes…"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    autoFocus
+                    className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                </div>
+              </ModalHeader>
+              <ModalBody className="pt-2 px-0">
+                {recipes.length === 0 ? (
+                  <p className="text-center text-zinc-400 py-12 px-4">
+                    No recipes yet. Add some from the Recipes tab first.
+                  </p>
+                ) : filteredRecipes.length === 0 ? (
+                  <p className="text-center text-zinc-400 py-12">No recipes match your search.</p>
+                ) : (
+                  <div>
+                    {filteredRecipes.map((recipe) => {
+                      const thumb = proxyUrl(recipe.thumbnail_url);
+                      return (
+                        <button
+                          key={recipe.id}
+                          onClick={() => handleAssign(recipe)}
+                          disabled={busy}
+                          className="flex items-center gap-3 px-4 py-3 w-full text-left border-b border-zinc-200 last:border-0 active:bg-zinc-100 transition-colors disabled:opacity-50"
+                        >
+                          {thumb ? (
+                            <RecipeThumb src={thumb} alt={recipe.title} className="w-12 h-12 rounded-xl shrink-0" />
+                          ) : (
+                            <div className="w-12 h-12 rounded-xl bg-zinc-100 shrink-0 flex items-center justify-center text-xl">
+                              🍽
+                            </div>
                           )}
-                          {recipe.creator_handle && (
-                            <span className="text-xs text-default-400">@{recipe.creator_handle}</span>
-                          )}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </ModalBody>
-        </ModalContent>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold line-clamp-2 leading-snug">{recipe.title}</p>
+                            <div className="flex gap-2 mt-0.5">
+                              {recipe.kcal_per_serving != null && (
+                                <span className="text-xs text-zinc-400">{recipe.kcal_per_serving} kcal</span>
+                              )}
+                              {recipe.creator_handle && (
+                                <span className="text-xs text-zinc-400">@{recipe.creator_handle}</span>
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </ModalBody>
+            </ModalDialog>
+          </ModalContainer>
+        </ModalBackdrop>
       </Modal>
 
       {/* ── Day action sheet ──────────────────────────────────────────────────── */}
       <Modal
         isOpen={!!actionEntry && !viewRecipe}
-        onClose={() => setActionEntry(null)}
-        placement="bottom"
-        size="sm"
-        classNames={{ base: "rounded-t-2xl rounded-b-none mx-0 mb-0" }}
+        onOpenChange={(open) => { if (!open) setActionEntry(null); }}
       >
-        <ModalContent>
-          {actionEntry && (
-            <>
-              <ModalHeader className="flex items-center gap-3 pb-2">
-                {proxyUrl(actionEntry.recipe.thumbnail_url) ? (
-                  <RecipeThumb
-                    src={proxyUrl(actionEntry.recipe.thumbnail_url)!}
-                    alt={actionEntry.recipe.title}
-                    className="w-12 h-12 rounded-xl shrink-0"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-xl bg-default-100 shrink-0 flex items-center justify-center text-xl">🍽</div>
-                )}
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold line-clamp-2 leading-snug">{actionEntry.recipe.title}</p>
-                  {actionEntry.recipe.kcal_per_serving != null && (
-                    <p className="text-xs text-default-400 mt-0.5">{actionEntry.recipe.kcal_per_serving} kcal</p>
-                  )}
-                </div>
-              </ModalHeader>
-              <ModalBody className="gap-2 pt-0 pb-2">
-                <Button
-                  variant="flat"
-                  fullWidth
-                  onPress={() => setViewRecipe(actionEntry.recipe)}
-                >
-                  View recipe
-                </Button>
-                <Button
-                  variant="flat"
-                  fullWidth
-                  onPress={() => openPicker(actionEntry.date)}
-                >
-                  Change recipe
-                </Button>
-                <Button
-                  variant="flat"
-                  color="danger"
-                  fullWidth
-                  isLoading={busy}
-                  onPress={handleRemove}
-                >
-                  Remove from plan
-                </Button>
-              </ModalBody>
-              <ModalFooter className="pt-0" />
-            </>
-          )}
-        </ModalContent>
+        <ModalBackdrop isDismissable>
+          <ModalContainer placement="bottom" size="sm" className="rounded-t-2xl rounded-b-none mx-0 mb-0">
+            <ModalDialog>
+              {actionEntry && (
+                <>
+                  <ModalHeader className="flex items-center gap-3 pb-2">
+                    {proxyUrl(actionEntry.recipe.thumbnail_url) ? (
+                      <RecipeThumb
+                        src={proxyUrl(actionEntry.recipe.thumbnail_url)!}
+                        alt={actionEntry.recipe.title}
+                        className="w-12 h-12 rounded-xl shrink-0"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-xl bg-zinc-100 shrink-0 flex items-center justify-center text-xl">🍽</div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold line-clamp-2 leading-snug">{actionEntry.recipe.title}</p>
+                      {actionEntry.recipe.kcal_per_serving != null && (
+                        <p className="text-xs text-zinc-400 mt-0.5">{actionEntry.recipe.kcal_per_serving} kcal</p>
+                      )}
+                    </div>
+                  </ModalHeader>
+                  <ModalBody className="gap-2 pt-0 pb-2">
+                    <Button
+                      variant="secondary"
+                      fullWidth
+                      onPress={() => setViewRecipe(actionEntry.recipe)}
+                    >
+                      View recipe
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      fullWidth
+                      onPress={() => openPicker(actionEntry.date)}
+                    >
+                      Change recipe
+                    </Button>
+                    <Button
+                      variant="danger-soft"
+                      fullWidth
+                      isDisabled={busy}
+                      onPress={handleRemove}
+                    >
+                      Remove from plan
+                    </Button>
+                  </ModalBody>
+                  <ModalFooter className="pt-0" />
+                </>
+              )}
+            </ModalDialog>
+          </ModalContainer>
+        </ModalBackdrop>
       </Modal>
 
       {/* ── Recipe detail modal ───────────────────────────────────────────────── */}

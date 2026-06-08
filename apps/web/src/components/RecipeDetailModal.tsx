@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Modal,
-  ModalContent,
+  ModalBackdrop,
+  ModalContainer,
+  ModalDialog,
   ModalHeader,
   ModalBody,
   ModalFooter,
   Button,
   Switch,
-  addToast,
+  toast,
 } from "@heroui/react";
 import {
   RecipeOut,
@@ -36,7 +38,7 @@ function EditLine({
   multiline?: boolean;
 }) {
   const base =
-    "w-full bg-transparent border-b border-transparent hover:border-default-300 focus:border-primary focus:outline-none transition-colors resize-none";
+    "w-full bg-transparent border-b border-transparent hover:border-zinc-300 focus:border-primary focus:outline-none transition-colors resize-none";
   const ref = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -101,15 +103,15 @@ function ViewComponent({ comp, single }: { comp: SaveComponent; single: boolean 
   return (
     <div className="mb-5">
       {!single && (
-        <h3 className="text-sm font-semibold text-default-600 mb-2">{comp.name}</h3>
+        <h3 className="text-sm font-semibold text-zinc-600 mb-2">{comp.name}</h3>
       )}
       {comp.ingredients.length > 0 && (
         <>
-          <p className="text-xs font-semibold uppercase text-default-400 mb-1">Ingredients</p>
+          <p className="text-xs font-semibold uppercase text-zinc-400 mb-1">Ingredients</p>
           <ul className="space-y-1 mb-3">
             {comp.ingredients.map((ing, i) => (
               <li key={i} className="flex items-start gap-2 text-sm">
-                <span className="text-default-300 mt-1 shrink-0">·</span>
+                <span className="text-zinc-300 mt-1 shrink-0">·</span>
                 <span>{ing}</span>
               </li>
             ))}
@@ -118,11 +120,11 @@ function ViewComponent({ comp, single }: { comp: SaveComponent; single: boolean 
       )}
       {comp.steps.length > 0 && (
         <>
-          <p className="text-xs font-semibold uppercase text-default-400 mb-1">Steps</p>
+          <p className="text-xs font-semibold uppercase text-zinc-400 mb-1">Steps</p>
           <ol className="space-y-2">
             {comp.steps.map((step, i) => (
               <li key={i} className="flex items-start gap-2 text-sm">
-                <span className="text-default-400 font-medium shrink-0">{i + 1}.</span>
+                <span className="text-zinc-400 font-medium shrink-0">{i + 1}.</span>
                 <span>{step}</span>
               </li>
             ))}
@@ -149,15 +151,15 @@ function EditComponent({
   return (
     <div className="mb-5">
       {!single && (
-        <h3 className="text-sm font-semibold text-default-600 mb-2">{comp.name}</h3>
+        <h3 className="text-sm font-semibold text-zinc-600 mb-2">{comp.name}</h3>
       )}
       {comp.ingredients.length > 0 && (
         <>
-          <p className="text-xs font-semibold uppercase text-default-400 mb-1">Ingredients</p>
+          <p className="text-xs font-semibold uppercase text-zinc-400 mb-1">Ingredients</p>
           <ul className="space-y-1 mb-3">
             {comp.ingredients.map((ing, ii) => (
               <li key={ii} className="flex items-start gap-2 text-sm">
-                <span className="text-default-300 mt-1.5 shrink-0">·</span>
+                <span className="text-zinc-300 mt-1.5 shrink-0">·</span>
                 <EditLine value={ing} onChange={(v) => onIngredientChange(ii, v)} />
               </li>
             ))}
@@ -166,11 +168,11 @@ function EditComponent({
       )}
       {comp.steps.length > 0 && (
         <>
-          <p className="text-xs font-semibold uppercase text-default-400 mb-1">Steps</p>
+          <p className="text-xs font-semibold uppercase text-zinc-400 mb-1">Steps</p>
           <ol className="space-y-2">
             {comp.steps.map((step, si) => (
               <li key={si} className="flex items-start gap-2 text-sm">
-                <span className="text-default-400 font-medium shrink-0">{si + 1}.</span>
+                <span className="text-zinc-400 font-medium shrink-0">{si + 1}.</span>
                 <EditLine value={step} onChange={(v) => onStepChange(si, v)} multiline />
               </li>
             ))}
@@ -310,7 +312,7 @@ export default function RecipeDetailModal({
         tag_ids: localTags.map((t) => t.id),
         shared_to_personal: draft.shared_to_personal,
       });
-      addToast({ title: "Recipe updated", color: "success", timeout: 3000 });
+      toast.success("Recipe updated", { timeout: 3000 });
       onUpdated?.(updated);
       setMode("view");
     } catch (err) {
@@ -325,7 +327,7 @@ export default function RecipeDetailModal({
     setError(null);
     try {
       await deleteRecipe(r.id);
-      addToast({ title: "Recipe deleted", color: "danger", timeout: 3000 });
+      toast.danger("Recipe deleted", { timeout: 3000 });
       onDeleted?.(r.id);
       onClose();
     } catch (err) {
@@ -350,244 +352,253 @@ export default function RecipeDetailModal({
   }
 
   return (
-    <Modal isOpen={!!recipe} onClose={handleClose} size="lg" scrollBehavior="inside" classNames={{ base: "!rounded-xl overflow-hidden" }}>
-      <ModalContent>
-        {/* ── Sticky header ── */}
-        <ModalHeader className="flex-col gap-0 p-0">
+    <Modal isOpen={!!recipe} onOpenChange={(open) => { if (!open) handleClose(); }}>
+      <ModalBackdrop isDismissable>
+        <ModalContainer size="lg" scroll="inside" className="!rounded-xl overflow-hidden">
+          <ModalDialog>
+            {/* ── Sticky header ── */}
+            <ModalHeader className="flex-col gap-0 p-0">
 
-          {/* Hero image (or solid colour in edit/confirm mode) */}
-          {proxyUrl ? (
-            <div className="relative w-full h-48 shrink-0">
-              <img src={proxyUrl} alt={r.title} className="absolute inset-0 w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
+              {/* Hero image (or solid colour in edit/confirm mode) */}
+              {proxyUrl ? (
+                <div className="relative w-full h-48 shrink-0">
+                  <img src={proxyUrl} alt={r.title} className="absolute inset-0 w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
 
-              {/* Edit-image button (editing only) */}
-              {mode === "editing" && (
-                <button
-                  type="button"
-                  onClick={openImgEditor}
-                  className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/40 text-white text-xs font-semibold hover:bg-black/60 transition-colors backdrop-blur-sm"
-                >
-                  Edit image
-                </button>
+                  {/* Edit-image button (editing only) */}
+                  {mode === "editing" && (
+                    <button
+                      type="button"
+                      onClick={openImgEditor}
+                      className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/40 text-white text-xs font-semibold hover:bg-black/60 transition-colors backdrop-blur-sm"
+                    >
+                      Edit image
+                    </button>
+                  )}
+
+                  {/* Title + author over gradient */}
+                  <div className="absolute bottom-0 inset-x-0 px-5 pb-4 pt-8">
+                    {mode === "editing" ? (
+                      <EditLine
+                        value={draft.title}
+                        onChange={(v) => setDraft((d) => (d ? { ...d, title: v } : d))}
+                        className="text-xl font-bold text-white leading-snug placeholder:text-white/50"
+                        multiline
+                      />
+                    ) : (
+                      <h2 className="text-xl font-bold text-white leading-snug">{r.title}</h2>
+                    )}
+                    {r.creator_handle && (
+                      <p className="text-sm text-white/75 mt-0.5">@{r.creator_handle}</p>
+                    )}
+                    {r.household_id && r.added_by && (
+                      <p className="text-xs text-white/60 mt-0.5">Added by {r.added_by}</p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                /* No image: plain title block */
+                <div className={`px-5 pt-5 pb-1 ${headerBg}`}>
+                  {mode === "editing" ? (
+                    <EditLine
+                      value={draft.title}
+                      onChange={(v) => setDraft((d) => (d ? { ...d, title: v } : d))}
+                      className="text-xl font-bold leading-snug"
+                      multiline
+                    />
+                  ) : (
+                    <h2 className="text-xl font-bold leading-snug">{r.title}</h2>
+                  )}
+                  {r.creator_handle && (
+                    <p className="text-sm text-zinc-500 mt-0.5">@{r.creator_handle}</p>
+                  )}
+                  {r.household_id && r.added_by && (
+                    <p className="text-xs text-zinc-400 mt-0.5">Added by {r.added_by}</p>
+                  )}
+                </div>
               )}
 
-              {/* Title + author over gradient */}
-              <div className="absolute bottom-0 inset-x-0 px-5 pb-4 pt-8">
-                {mode === "editing" ? (
-                  <EditLine
-                    value={draft.title}
-                    onChange={(v) => setDraft((d) => (d ? { ...d, title: v } : d))}
-                    className="text-xl font-bold text-white leading-snug placeholder:text-white/50"
-                    multiline
+              {/* Image URL input */}
+              {mode === "editing" && showImgInput && (
+                <div className={`px-5 pt-2 ${headerBg}`}>
+                  <input
+                    type="url"
+                    value={imgDraft}
+                    onChange={(e) => setImgDraft(e.target.value)}
+                    onBlur={commitImg}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") { e.preventDefault(); commitImg(); }
+                      if (e.key === "Escape") setShowImgInput(false);
+                    }}
+                    placeholder="Image URL"
+                    autoFocus
+                    className="w-full text-sm border-b border-primary focus:outline-none bg-transparent"
                   />
-                ) : (
-                  <h2 className="text-xl font-bold text-white leading-snug">{r.title}</h2>
-                )}
-                {r.creator_handle && (
-                  <p className="text-sm text-white/75 mt-0.5">@{r.creator_handle}</p>
-                )}
-                {r.household_id && r.added_by && (
-                  <p className="text-xs text-white/60 mt-0.5">Added by {r.added_by}</p>
-                )}
+                </div>
+              )}
+
+              {/* Metadata: tags, pills, actions */}
+              <div className={`px-5 pt-3 pb-3 flex flex-col gap-2 ${headerBg}`}>
+
+              {/* Tags — always visible */}
+              <TagRow
+                tags={localTags}
+                allTags={allTags}
+                onAdd={handleTagAdd}
+                onRemove={handleTagRemove}
+                onCreateTag={handleTagCreate}
+              />
+
+              {/* Serves / kcal pills */}
+              {(draft.servings !== "" || draft.kcal !== "" || r.servings != null || r.kcal_per_serving != null) && (
+                <div className="flex gap-2">
+                  {mode === "editing" ? (
+                    <>
+                      <label className="flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-medium pl-3 pr-2 py-1.5 rounded-full cursor-text">
+                        <span>Serves</span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={99}
+                          value={draft.servings}
+                          onChange={(e) =>
+                            setDraft((d) =>
+                              d ? { ...d, servings: String(Math.min(99, Math.max(1, Number(e.target.value)))) } : d
+                            )
+                          }
+                          className="w-[2.2ch] bg-transparent text-primary font-semibold text-xs text-center focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                        />
+                      </label>
+                      <label className="flex items-center gap-1.5 bg-warning/10 text-warning-700 text-xs font-medium pl-2 pr-3 py-1.5 rounded-full cursor-text">
+                        <input
+                          type="number"
+                          min={1}
+                          max={9999}
+                          value={draft.kcal}
+                          onChange={(e) =>
+                            setDraft((d) =>
+                              d ? { ...d, kcal: String(Math.min(9999, Math.max(1, Number(e.target.value)))) } : d
+                            )
+                          }
+                          className="w-[3.8ch] bg-transparent text-warning-700 font-semibold text-xs text-center focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                        />
+                        <span>kcal / serving</span>
+                      </label>
+                    </>
+                  ) : (
+                    <>
+                      {r.servings != null && (
+                        <span className="text-xs text-primary font-medium bg-primary/10 px-3 py-1.5 rounded-full">
+                          Serves {r.servings}
+                        </span>
+                      )}
+                      {r.kcal_per_serving != null && (
+                        <span className="text-xs text-warning-700 font-medium bg-warning/10 px-3 py-1.5 rounded-full">
+                          {r.kcal_per_serving} kcal / serving
+                        </span>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Action bar */}
+              {mode === "view" && (
+                <div className="flex gap-2 pt-0.5 items-center">
+                  <Button size="sm" variant="secondary" onPress={() => setMode("editing")}>
+                    Edit
+                  </Button>
+                  <Button size="sm" variant="danger-soft" onPress={() => setMode("confirming")}>
+                    Remove
+                  </Button>
+                  {r.source_url && (
+                    <a
+                      href={r.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-lg bg-zinc-100 hover:bg-zinc-200 transition-colors"
+                    >
+                      Source
+                    </a>
+                  )}
+                </div>
+              )}
+              {mode === "editing" && (
+                <div className="flex items-center gap-2 pt-0.5">
+                  <button
+                    type="button"
+                    onClick={cancelMode}
+                    className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-warning text-warning-foreground hover:bg-warning-400 transition-colors"
+                  >
+                    ✎ Editing — tap to cancel
+                  </button>
+                </div>
+              )}
+              {mode === "confirming" && (
+                <div className="flex items-center gap-2 pt-0.5">
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-danger text-danger-foreground">
+                    Delete this recipe?
+                  </span>
+                </div>
+              )}
+              </div>{/* end metadata block */}
+            </ModalHeader>
+
+            {/* ── Scrollable body ── */}
+            <ModalBody>
+              {error && (
+                <div className="bg-danger-50 text-danger rounded-lg p-3 text-sm mb-3">
+                  {error}
+                </div>
+              )}
+
+              {mode === "editing"
+                ? components.map((comp, ci) => (
+                    <EditComponent
+                      key={ci}
+                      comp={comp}
+                      single={single}
+                      onIngredientChange={(ii, val) => setIngredient(ci, ii, val)}
+                      onStepChange={(si, val) => setStep(ci, si, val)}
+                    />
+                  ))
+                : components.map((comp, ci) => (
+                    <ViewComponent key={ci} comp={comp as SaveComponent} single={single} />
+                  ))}
+            </ModalBody>
+
+            <ModalFooter className="flex-col gap-2 items-stretch">
+              {mode === "editing" && r.household_id && (
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-sm text-zinc-600">Also in my private recipes</span>
+                  <Switch
+                    size="sm"
+                    isSelected={draft?.shared_to_personal ?? true}
+                    onChange={(v) => setDraft((d) => d ? { ...d, shared_to_personal: v } : d)}
+                  />
+                </div>
+              )}
+              <div className="flex justify-end gap-2">
+              {mode === "editing" && (
+                <>
+                  <Button variant="tertiary" onPress={cancelMode} isDisabled={busy}>Cancel</Button>
+                  <Button variant="primary" onPress={handleSave} isDisabled={busy}>Save</Button>
+                </>
+              )}
+              {mode === "confirming" && (
+                <>
+                  <Button variant="tertiary" onPress={cancelMode} isDisabled={busy}>Cancel</Button>
+                  <Button variant="danger" onPress={handleDelete} isDisabled={busy}>Delete</Button>
+                </>
+              )}
+              {mode === "view" && (
+                <Button variant="tertiary" onPress={handleClose}>Close</Button>
+              )}
               </div>
-            </div>
-          ) : (
-            /* No image: plain title block */
-            <div className={`px-5 pt-5 pb-1 ${headerBg}`}>
-              {mode === "editing" ? (
-                <EditLine
-                  value={draft.title}
-                  onChange={(v) => setDraft((d) => (d ? { ...d, title: v } : d))}
-                  className="text-xl font-bold leading-snug"
-                  multiline
-                />
-              ) : (
-                <h2 className="text-xl font-bold leading-snug">{r.title}</h2>
-              )}
-              {r.creator_handle && (
-                <p className="text-sm text-default-500 mt-0.5">@{r.creator_handle}</p>
-              )}
-              {r.household_id && r.added_by && (
-                <p className="text-xs text-default-400 mt-0.5">Added by {r.added_by}</p>
-              )}
-            </div>
-          )}
-
-          {/* Image URL input */}
-          {mode === "editing" && showImgInput && (
-            <div className={`px-5 pt-2 ${headerBg}`}>
-              <input
-                type="url"
-                value={imgDraft}
-                onChange={(e) => setImgDraft(e.target.value)}
-                onBlur={commitImg}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") { e.preventDefault(); commitImg(); }
-                  if (e.key === "Escape") setShowImgInput(false);
-                }}
-                placeholder="Image URL"
-                autoFocus
-                className="w-full text-sm border-b border-primary focus:outline-none bg-transparent"
-              />
-            </div>
-          )}
-
-          {/* Metadata: tags, pills, actions */}
-          <div className={`px-5 pt-3 pb-3 flex flex-col gap-2 ${headerBg}`}>
-
-          {/* Tags — always visible */}
-          <TagRow
-            tags={localTags}
-            allTags={allTags}
-            onAdd={handleTagAdd}
-            onRemove={handleTagRemove}
-            onCreateTag={handleTagCreate}
-          />
-
-          {/* Serves / kcal pills */}
-          {(draft.servings !== "" || draft.kcal !== "" || r.servings != null || r.kcal_per_serving != null) && (
-            <div className="flex gap-2">
-              {mode === "editing" ? (
-                <>
-                  <label className="flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-medium pl-3 pr-2 py-1.5 rounded-full cursor-text">
-                    <span>Serves</span>
-                    <input
-                      type="number"
-                      min={1}
-                      max={99}
-                      value={draft.servings}
-                      onChange={(e) =>
-                        setDraft((d) =>
-                          d ? { ...d, servings: String(Math.min(99, Math.max(1, Number(e.target.value)))) } : d
-                        )
-                      }
-                      className="w-[2.2ch] bg-transparent text-primary font-semibold text-xs text-center focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                    />
-                  </label>
-                  <label className="flex items-center gap-1.5 bg-warning/10 text-warning-700 text-xs font-medium pl-2 pr-3 py-1.5 rounded-full cursor-text">
-                    <input
-                      type="number"
-                      min={1}
-                      max={9999}
-                      value={draft.kcal}
-                      onChange={(e) =>
-                        setDraft((d) =>
-                          d ? { ...d, kcal: String(Math.min(9999, Math.max(1, Number(e.target.value)))) } : d
-                        )
-                      }
-                      className="w-[3.8ch] bg-transparent text-warning-700 font-semibold text-xs text-center focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                    />
-                    <span>kcal / serving</span>
-                  </label>
-                </>
-              ) : (
-                <>
-                  {r.servings != null && (
-                    <span className="text-xs text-primary font-medium bg-primary/10 px-3 py-1.5 rounded-full">
-                      Serves {r.servings}
-                    </span>
-                  )}
-                  {r.kcal_per_serving != null && (
-                    <span className="text-xs text-warning-700 font-medium bg-warning/10 px-3 py-1.5 rounded-full">
-                      {r.kcal_per_serving} kcal / serving
-                    </span>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-
-          {/* Action bar */}
-          {mode === "view" && (
-            <div className="flex gap-2 pt-0.5 items-center">
-              <Button size="sm" variant="flat" onPress={() => setMode("editing")}>
-                Edit
-              </Button>
-              <Button size="sm" variant="flat" color="danger" onPress={() => setMode("confirming")}>
-                Remove
-              </Button>
-              {r.source_url && (
-                <Button size="sm" variant="flat" as="a" href={r.source_url} target="_blank" rel="noopener noreferrer">
-                  Source
-                </Button>
-              )}
-            </div>
-          )}
-          {mode === "editing" && (
-            <div className="flex items-center gap-2 pt-0.5">
-              <button
-                type="button"
-                onClick={cancelMode}
-                className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-warning text-warning-foreground hover:bg-warning-400 transition-colors"
-              >
-                ✎ Editing — tap to cancel
-              </button>
-            </div>
-          )}
-          {mode === "confirming" && (
-            <div className="flex items-center gap-2 pt-0.5">
-              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-danger text-danger-foreground">
-                Delete this recipe?
-              </span>
-            </div>
-          )}
-          </div>{/* end metadata block */}
-        </ModalHeader>
-
-        {/* ── Scrollable body ── */}
-        <ModalBody>
-          {error && (
-            <div className="bg-danger-50 text-danger rounded-lg p-3 text-sm mb-3">
-              {error}
-            </div>
-          )}
-
-          {mode === "editing"
-            ? components.map((comp, ci) => (
-                <EditComponent
-                  key={ci}
-                  comp={comp}
-                  single={single}
-                  onIngredientChange={(ii, val) => setIngredient(ci, ii, val)}
-                  onStepChange={(si, val) => setStep(ci, si, val)}
-                />
-              ))
-            : components.map((comp, ci) => (
-                <ViewComponent key={ci} comp={comp as SaveComponent} single={single} />
-              ))}
-        </ModalBody>
-
-        <ModalFooter className="flex-col gap-2 items-stretch">
-          {mode === "editing" && r.household_id && (
-            <div className="flex items-center justify-between px-1">
-              <span className="text-sm text-default-600">Also in my private recipes</span>
-              <Switch
-                size="sm"
-                isSelected={draft?.shared_to_personal ?? true}
-                onValueChange={(v) => setDraft((d) => d ? { ...d, shared_to_personal: v } : d)}
-              />
-            </div>
-          )}
-          <div className="flex justify-end gap-2">
-          {mode === "editing" && (
-            <>
-              <Button variant="light" onPress={cancelMode} isDisabled={busy}>Cancel</Button>
-              <Button color="primary" onPress={handleSave} isLoading={busy}>Save</Button>
-            </>
-          )}
-          {mode === "confirming" && (
-            <>
-              <Button variant="light" onPress={cancelMode} isDisabled={busy}>Cancel</Button>
-              <Button color="danger" onPress={handleDelete} isLoading={busy}>Delete</Button>
-            </>
-          )}
-          {mode === "view" && (
-            <Button variant="ghost" onPress={handleClose}>Close</Button>
-          )}
-          </div>
-        </ModalFooter>
-      </ModalContent>
+            </ModalFooter>
+          </ModalDialog>
+        </ModalContainer>
+      </ModalBackdrop>
     </Modal>
   );
 }

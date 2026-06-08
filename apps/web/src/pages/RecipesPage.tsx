@@ -6,8 +6,8 @@ import { RecipeOut, Tag } from "../api/client";
 function RecipeThumb({ src, alt }: { src: string; alt: string }) {
   const [loaded, setLoaded] = useState(false);
   return (
-    <div className="w-16 h-16 rounded-lg shrink-0 overflow-hidden bg-default-100 relative">
-      {!loaded && <div className="absolute inset-0 animate-pulse bg-default-200" />}
+    <div className="w-16 h-16 rounded-lg shrink-0 overflow-hidden bg-zinc-100 relative">
+      {!loaded && <div className="absolute inset-0 animate-pulse bg-zinc-200" />}
       <img
         src={src}
         alt={alt}
@@ -44,13 +44,13 @@ function RecipeCard({
   return (
     <button
       onClick={onClick}
-      className="flex gap-3 items-start p-3 rounded-xl bg-content1 shadow-sm w-full text-left active:opacity-70 transition-opacity"
+      className="flex gap-3 items-start p-3 rounded-xl bg-white shadow-sm w-full text-left active:opacity-70 transition-opacity"
     >
       {proxyUrl && <RecipeThumb src={proxyUrl} alt={recipe.title} />}
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-sm leading-snug line-clamp-2">{recipe.title}</p>
         {recipe.creator_handle && (
-          <p className="text-xs text-default-400 mt-0.5">@{recipe.creator_handle}</p>
+          <p className="text-xs text-zinc-400 mt-0.5">@{recipe.creator_handle}</p>
         )}
         <div className="flex gap-2 mt-1.5 flex-wrap">
           {recipe.servings != null && (
@@ -135,7 +135,7 @@ export default function RecipesPage({
                 className={`shrink-0 text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${
                   active
                     ? "bg-secondary text-white"
-                    : "bg-default-100 text-default-600 hover:bg-default-200"
+                    : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
                 }`}
               >
                 {tag.name}
@@ -148,11 +148,11 @@ export default function RecipesPage({
       {loading ? (
         <div className="flex flex-col gap-3 px-4 mt-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-20 rounded-xl bg-default-100 animate-pulse" />
+            <div key={i} className="h-20 rounded-xl bg-zinc-100 animate-pulse" />
           ))}
         </div>
       ) : displayed.length === 0 && recipes.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 text-default-400 px-4 text-center">
+        <div className="flex flex-col items-center justify-center py-24 text-zinc-400 px-4 text-center">
           <p className="text-lg">No recipes yet.</p>
           <p className="text-sm mt-1">
             Tap the{" "}
@@ -163,7 +163,7 @@ export default function RecipesPage({
           </p>
         </div>
       ) : displayed.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 text-default-400 px-4 text-center">
+        <div className="flex flex-col items-center justify-center py-24 text-zinc-400 px-4 text-center">
           <p className="text-lg">No recipes with this tag.</p>
           <button onClick={() => setFilterTag(null)} className="text-sm text-primary mt-1">
             Clear filter

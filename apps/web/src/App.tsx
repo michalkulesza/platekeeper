@@ -75,7 +75,7 @@ function AppShell() {
 
   return (
     <HouseholdProvider onContextSwitch={handleContextSwitch}>
-      <div className="min-h-screen bg-background md:bg-default-100">
+      <div className="min-h-screen bg-background md:bg-zinc-100">
         {/* Centered max-width container — flex row on desktop, block on mobile */}
         <div className="md:max-w-7xl md:mx-auto md:flex md:min-h-screen">
           <Sidebar />
@@ -131,7 +131,7 @@ function AppShell() {
 export default function App() {
   return (
     <BrowserRouter>
-      <ToastProvider placement="bottom-center" />
+      <ToastProvider placement="bottom" />
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />

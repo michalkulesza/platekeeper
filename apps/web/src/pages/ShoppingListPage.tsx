@@ -4,7 +4,7 @@ export default function ShoppingListPage() {
   return (
     <>
       <PageHeader title="Shopping List" />
-      <div className="flex flex-col items-center justify-center py-24 text-default-400 px-4 text-center">
+      <div className="flex flex-col items-center justify-center py-24 text-zinc-400 px-4 text-center">
         <p className="text-lg">Shopping list coming soon.</p>
       </div>
     </>

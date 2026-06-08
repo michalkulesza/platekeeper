@@ -62,7 +62,7 @@ export default function TagRow({ tags, allTags, onAdd, onRemove, onCreateTag }: 
   return (
     <div className="flex flex-wrap gap-1.5 items-center" ref={containerRef}>
       {tags.length === 0 && (
-        <span className="text-xs text-default-400 italic">No tags</span>
+        <span className="text-xs text-zinc-400 italic">No tags</span>
       )}
       {tags.map((tag) => (
         <span
@@ -85,15 +85,15 @@ export default function TagRow({ tags, allTags, onAdd, onRemove, onCreateTag }: 
         <button
           type="button"
           onClick={() => setPickerOpen((o) => !o)}
-          className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-default-200 hover:bg-default-300 text-default-600 text-xs font-bold transition-colors"
+          className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-zinc-200 hover:bg-zinc-300 text-zinc-600 text-xs font-bold transition-colors"
           aria-label="Add tag"
         >
           +
         </button>
 
         {pickerOpen && (
-          <div className="absolute left-0 top-6 z-50 w-52 bg-content1 rounded-xl shadow-xl border border-divider overflow-hidden">
-            <div className="px-3 py-2 border-b border-divider">
+          <div className="absolute left-0 top-6 z-50 w-52 bg-white rounded-xl shadow-xl border border-zinc-200 overflow-hidden">
+            <div className="px-3 py-2 border-b border-zinc-200">
               <input
                 ref={inputRef}
                 type="text"
@@ -110,7 +110,7 @@ export default function TagRow({ tags, allTags, onAdd, onRemove, onCreateTag }: 
                   }
                 }}
                 placeholder="Search or create…"
-                className="w-full text-sm bg-transparent focus:outline-none placeholder-default-400"
+                className="w-full text-sm bg-transparent focus:outline-none placeholder-zinc-400"
               />
             </div>
             <div className="max-h-44 overflow-y-auto">
@@ -118,7 +118,7 @@ export default function TagRow({ tags, allTags, onAdd, onRemove, onCreateTag }: 
                 <button
                   key={tag.id}
                   type="button"
-                  className="w-full text-left px-3 py-2 text-sm hover:bg-default-100 transition-colors"
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-zinc-100 transition-colors"
                   onClick={() => handleAddTag(tag)}
                 >
                   {tag.name}
@@ -135,7 +135,7 @@ export default function TagRow({ tags, allTags, onAdd, onRemove, onCreateTag }: 
                 </button>
               )}
               {filtered.length === 0 && !canCreate && (
-                <p className="px-3 py-2 text-sm text-default-400">
+                <p className="px-3 py-2 text-sm text-zinc-400">
                   {allTags.length === 0 ? "No tags available" : "All tags already added"}
                 </p>
               )}

@@ -69,7 +69,7 @@ export default function Sidebar() {
     } ${
       isActive
         ? "bg-primary/10 text-primary"
-        : "text-default-600 hover:bg-default-200/60 hover:text-default-900"
+        : "text-zinc-600 hover:bg-zinc-200/60 hover:text-zinc-900"
     }`;
 
   return (
@@ -86,7 +86,7 @@ export default function Sidebar() {
         <button
           type="button"
           onClick={() => setCollapsed((c) => !c)}
-          className="p-1.5 rounded-lg text-default-500 hover:bg-default-200/60 hover:text-default-900 transition-colors shrink-0"
+          className="p-1.5 rounded-lg text-zinc-500 hover:bg-zinc-200/60 hover:text-zinc-900 transition-colors shrink-0"
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           <PanelIcon />
@@ -98,7 +98,7 @@ export default function Sidebar() {
         type="button"
         onClick={() => setSwitcherOpen(true)}
         title={collapsed ? (activeHousehold?.name ?? "Personal Library") : undefined}
-        className={`flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-default-200/60 transition-colors mb-3 w-full text-left ${
+        className={`flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-zinc-200/60 transition-colors mb-3 w-full text-left ${
           collapsed ? "justify-center" : ""
         }`}
       >
@@ -126,7 +126,7 @@ export default function Sidebar() {
       </button>
 
       {/* Divider */}
-      <div className="h-px bg-default-200 mx-1 mb-3" />
+      <div className="h-px bg-zinc-200 mx-1 mb-3" />
 
       {/* Nav links */}
       <nav className="flex flex-col gap-0.5 flex-1">
