@@ -172,6 +172,39 @@ function RecipeCard({
   );
 }
 
+function SearchResultItem({
+  recipe,
+  matchedIngredient,
+  onClick,
+}: {
+  recipe: RecipeOut;
+  matchedIngredient?: string;
+  onClick: () => void;
+}) {
+  const proxyUrl = recipe.thumbnail_url
+    ? `/api/proxy/image?url=${encodeURIComponent(recipe.thumbnail_url)}`
+    : null;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex items-center gap-3 px-4 py-3 w-full text-left hover:bg-zinc-50 transition-colors border-b border-zinc-100 last:border-b-0"
+    >
+      {proxyUrl ? (
+        <img src={proxyUrl} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
+      ) : (
+        <div className="w-10 h-10 rounded-lg bg-zinc-100 shrink-0" />
+      )}
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium truncate">{recipe.title}</p>
+        {matchedIngredient && (
+          <p className="text-xs text-zinc-400 truncate mt-0.5">{matchedIngredient}</p>
+        )}
+      </div>
+    </button>
+  );
+}
+
 export default function RecipesPage({
   onAddRecipe,
   recipes,
@@ -189,11 +222,28 @@ export default function RecipesPage({
   const [deleteTarget, setDeleteTarget] = useState<RecipeOut | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const displayed = recipes.filter((r) => {
-    const matchesTag = !filterTag || r.tags.some((t) => t.id === filterTag.id);
-    const matchesSearch = !searchQuery || r.title.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesTag && matchesSearch;
-  });
+  const displayed = filterTag
+    ? recipes.filter((r) => r.tags.some((t) => t.id === filterTag.id))
+    : recipes;
+
+  const q = searchQuery.trim().toLowerCase();
+  const titleMatches = q ? recipes.filter((r) => r.title.toLowerCase().includes(q)) : [];
+  const titleMatchIds = new Set(titleMatches.map((r) => r.id));
+  const ingredientMatches: { recipe: RecipeOut; matchedIngredient: string }[] = [];
+  if (q) {
+    for (const recipe of recipes) {
+      if (titleMatchIds.has(recipe.id)) continue;
+      for (const component of recipe.components) {
+        const match = component.ingredients.find((ing) =>
+          ing.toLowerCase().includes(q)
+        );
+        if (match) {
+          ingredientMatches.push({ recipe, matchedIngredient: match });
+          break;
+        }
+      }
+    }
+  }
 
   function openView(recipe: RecipeOut) {
     setOpenInEdit(false);
@@ -260,7 +310,49 @@ export default function RecipesPage({
     <>
       <PageHeader title="Recipes" searchSlot={searchInput} />
 
+      {/* Mobile search */}
       <div className="md:hidden px-4 mt-3">{searchInput}</div>
+
+      {/* Everything below anchors the overlay */}
+      <div className="relative">
+        {/* Search overlay — appears below mobile search on mobile, below header on desktop */}
+        {q && (
+          <div className="absolute left-2 right-2 top-2 z-40 bg-white rounded-xl shadow-xl border border-zinc-200 overflow-hidden">
+            <div className="max-h-[60vh] overflow-y-auto">
+              {titleMatches.length === 0 && ingredientMatches.length === 0 ? (
+                <p className="px-4 py-8 text-sm text-zinc-400 text-center">No results</p>
+              ) : (
+                <>
+                  {titleMatches.length > 0 && (
+                    <>
+                      <div className="px-4 py-2 bg-zinc-50 border-b border-zinc-100">
+                        <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wide">Recipes</span>
+                      </div>
+                      {titleMatches.map((r) => (
+                        <SearchResultItem key={r.id} recipe={r} onClick={() => { setSearchQuery(""); openView(r); }} />
+                      ))}
+                    </>
+                  )}
+                  {ingredientMatches.length > 0 && (
+                    <>
+                      <div className="px-4 py-2 bg-zinc-50 border-b border-zinc-100">
+                        <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wide">Ingredients</span>
+                      </div>
+                      {ingredientMatches.map(({ recipe, matchedIngredient }) => (
+                        <SearchResultItem
+                          key={recipe.id}
+                          recipe={recipe}
+                          matchedIngredient={matchedIngredient}
+                          onClick={() => { setSearchQuery(""); openView(recipe); }}
+                        />
+                      ))}
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        )}
 
       {allTags.length > 0 && (
         <div className="flex gap-2 px-4 mt-3 overflow-x-auto pb-1 scrollbar-hide">
@@ -320,12 +412,9 @@ export default function RecipesPage({
         </div>
       ) : displayed.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-zinc-400 px-4 text-center">
-          <p className="text-lg">No recipes match your filters.</p>
-          <button
-            onClick={() => { setFilterTag(null); setSearchQuery(""); }}
-            className="text-sm text-primary mt-1"
-          >
-            Clear filters
+          <p className="text-lg">No recipes with this tag.</p>
+          <button onClick={() => setFilterTag(null)} className="text-sm text-primary mt-1">
+            Clear filter
           </button>
         </div>
       ) : (
@@ -356,6 +445,7 @@ export default function RecipesPage({
           </div>
         </>
       )}
+      </div>{/* end relative wrapper */}
 
       {/* Recipe detail modal */}
       <RecipeDetailModal
