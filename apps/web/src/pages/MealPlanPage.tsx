@@ -23,6 +23,7 @@ import {
   setMealPlanEntry,
 } from "../api/client";
 import RecipeDetailModal from "../components/RecipeDetailModal";
+import PageHeader from "../components/PageHeader";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -524,14 +525,10 @@ export default function MealPlanPage({ recipes, preferences, allTags, onTagCreat
   return (
     <div className="flex flex-col min-h-full">
 
-      {/* ── Sticky header + calendar ─────────────────────────────────────────── */}
-      <div
-        ref={stickyRef}
-        className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-divider"
-        style={{ paddingTop: "env(safe-area-inset-top)" }}
-      >
-        <div className="flex items-center px-4 h-14 max-w-lg mx-auto">
-          <h1 className="text-xl font-bold flex-1">Meal Plan</h1>
+      {/* ── Page header ──────────────────────────────────────────────────────── */}
+      <PageHeader
+        title="Meal Plan"
+        action={
           <div className="flex gap-2">
             <Button
               size="sm"
@@ -550,8 +547,14 @@ export default function MealPlanPage({ recipes, preferences, allTags, onTagCreat
               Export as xlsx
             </Button>
           </div>
-        </div>
+        }
+      />
 
+      {/* ── Sticky calendar ──────────────────────────────────────────────────── */}
+      <div
+        ref={stickyRef}
+        className="sticky top-14 z-20 bg-background/95 backdrop-blur-md border-b border-divider"
+      >
         <div ref={calendarRef} className="pk-cal pb-2 px-1">
           <I18nProvider locale={calendarLocale}>
             <Calendar

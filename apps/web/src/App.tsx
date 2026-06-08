@@ -79,7 +79,7 @@ function AppShell() {
         {/* Centered max-width container — flex row on desktop, block on mobile */}
         <div className="md:max-w-7xl md:mx-auto md:flex md:min-h-screen">
           <Sidebar />
-          <div className="flex-1 min-w-0 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0 md:bg-background md:my-2 md:mr-2 md:rounded-xl md:shadow-sm md:overflow-hidden">
+          <div className="flex-1 min-w-0 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0 md:bg-background md:my-2 md:mr-2 md:rounded-xl md:shadow-sm">
             <Routes>
               <Route
                 path="/"
