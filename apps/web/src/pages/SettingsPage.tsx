@@ -509,6 +509,7 @@ function ManageHouseholdModal({ household, isOpen, onClose, onChanged }: {
 export default function SettingsPage({ stats, onStatsRefresh, preferences, onPreferencesChange }: SettingsPageProps) {
   const { user, logout } = useAuth();
   const { households, activeHouseholdId, activeHousehold, refetchHouseholds } = useHousehold();
+  const [wakeLockDefault, setWakeLockDefault] = useState(() => localStorage.getItem("wakelock-default") === "1");
   const [loggingOut, setLoggingOut] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -687,7 +688,7 @@ export default function SettingsPage({ stats, onStatsRefresh, preferences, onPre
         {/* Preferences */}
         <section className="flex flex-col gap-3">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Preferences</h2>
-          <div className="rounded-xl border border-zinc-200 bg-white p-4">
+          <div className="rounded-xl border border-zinc-200 bg-white p-4 flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium">Week starts on</label>
               <Select
@@ -712,6 +713,24 @@ export default function SettingsPage({ stats, onStatsRefresh, preferences, onPre
                 </Select.Popover>
               </Select>
             </div>
+            {"wakeLock" in navigator && (
+              <div className="flex items-center justify-between gap-2 pt-3 border-t border-zinc-100">
+                <div>
+                  <p className="text-sm font-medium">Keep screen on by default</p>
+                  <p className="text-xs text-zinc-400">Screen stays awake whenever you open a recipe</p>
+                </div>
+                <Switch
+                  size="sm"
+                  isSelected={wakeLockDefault}
+                  onChange={(v) => {
+                    localStorage.setItem("wakelock-default", v ? "1" : "0");
+                    setWakeLockDefault(v);
+                  }}
+                >
+                  <Switch.Control><Switch.Thumb /></Switch.Control>
+                </Switch>
+              </div>
+            )}
           </div>
         </section>
 

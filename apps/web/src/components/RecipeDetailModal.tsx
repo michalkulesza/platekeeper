@@ -193,11 +193,10 @@ function EditLine({
 // ── Screen Wake Lock hook ─────────────────────────────────────────────────────
 
 function useScreenWakeLock() {
-  const [active, setActive] = useState(() => sessionStorage.getItem("wakelock-enabled") === "1");
+  const [active, setActive] = useState(() => localStorage.getItem("wakelock-default") === "1");
   const sentinelRef = useRef<WakeLockSentinel | null>(null);
 
   useEffect(() => {
-    sessionStorage.setItem("wakelock-enabled", active ? "1" : "0");
 
     if (!active) {
       sentinelRef.current?.release().catch(() => {});
