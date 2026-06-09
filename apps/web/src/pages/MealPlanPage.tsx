@@ -774,7 +774,7 @@ export default function MealPlanPage({ recipes, preferences, allTags, onTagCreat
         onOpenChange={(open) => { if (!open) setActionEntry(null); }}
       >
         <ModalBackdrop isDismissable>
-          <ModalContainer placement="bottom" size="sm" className="rounded-t-2xl rounded-b-none mx-0 mb-0">
+          <ModalContainer size="sm" className="!rounded-xl overflow-hidden">
             <ModalDialog>
               {actionEntry && (
                 <>
@@ -795,31 +795,32 @@ export default function MealPlanPage({ recipes, preferences, allTags, onTagCreat
                       )}
                     </div>
                   </ModalHeader>
-                  <ModalBody className="gap-2 pt-0 pb-2">
-                    <Button
-                      variant="secondary"
-                      fullWidth
-                      onPress={() => setViewRecipe(actionEntry.recipe)}
-                    >
-                      View recipe
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      fullWidth
-                      onPress={() => openPicker(actionEntry.date)}
-                    >
-                      Change recipe
-                    </Button>
-                    <Button
-                      variant="danger-soft"
-                      fullWidth
-                      isDisabled={busy}
-                      onPress={handleRemove}
-                    >
-                      Remove from plan
-                    </Button>
+                  <ModalBody className="pt-0 pb-4">
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        variant="secondary"
+                        fullWidth
+                        onPress={() => setViewRecipe(actionEntry.recipe)}
+                      >
+                        View recipe
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        fullWidth
+                        onPress={() => openPicker(actionEntry.date)}
+                      >
+                        Change recipe
+                      </Button>
+                      <Button
+                        variant="danger-soft"
+                        fullWidth
+                        isDisabled={busy}
+                        onPress={handleRemove}
+                      >
+                        Remove from plan
+                      </Button>
+                    </div>
                   </ModalBody>
-                  <ModalFooter className="pt-0" />
                 </>
               )}
             </ModalDialog>
