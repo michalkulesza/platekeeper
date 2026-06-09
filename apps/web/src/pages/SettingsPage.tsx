@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Button, ListBox, ListBoxItem, Modal, ModalBackdrop, ModalBody, ModalContainer, ModalDialog, ModalFooter, ModalHeader, Select, Switch, toast } from "@heroui/react";
+import { Button, Disclosure, ListBox, ListBoxItem, Modal, ModalBackdrop, ModalBody, ModalContainer, ModalDialog, ModalFooter, ModalHeader, Select, Switch, toast } from "@heroui/react";
 import PageHeader from "../components/PageHeader";
 import {
   exportRecipes, importRecipes, updatePreferences, updateHouseholdAllergens, streamReanalyze,
@@ -30,9 +30,8 @@ const PRESET_COLORS = [
   "#6366f1", "#ec4899", "#14b8a6", "#f59e0b", "#22c55e", "#ef4444", "#8b5cf6", "#06b6d4",
 ];
 
-const BIG_14 = [
+const ALLERGENS = [
   { key: "celery", label: "Celery" },
-  { key: "gluten", label: "Gluten (wheat, rye, barley)" },
   { key: "crustaceans", label: "Crustaceans" },
   { key: "eggs", label: "Eggs" },
   { key: "fish", label: "Fish" },
@@ -43,8 +42,12 @@ const BIG_14 = [
   { key: "peanuts", label: "Peanuts" },
   { key: "sesame", label: "Sesame" },
   { key: "soybeans", label: "Soybeans" },
-  { key: "sulphites", label: "Sulphur dioxide / Sulphites" },
   { key: "tree nuts", label: "Tree nuts" },
+];
+
+const INTOLERANCES = [
+  { key: "gluten", label: "Gluten (wheat, rye, barley)" },
+  { key: "sulphites", label: "Sulphur dioxide / Sulphites" },
 ];
 
 interface SettingsPageProps {
@@ -121,12 +124,10 @@ function AllergenSection({
     });
   }
 
-  return (
-    <div className="flex flex-col gap-4">
-      <p className="text-xs text-zinc-400">{scopeLabel}</p>
-
-      <div className="grid grid-cols-1 gap-2">
-        {BIG_14.map(({ key, label }) => (
+  function CheckboxGroup({ items }: { items: { key: string; label: string }[] }) {
+    return (
+      <div className="grid grid-cols-1 gap-2 pt-1">
+        {items.map(({ key, label }) => (
           <label key={key} className="flex items-center gap-3 cursor-pointer">
             <input
               type="checkbox"
@@ -138,43 +139,87 @@ function AllergenSection({
           </label>
         ))}
       </div>
+    );
+  }
 
-      {/* Custom tags */}
-      <div className="flex flex-col gap-2">
-        <p className="text-xs font-medium text-zinc-500">Custom allergens</p>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="e.g. nightshades"
-            value={tagInput}
-            onChange={(e) => setTagInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustomTag(); } }}
-            className="flex-1 px-3 py-1.5 text-sm rounded-lg border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
-          />
-          <Button size="sm" variant="secondary" onPress={addCustomTag}>Add</Button>
-        </div>
-        {custom.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {custom.map((tag) => (
-              <span key={tag} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-zinc-100 text-zinc-600">
-                {tag}
-                <button type="button" onClick={() => removeCustomTag(tag)} className="text-zinc-400 hover:text-zinc-700 ml-0.5">×</button>
-              </span>
-            ))}
-          </div>
-        )}
+  return (
+    <div className="flex flex-col gap-4">
+      <p className="text-xs text-zinc-400">{scopeLabel}</p>
+
+      <div className="flex flex-col divide-y divide-zinc-100">
+        <Disclosure defaultExpanded>
+          <Disclosure.Heading>
+            <Disclosure.Trigger className="w-full flex items-center justify-between py-2 text-sm font-medium text-zinc-700">
+              Allergens
+              <Disclosure.Indicator />
+            </Disclosure.Trigger>
+          </Disclosure.Heading>
+          <Disclosure.Content>
+            <Disclosure.Body className="pb-3">
+              <CheckboxGroup items={ALLERGENS} />
+            </Disclosure.Body>
+          </Disclosure.Content>
+        </Disclosure>
+
+        <Disclosure defaultExpanded>
+          <Disclosure.Heading>
+            <Disclosure.Trigger className="w-full flex items-center justify-between py-2 text-sm font-medium text-zinc-700">
+              Intolerances
+              <Disclosure.Indicator />
+            </Disclosure.Trigger>
+          </Disclosure.Heading>
+          <Disclosure.Content>
+            <Disclosure.Body className="pb-3">
+              <CheckboxGroup items={INTOLERANCES} />
+            </Disclosure.Body>
+          </Disclosure.Content>
+        </Disclosure>
+
+        <Disclosure>
+          <Disclosure.Heading>
+            <Disclosure.Trigger className="w-full flex items-center justify-between py-2 text-sm font-medium text-zinc-700">
+              Custom
+              <Disclosure.Indicator />
+            </Disclosure.Trigger>
+          </Disclosure.Heading>
+          <Disclosure.Content>
+            <Disclosure.Body className="pb-3 flex flex-col gap-2">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="e.g. nightshades"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustomTag(); } }}
+                  className="flex-1 px-3 py-1.5 text-sm rounded-lg border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+                <Button size="sm" variant="secondary" onPress={addCustomTag}>Add</Button>
+              </div>
+              {custom.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {custom.map((tag) => (
+                    <span key={tag} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-zinc-100 text-zinc-600">
+                      {tag}
+                      <button type="button" onClick={() => removeCustomTag(tag)} className="text-zinc-400 hover:text-zinc-700 ml-0.5">×</button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </Disclosure.Body>
+          </Disclosure.Content>
+        </Disclosure>
       </div>
 
       <div className="flex gap-2 flex-wrap">
         <Button size="sm" variant="primary" onPress={handleSave} isDisabled={saving}>
-          {saving ? "Saving…" : "Save allergens"}
+          {saving ? "Saving…" : "Save"}
         </Button>
         <Button size="sm" variant="secondary" onPress={handleReanalyze} isDisabled={reanalyzing}>
           {reanalyzing
             ? reanalyzeProgress && reanalyzeProgress.total > 0
               ? `Analyzing… ${reanalyzeProgress.done}/${reanalyzeProgress.total}`
               : "Starting…"
-            : "Re-analyze all recipes"}
+            : "Re-analyze recipes"}
         </Button>
       </div>
     </div>
