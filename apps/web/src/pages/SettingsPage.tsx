@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Button, Disclosure, ListBox, ListBoxItem, Modal, ModalBackdrop, ModalBody, ModalContainer, ModalDialog, ModalFooter, ModalHeader, Select, Switch, toast } from "@heroui/react";
+import { Button, Checkbox, Description, Disclosure, Label, ListBox, ListBoxItem, Modal, ModalBackdrop, ModalBody, ModalContainer, ModalDialog, ModalFooter, ModalHeader, Select, Switch, toast } from "@heroui/react";
 import PageHeader from "../components/PageHeader";
 import {
   exportRecipes, importRecipes, updatePreferences, updateHouseholdAllergens, streamReanalyze,
@@ -31,33 +31,33 @@ const PRESET_COLORS = [
 ];
 
 const ALLERGENS = [
-  { key: "gluten", label: "Gluten-containing cereals — wheat, rye, barley, oats" },
-  { key: "crustaceans", label: "Crustaceans — shrimp, crab, lobster" },
-  { key: "eggs", label: "Eggs" },
-  { key: "fish", label: "Fish" },
-  { key: "peanuts", label: "Peanuts" },
-  { key: "soybeans", label: "Soy" },
-  { key: "milk", label: "Milk (dairy)" },
-  { key: "tree nuts", label: "Tree nuts — almonds, cashews, walnuts, etc." },
-  { key: "celery", label: "Celery — stalks, seeds, celeriac" },
-  { key: "mustard", label: "Mustard — seeds, leaves, oil" },
-  { key: "sesame", label: "Sesame" },
-  { key: "sulphites", label: "Sulphur dioxide / sulphites (>10 mg/kg)" },
-  { key: "lupin", label: "Lupin — flour and seeds" },
-  { key: "molluscs", label: "Molluscs — squid, oyster, mussel" },
+  { key: "gluten",      label: "Gluten-containing cereals", description: "wheat, rye, barley, oats" },
+  { key: "crustaceans", label: "Crustaceans",               description: "shrimp, crab, lobster" },
+  { key: "eggs",        label: "Eggs" },
+  { key: "fish",        label: "Fish" },
+  { key: "peanuts",     label: "Peanuts" },
+  { key: "soybeans",    label: "Soy" },
+  { key: "milk",        label: "Milk (dairy)" },
+  { key: "tree nuts",   label: "Tree nuts",                 description: "almonds, cashews, walnuts, etc." },
+  { key: "celery",      label: "Celery",                    description: "stalks, seeds, celeriac" },
+  { key: "mustard",     label: "Mustard",                   description: "seeds, leaves, oil" },
+  { key: "sesame",      label: "Sesame" },
+  { key: "sulphites",   label: "Sulphur dioxide / sulphites", description: ">10 mg/kg" },
+  { key: "lupin",       label: "Lupin",                     description: "flour and seeds" },
+  { key: "molluscs",    label: "Molluscs",                  description: "squid, oyster, mussel" },
 ];
 
 const INTOLERANCES = [
-  { key: "lactose", label: "Lactose — milk sugar, affects ~65% of adults globally" },
-  { key: "ncgs", label: "Gluten / NCGS — non-coeliac gluten sensitivity" },
-  { key: "fructose", label: "Fructose — fruit sugar malabsorption" },
-  { key: "histamine", label: "Histamine — found in aged cheese, wine, cured fish" },
-  { key: "fodmap", label: "FODMAPs — fermentable carbs, linked to IBS" },
-  { key: "caffeine", label: "Caffeine — slow metabolisers" },
-  { key: "sulphite-sensitivity", label: "Sulphites — wine, dried fruit, triggers asthma in some" },
-  { key: "sorbitol", label: "Sorbitol — sugar alcohol found in \"diet\" foods" },
-  { key: "salicylates", label: "Salicylates — natural plant compound" },
-  { key: "msg", label: "MSG — glutamate sensitivity" },
+  { key: "lactose",             label: "Lactose",       description: "milk sugar, affects ~65% of adults globally" },
+  { key: "ncgs",                label: "Gluten / NCGS", description: "non-coeliac gluten sensitivity" },
+  { key: "fructose",            label: "Fructose",      description: "fruit sugar malabsorption" },
+  { key: "histamine",           label: "Histamine",     description: "found in aged cheese, wine, cured fish" },
+  { key: "fodmap",              label: "FODMAPs",       description: "fermentable carbs, linked to IBS" },
+  { key: "caffeine",            label: "Caffeine",      description: "slow metabolisers" },
+  { key: "sulphite-sensitivity",label: "Sulphites",     description: "wine, dried fruit, triggers asthma in some" },
+  { key: "sorbitol",            label: "Sorbitol",      description: 'sugar alcohol found in "diet" foods' },
+  { key: "salicylates",         label: "Salicylates",   description: "natural plant compound" },
+  { key: "msg",                 label: "MSG",           description: "glutamate sensitivity" },
 ];
 
 interface SettingsPageProps {
@@ -134,19 +134,21 @@ function AllergenSection({
     });
   }
 
-  function CheckboxGroup({ items }: { items: { key: string; label: string }[] }) {
+  function CheckboxGroup({ items }: { items: { key: string; label: string; description?: string }[] }) {
     return (
-      <div className="grid grid-cols-1 gap-2 pt-1">
-        {items.map(({ key, label }) => (
-          <label key={key} className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={predefined.includes(key)}
-              onChange={() => togglePredefined(key)}
-              className="w-4 h-4 rounded border-zinc-300 accent-primary"
-            />
-            <span className="text-sm">{label}</span>
-          </label>
+      <div className="flex flex-col gap-3 pt-1">
+        {items.map(({ key, label, description }) => (
+          <Checkbox
+            key={key}
+            isSelected={predefined.includes(key)}
+            onChange={() => togglePredefined(key)}
+          >
+            <Checkbox.Control><Checkbox.Indicator /></Checkbox.Control>
+            <Checkbox.Content>
+              <Label>{label}</Label>
+              {description && <Description>{description}</Description>}
+            </Checkbox.Content>
+          </Checkbox>
         ))}
       </div>
     );
