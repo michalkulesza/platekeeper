@@ -549,7 +549,7 @@ export default function SettingsPage({ stats, onStatsRefresh, preferences, onPre
           </div>
 
           {households.length === 0 ? (
-            <div className="rounded-xl border border-zinc-200 p-4 text-sm text-zinc-400">
+            <div className="rounded-xl border border-zinc-200 bg-white p-4 text-sm text-zinc-400">
               No households yet. Create one to share recipes with others.
             </div>
           ) : (
@@ -557,7 +557,7 @@ export default function SettingsPage({ stats, onStatsRefresh, preferences, onPre
               {households.map((h) => (
                 <li
                   key={h.id}
-                  className="rounded-xl border border-zinc-200 p-3 flex items-center gap-3"
+                  className="rounded-xl border border-zinc-200 bg-white p-3 flex items-center gap-3"
                 >
                   <span
                     className="w-4 h-4 rounded-full shrink-0"
@@ -585,7 +585,7 @@ export default function SettingsPage({ stats, onStatsRefresh, preferences, onPre
         {/* Allergies & Intolerances */}
         <section className="flex flex-col gap-3">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Allergies & Intolerances</h2>
-          <div className="rounded-xl border border-zinc-200 p-4">
+          <div className="rounded-xl border border-zinc-200 bg-white p-4">
             <AllergenSection
               key={activeHouseholdId ?? "personal"}
               allergens={currentAllergens}
@@ -598,7 +598,7 @@ export default function SettingsPage({ stats, onStatsRefresh, preferences, onPre
         {/* Account */}
         <section className="flex flex-col gap-3">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Account</h2>
-          <div className="rounded-xl border border-zinc-200 p-4">
+          <div className="rounded-xl border border-zinc-200 bg-white p-4">
             <Button
               size="sm"
               variant="danger-soft"
@@ -613,7 +613,7 @@ export default function SettingsPage({ stats, onStatsRefresh, preferences, onPre
         {/* Preferences */}
         <section className="flex flex-col gap-3">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Preferences</h2>
-          <div className="rounded-xl border border-zinc-200 p-4 flex flex-col gap-4">
+          <div className="rounded-xl border border-zinc-200 bg-white p-4 flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium" htmlFor="week-start">Week starts on</label>
               <select
@@ -656,7 +656,7 @@ export default function SettingsPage({ stats, onStatsRefresh, preferences, onPre
         <section className="flex flex-col gap-3">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Data</h2>
 
-          <div className="flex flex-col gap-2 rounded-xl border border-zinc-200 p-4">
+          <div className="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-4">
             <p className="text-sm font-medium">Export recipes</p>
             <p className="text-xs text-zinc-400">Download all your recipes as a CSV file.</p>
             <Button size="sm" variant="secondary" onPress={handleExport} isDisabled={exporting} className="self-start">
@@ -664,7 +664,7 @@ export default function SettingsPage({ stats, onStatsRefresh, preferences, onPre
             </Button>
           </div>
 
-          <div className="flex flex-col gap-2 rounded-xl border border-zinc-200 p-4">
+          <div className="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-4">
             <p className="text-sm font-medium">Import recipes</p>
             <p className="text-xs text-zinc-400">Import recipes from a previously exported CSV file.</p>
             <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleFileChange} />
