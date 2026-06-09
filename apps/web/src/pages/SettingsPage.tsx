@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { Button, Checkbox, Description, Disclosure, Label, ListBox, ListBoxItem, Modal, ModalBackdrop, ModalBody, ModalContainer, ModalDialog, ModalFooter, ModalHeader, Select, Switch, toast } from "@heroui/react";
+import { useTimers, getRemainingSeconds, formatCountdown } from "../context/TimerContext";
 import PageHeader from "../components/PageHeader";
 import {
   exportRecipes, importRecipes, updatePreferences, updateHouseholdAllergens, streamReanalyze,
@@ -504,6 +505,86 @@ function ManageHouseholdModal({ household, isOpen, onClose, onChanged }: {
   );
 }
 
+// ── Timer settings section ────────────────────────────────────────────────────
+
+function TimerSettingsSection() {
+  const { timers, pauseTimer, resumeTimer, cancelTimer, wakeLockTimersEnabled, setWakeLockTimersEnabled } = useTimers();
+  const timerList = [...timers.values()];
+
+  return (
+    <section className="flex flex-col gap-3">
+      <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Timers</h2>
+      <div className="rounded-xl border border-zinc-200 bg-white p-4 flex flex-col gap-4">
+        {timerList.length > 0 ? (
+          <div className="flex flex-col divide-y divide-zinc-100">
+            {timerList.map((t) => {
+              const remaining = getRemainingSeconds(t);
+              return (
+                <div key={t.id} className="flex items-center gap-3 py-2.5">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{t.recipeTitle}</p>
+                    <p className="text-xs text-zinc-400 truncate">
+                      Step {t.stepIndex + 1}: {t.stepText.length > 55 ? t.stepText.slice(0, 52) + "…" : t.stepText}
+                    </p>
+                  </div>
+                  <span className={`font-mono text-sm font-semibold tabular-nums shrink-0 ${
+                    t.status === "done" ? "text-emerald-600" :
+                    t.status === "paused" ? "text-zinc-400" : "text-amber-600"
+                  }`}>
+                    {t.status === "done" ? "Done ✓" : formatCountdown(remaining)}
+                  </span>
+                  <div className="flex gap-0.5 shrink-0">
+                    {t.status === "running" && (
+                      <button
+                        type="button"
+                        onClick={() => pauseTimer(t.id)}
+                        className="w-7 h-7 flex items-center justify-center rounded hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700"
+                        title="Pause"
+                      >⏸</button>
+                    )}
+                    {t.status === "paused" && (
+                      <button
+                        type="button"
+                        onClick={() => resumeTimer(t.id)}
+                        className="w-7 h-7 flex items-center justify-center rounded hover:bg-zinc-100 text-zinc-400 hover:text-amber-600"
+                        title="Resume"
+                      >▶</button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => cancelTimer(t.id)}
+                      className="w-7 h-7 flex items-center justify-center rounded hover:bg-zinc-100 text-zinc-400 hover:text-danger"
+                      title="Cancel"
+                    >✕</button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-sm text-zinc-400">No timers running.</p>
+        )}
+
+        {"wakeLock" in navigator && (
+          <div className="flex items-center justify-between gap-2 pt-3 border-t border-zinc-100">
+            <div>
+              <p className="text-sm font-medium">Keep screen on while a timer is running</p>
+              <p className="text-xs text-zinc-400">Prevent screen from sleeping during cooking</p>
+            </div>
+            <Switch
+              size="sm"
+              isSelected={wakeLockTimersEnabled}
+              onChange={setWakeLockTimersEnabled}
+            >
+              <Switch.Control><Switch.Thumb /></Switch.Control>
+            </Switch>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function SettingsPage({ stats, onStatsRefresh, preferences, onPreferencesChange }: SettingsPageProps) {
@@ -733,6 +814,8 @@ export default function SettingsPage({ stats, onStatsRefresh, preferences, onPre
             )}
           </div>
         </section>
+
+        <TimerSettingsSection />
 
         {/* Data */}
         <section className="flex flex-col gap-3">

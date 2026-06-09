@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ToastProvider } from "@heroui/react";
+import { Button, Modal, ModalBackdrop, ModalBody, ModalContainer, ModalDialog, ModalFooter, ModalHeader, ToastProvider } from "@heroui/react";
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import BottomNav from "./components/BottomNav";
 import Sidebar from "./components/Sidebar";
@@ -13,7 +13,55 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { HouseholdProvider } from "./context/HouseholdContext";
+import { TimerProvider, useTimers, formatCountdown } from "./context/TimerContext";
 import { fetchStats, getPreferences, listRecipes, listTags, RecipeOut, RecipeStats, Tag, UserPreferences } from "./api/client";
+
+function ResumeTimersModal() {
+  const { resumeInfo, confirmResume, confirmClear } = useTimers();
+  if (!resumeInfo) return null;
+  const { interrupted, expired } = resumeInfo;
+  return (
+    <Modal isOpen onOpenChange={(open) => { if (!open) confirmClear(); }}>
+      <ModalBackdrop isDismissable>
+        <ModalContainer size="sm" className="!rounded-xl overflow-hidden">
+          <ModalDialog>
+            <ModalHeader>Timers were running</ModalHeader>
+            <ModalBody className="flex flex-col gap-4">
+              {expired.length > 0 && (
+                <div className="flex flex-col gap-1.5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-600">Finished while you were away</p>
+                  {expired.map((t) => (
+                    <p key={t.id} className="text-sm text-zinc-600">
+                      <span className="font-medium">{t.recipeTitle}</span> — Step {t.stepIndex + 1}
+                    </p>
+                  ))}
+                </div>
+              )}
+              {interrupted.length > 0 && (
+                <div className="flex flex-col gap-1.5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-amber-600">Interrupted</p>
+                  {interrupted.map((t) => (
+                    <div key={t.id} className="flex items-center justify-between text-sm text-zinc-600">
+                      <span><span className="font-medium">{t.recipeTitle}</span> — Step {t.stepIndex + 1}</span>
+                      <span className="font-mono text-xs tabular-nums text-zinc-400">{formatCountdown(t.remainingAtStart)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="tertiary" onPress={confirmClear}>Clear all</Button>
+              {interrupted.length > 0
+                ? <Button variant="primary" onPress={confirmResume}>Continue</Button>
+                : <Button variant="primary" onPress={confirmClear}>OK</Button>
+              }
+            </ModalFooter>
+          </ModalDialog>
+        </ModalContainer>
+      </ModalBackdrop>
+    </Modal>
+  );
+}
 
 function AppShell() {
   const { user } = useAuth();
@@ -74,6 +122,7 @@ function AppShell() {
   }
 
   return (
+    <TimerProvider>
     <HouseholdProvider onContextSwitch={handleContextSwitch}>
       <div className="min-h-screen bg-background md:bg-zinc-100">
         {/* Centered max-width container — flex row on desktop, block on mobile */}
@@ -128,8 +177,10 @@ function AppShell() {
           onTagCreated={handleTagCreated}
           preferences={preferences}
         />
+        <ResumeTimersModal />
       </div>
     </HouseholdProvider>
+    </TimerProvider>
   );
 }
 

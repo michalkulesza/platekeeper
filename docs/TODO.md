@@ -20,10 +20,11 @@ Private per-recipe notes field (freeform text, markdown-lite).
 Shown below the recipe, not part of the structured data.
 Optional: versioned snapshots ("v1: original import", "v2: my tweaks").
 
-### Timer integration in steps
-Detect duration patterns in step text ("bake for 30 minutes", "simmer 10 min").
-Surface a tap-to-start countdown timer inline in the step card.
-Multiple concurrent timers allowed (one per step). Fires a notification when done.
+### ~~Timer integration in steps~~ ✓ done
+Regex detects durations in step text; chip appended per step. Tap to start/pause/resume.
+Multiple concurrent timers via TimerContext (localStorage-persisted, wall-clock accurate).
+Browser Notification on expiry. Settings → Timers lists all running timers with controls.
+Resume modal on page reload if timers were interrupted. Screen kept awake while any timer runs (toggle in Settings → Timers, default on).
 
 ### ~~Always-on display~~ ✓ done
 Screen Wake Lock toggle in the recipe detail modal action bar (view mode).
@@ -61,3 +62,10 @@ Consider: run estimation at import time via Gemini structured output rather than
 
 - `(?)` = uncertain whether to build; needs spike or decision before scheduling
 - Items here are **not** ordered by priority
+
+
+
+FAVOURITE RECIPES, STAR + TABLE
+table name always visible
+table overflow hide
+table allow for horizotnal scroll, ther dots on the right always visible

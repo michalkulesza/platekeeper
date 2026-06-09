@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  useTimers,
+  getRemainingSeconds,
+  parseDurationSeconds,
+  formatCountdown,
+  formatDurationLabel,
+  type TimerEntry,
+} from "../context/TimerContext";
+import {
   Modal,
   ModalBackdrop,
   ModalContainer,
@@ -259,6 +267,68 @@ function toEditState(r: RecipeOut): EditState {
   };
 }
 
+// ── Step timer chip ───────────────────────────────────────────────────────────
+
+function StepTimerChip({
+  timerId,
+  totalSeconds,
+  stepText,
+  recipeId,
+  recipeTitle,
+  componentIndex,
+  stepIndex,
+}: {
+  timerId: string;
+  totalSeconds: number;
+  stepText: string;
+  recipeId: string;
+  recipeTitle: string;
+  componentIndex: number;
+  stepIndex: number;
+}) {
+  const { timers, startTimer, pauseTimer, resumeTimer } = useTimers();
+  const timer: TimerEntry | undefined = timers.get(timerId);
+
+  if (timer?.status === "done") {
+    return (
+      <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-700 text-xs font-medium">
+        ✓ Done
+      </span>
+    );
+  }
+
+  if (!timer) {
+    return (
+      <button
+        type="button"
+        onClick={() => startTimer({ id: timerId, recipeId, recipeTitle, componentIndex, stepIndex, stepText, totalSeconds })}
+        className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-100 hover:bg-amber-50 hover:text-amber-700 text-zinc-500 text-xs font-medium transition-colors"
+        title="Start timer"
+      >
+        ⏱ {formatDurationLabel(totalSeconds)}
+      </button>
+    );
+  }
+
+  const remaining = getRemainingSeconds(timer);
+  const isRunning = timer.status === "running";
+
+  return (
+    <button
+      type="button"
+      onClick={() => isRunning ? pauseTimer(timerId) : resumeTimer(timerId)}
+      className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium font-mono transition-colors ${
+        isRunning
+          ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
+          : "bg-zinc-100 text-zinc-500 hover:bg-amber-50 hover:text-amber-700"
+      }`}
+      title={isRunning ? "Pause timer" : "Resume timer"}
+    >
+      ⏱ {formatCountdown(remaining)} {isRunning ? "⏸" : "▶"}
+    </button>
+  );
+}
+
 // ── View: component section ───────────────────────────────────────────────────
 
 function ViewComponent({
@@ -267,12 +337,18 @@ function ViewComponent({
   activeAllergens,
   onReplaceIngredient,
   onRestoreIngredient,
+  recipeId,
+  recipeTitle,
+  componentIndex,
 }: {
   comp: SaveComponent;
   single: boolean;
   activeAllergens: string[];
   onReplaceIngredient: (ii: number) => void;
   onRestoreIngredient: (ii: number) => void;
+  recipeId: string;
+  recipeTitle: string;
+  componentIndex: number;
 }) {
   return (
     <div className="mb-5">
@@ -307,12 +383,27 @@ function ViewComponent({
         <>
           <p className="text-xs font-semibold uppercase text-zinc-400 mb-1">Steps</p>
           <ol className="space-y-2">
-            {comp.steps.map((step, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm">
-                <span className="text-zinc-400 font-medium shrink-0">{i + 1}.</span>
-                <span>{step}</span>
-              </li>
-            ))}
+            {comp.steps.map((step, i) => {
+              const durationSeconds = parseDurationSeconds(step);
+              const timerId = `${recipeId}-c${componentIndex}-s${i}`;
+              return (
+                <li key={i} className="flex items-start gap-2 text-sm">
+                  <span className="text-zinc-400 font-medium shrink-0">{i + 1}.</span>
+                  <span className="flex-1">{step}</span>
+                  {durationSeconds !== null && (
+                    <StepTimerChip
+                      timerId={timerId}
+                      totalSeconds={durationSeconds}
+                      stepText={step}
+                      recipeId={recipeId}
+                      recipeTitle={recipeTitle}
+                      componentIndex={componentIndex}
+                      stepIndex={i}
+                    />
+                  )}
+                </li>
+              );
+            })}
           </ol>
         </>
       )}
@@ -860,6 +951,9 @@ export default function RecipeDetailModal({
                       activeAllergens={activeAllergens}
                       onReplaceIngredient={(ii) => handleReplaceIngredient(ci, ii)}
                       onRestoreIngredient={(ii) => handleRestoreIngredient(ci, ii)}
+                      recipeId={r.id}
+                      recipeTitle={r.title}
+                      componentIndex={ci}
                     />
                   ))}
             </ModalBody>
