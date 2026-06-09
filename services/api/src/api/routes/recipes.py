@@ -206,6 +206,7 @@ async def save_recipe(
         thumbnail_url=body.thumbnail_url,
         creator_handle=body.creator_handle,
         source_url=body.source_url,
+        notes=body.notes,
         components=[c.model_dump() for c in body.components],
     )
     session.add(recipe)
@@ -254,6 +255,7 @@ async def update_recipe(
     recipe.thumbnail_url = body.thumbnail_url
     recipe.creator_handle = body.creator_handle
     recipe.source_url = body.source_url
+    recipe.notes = body.notes
     recipe.components = [c.model_dump() for c in body.components]
     if household_id is not None:
         recipe.shared_to_personal = body.shared_to_personal

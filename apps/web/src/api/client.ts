@@ -86,6 +86,7 @@ export interface RecipeSaveRequest {
   thumbnail_url: string | null;
   creator_handle: string | null;
   source_url: string | null;
+  notes?: string | null;
   components: SaveComponent[];
   tag_ids: string[];
   shared_to_personal?: boolean;
@@ -99,6 +100,7 @@ export interface RecipeOut {
   thumbnail_url: string | null;
   creator_handle: string | null;
   source_url: string | null;
+  notes: string | null;
   components: SaveComponent[];
   created_at: string;
   tags: Tag[];

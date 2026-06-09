@@ -123,6 +123,7 @@ class Recipe(Base):
     creator_handle: Mapped[str | None] = mapped_column(String(50), nullable=True)
     source_url: Mapped[str | None] = mapped_column(String, nullable=True)
     components: Mapped[list[Any]] = mapped_column(JSON, default=list)
+    notes: Mapped[str | None] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     position: Mapped[int | None] = mapped_column(Integer, nullable=True)
     tags: Mapped[list[Tag]] = relationship("Tag", secondary=recipe_tags_table, lazy="selectin")
@@ -214,6 +215,7 @@ class RecipeSaveRequest(BaseModel):
     thumbnail_url: str | None = None
     creator_handle: str | None = None
     source_url: str | None = None
+    notes: str | None = None
     components: list[SaveComponent]
     tag_ids: list[uuid.UUID] = []
     shared_to_personal: bool = True
@@ -229,6 +231,7 @@ class RecipeOut(BaseModel):
     thumbnail_url: str | None
     creator_handle: str | None
     source_url: str | None
+    notes: str | None = None
     components: list[Any]
     created_at: datetime
     tags: list[TagOut] = []

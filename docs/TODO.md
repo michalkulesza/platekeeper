@@ -15,10 +15,10 @@ Inline serving adjuster on the recipe view and in cooking mode.
 Multiplies all `qty` fields live; fractional quantities rendered as fractions or decimals.
 Already partially planned in PLAN.md — wire up the UI.
 
-### Notes in recipes
+### ~~Notes in recipes~~ ✓ done
 Private per-recipe notes field (freeform text, markdown-lite).
 Shown below the recipe, not part of the structured data.
-Optional: versioned snapshots ("v1: original import", "v2: my tweaks").
+Stored in `notes` column on the Recipe model; rendered with inline bold/italic/bullet support.
 
 ### ~~Timer integration in steps~~ ✓ done
 Regex detects durations in step text; chip appended per step. Tap to start/pause/resume.
