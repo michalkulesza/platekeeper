@@ -31,23 +31,33 @@ const PRESET_COLORS = [
 ];
 
 const ALLERGENS = [
-  { key: "celery", label: "Celery" },
-  { key: "crustaceans", label: "Crustaceans" },
+  { key: "gluten", label: "Gluten-containing cereals — wheat, rye, barley, oats" },
+  { key: "crustaceans", label: "Crustaceans — shrimp, crab, lobster" },
   { key: "eggs", label: "Eggs" },
   { key: "fish", label: "Fish" },
-  { key: "lupin", label: "Lupin" },
-  { key: "milk", label: "Milk / Dairy" },
-  { key: "molluscs", label: "Molluscs" },
-  { key: "mustard", label: "Mustard" },
   { key: "peanuts", label: "Peanuts" },
+  { key: "soybeans", label: "Soy" },
+  { key: "milk", label: "Milk (dairy)" },
+  { key: "tree nuts", label: "Tree nuts — almonds, cashews, walnuts, etc." },
+  { key: "celery", label: "Celery — stalks, seeds, celeriac" },
+  { key: "mustard", label: "Mustard — seeds, leaves, oil" },
   { key: "sesame", label: "Sesame" },
-  { key: "soybeans", label: "Soybeans" },
-  { key: "tree nuts", label: "Tree nuts" },
+  { key: "sulphites", label: "Sulphur dioxide / sulphites (>10 mg/kg)" },
+  { key: "lupin", label: "Lupin — flour and seeds" },
+  { key: "molluscs", label: "Molluscs — squid, oyster, mussel" },
 ];
 
 const INTOLERANCES = [
-  { key: "gluten", label: "Gluten (wheat, rye, barley)" },
-  { key: "sulphites", label: "Sulphur dioxide / Sulphites" },
+  { key: "lactose", label: "Lactose — milk sugar, affects ~65% of adults globally" },
+  { key: "ncgs", label: "Gluten / NCGS — non-coeliac gluten sensitivity" },
+  { key: "fructose", label: "Fructose — fruit sugar malabsorption" },
+  { key: "histamine", label: "Histamine — found in aged cheese, wine, cured fish" },
+  { key: "fodmap", label: "FODMAPs — fermentable carbs, linked to IBS" },
+  { key: "caffeine", label: "Caffeine — slow metabolisers" },
+  { key: "sulphite-sensitivity", label: "Sulphites — wine, dried fruit, triggers asthma in some" },
+  { key: "sorbitol", label: "Sorbitol — sugar alcohol found in \"diet\" foods" },
+  { key: "salicylates", label: "Salicylates — natural plant compound" },
+  { key: "msg", label: "MSG — glutamate sensitivity" },
 ];
 
 interface SettingsPageProps {
