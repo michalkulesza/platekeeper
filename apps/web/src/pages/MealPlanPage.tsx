@@ -703,7 +703,7 @@ export default function MealPlanPage({ recipes, preferences, allTags, onTagCreat
         onOpenChange={(open) => { if (!open) { setPickerOpen(false); setTargetDate(null); } }}
       >
         <ModalBackdrop isDismissable>
-          <ModalContainer placement="bottom" scroll="inside" size="full" className="max-h-[85vh] rounded-t-2xl rounded-b-none">
+          <ModalContainer scroll="inside" size="lg" className="!rounded-xl overflow-hidden">
             <ModalDialog>
               <ModalHeader className="flex flex-col gap-3 pb-0">
                 <span className="text-lg">Choose a dish</span>
