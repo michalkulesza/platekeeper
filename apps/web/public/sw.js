@@ -1,5 +1,5 @@
 self.addEventListener("notificationclick", (event) => {
-  event.notification.close();
+  // Don't close — leave it in the OS notification centre for history
   const url = event.notification.data?.url || "/";
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {

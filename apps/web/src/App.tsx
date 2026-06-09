@@ -37,22 +37,20 @@ function ExpiredTimersModal() {
             </ModalHeader>
             <ModalBody className="flex flex-col gap-3">
               {expiredQueue.map((t) => (
-                <div key={t.id} className="flex items-start gap-3">
-                  <span className="shrink-0 w-7 h-7 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm font-bold">✓</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-zinc-800 leading-snug">{t.recipeTitle}</p>
-                    <p className="text-xs text-zinc-500 mt-0.5">
-                      Step {t.stepIndex + 1} · {formatDurationLabel(t.totalSeconds)}
-                    </p>
-                    <p className="text-xs text-zinc-400 mt-0.5 leading-snug line-clamp-2">{t.stepText}</p>
-                    <button
-                      type="button"
-                      onClick={() => goToStep(t)}
-                      className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                    >
-                      Go to step ↗
-                    </button>
+                <div key={t.id} className="flex flex-col gap-2 rounded-xl bg-zinc-50 p-3">
+                  <div className="flex items-start gap-2.5">
+                    <span className="shrink-0 w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold mt-0.5">✓</span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-zinc-800 leading-snug">{t.recipeTitle}</p>
+                      <p className="text-xs text-zinc-500 mt-0.5">
+                        Step {t.stepIndex + 1} · {formatDurationLabel(t.totalSeconds)}
+                      </p>
+                      <p className="text-xs text-zinc-400 mt-0.5 leading-snug line-clamp-2">{t.stepText}</p>
+                    </div>
                   </div>
+                  <Button variant="secondary" size="sm" className="w-full" onPress={() => goToStep(t)}>
+                    Go to step ↗
+                  </Button>
                 </div>
               ))}
             </ModalBody>
