@@ -289,14 +289,6 @@ function StepTimerChip({
   const { timers, startTimer, pauseTimer, resumeTimer } = useTimers();
   const timer: TimerEntry | undefined = timers.get(timerId);
 
-  if (timer?.status === "done") {
-    return (
-      <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-700 text-xs font-medium">
-        ✓ Done
-      </span>
-    );
-  }
-
   if (!timer) {
     return (
       <button
@@ -312,6 +304,15 @@ function StepTimerChip({
 
   const remaining = getRemainingSeconds(timer);
   const isRunning = timer.status === "running";
+
+  // Show done as soon as remaining hits 0, even before the tick confirms status
+  if (timer.status === "done" || remaining === 0) {
+    return (
+      <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-700 text-xs font-medium">
+        ✓ Done
+      </span>
+    );
+  }
 
   return (
     <button

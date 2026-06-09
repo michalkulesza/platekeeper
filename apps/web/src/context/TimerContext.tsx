@@ -188,8 +188,10 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     () => localStorage.getItem("wakelock-timers") !== "0"
   );
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+  // Tracks timers we've already fired the "done" side-effects for (deduplicates StrictMode double-invocation)
+  const processedDoneRef = useRef<Set<string>>(new Set());
 
-  // Fire notifications for timers that expired while the page was closed
+  // Fire notifications for timers that expired while the page was closed (on mount only)
   const firedExpiredRef = useRef(false);
   useEffect(() => {
     if (firedExpiredRef.current) return;
@@ -202,7 +204,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     saveToStorage(timers);
   }, [timers]);
 
-  // Tick: drive countdown re-renders + detect expiry
+  // Tick: pure state update — detect expiry and drive countdown re-renders
   useEffect(() => {
     const id = setInterval(() => {
       setTimers((prev) => {
@@ -216,20 +218,28 @@ export function TimerProvider({ children }: { children: ReactNode }) {
           if (getRemainingSeconds(t) === 0) {
             next.set(tid, { ...t, status: "done", remainingAtStart: 0, startedAt: null });
             changed = true;
-            fireTimerDone(t);
-            setTimeout(() => {
-              setTimers((m) => { const n = new Map(m); n.delete(tid); return n; });
-            }, 5000);
           }
         }
 
-        // Return new Map reference to force re-renders for live countdowns
         if (hasRunning || changed) return new Map(next);
         return prev;
       });
     }, 1000);
     return () => clearInterval(id);
   }, []);
+
+  // Side-effects for expired timers: notification + auto-remove after 5 s
+  useEffect(() => {
+    for (const [id, t] of timers) {
+      if (t.status !== "done" || processedDoneRef.current.has(id)) continue;
+      processedDoneRef.current.add(id);
+      fireTimerDone(t);
+      setTimeout(() => {
+        setTimers((m) => { const n = new Map(m); n.delete(id); return n; });
+        processedDoneRef.current.delete(id);
+      }, 5000);
+    }
+  }, [timers]);
 
   const hasRunningTimers = [...timers.values()].some((t) => t.status === "running");
 
