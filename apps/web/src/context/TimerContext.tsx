@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { toast } from "@heroui/react";
 
 const STORAGE_KEY = "pk-timers";
 
@@ -129,6 +130,8 @@ export function parseDurationSeconds(text: string): number | null {
 
 function fireTimerDone(t: TimerEntry) {
   const body = t.stepText.length > 80 ? t.stepText.slice(0, 77) + "…" : t.stepText;
+  console.log("[timer] done fired", t.id, t.recipeTitle);
+  toast.success(`✓ Done — ${t.recipeTitle}`, { timeout: 8000 });
   showNotif(`✓ Done — ${t.recipeTitle}`, body, `timer-${t.id}`, { renotify: true });
 }
 
@@ -230,6 +233,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
 
   // Side-effects for expired timers: notification + auto-remove after 5 s
   useEffect(() => {
+    console.log("[timer] effect ran, entries:", [...timers.entries()].map(([id, t]) => `${id}=${t.status}`));
     for (const [id, t] of timers) {
       if (t.status !== "done" || processedDoneRef.current.has(id)) continue;
       processedDoneRef.current.add(id);
