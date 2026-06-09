@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import {
   Modal,
   ModalBackdrop,
@@ -40,23 +39,24 @@ function AllergenPopover({
   onRestore: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState({ top: 0, right: 0 });
+  const [above, setAbove] = useState(false);
+  const [pos, setPos] = useState({ vertical: 0, right: 0 });
   const btnRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
-    function handleClick(e: MouseEvent) {
+    function handleClickOutside(e: MouseEvent) {
       if (
         panelRef.current && !panelRef.current.contains(e.target as Node) &&
         btnRef.current && !btnRef.current.contains(e.target as Node)
       ) setOpen(false);
     }
     function handleScroll() { setOpen(false); }
-    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("mousedown", handleClickOutside);
     window.addEventListener("scroll", handleScroll, { capture: true });
     return () => {
-      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("mousedown", handleClickOutside);
       window.removeEventListener("scroll", handleScroll, { capture: true });
     };
   }, [open]);
@@ -71,10 +71,22 @@ function AllergenPopover({
   function handleOpen() {
     if (btnRef.current) {
       const r = btnRef.current.getBoundingClientRect();
-      setPos({ top: r.bottom + 4, right: window.innerWidth - r.right });
+      const showAbove = r.top > window.innerHeight / 2;
+      setAbove(showAbove);
+      setPos({
+        vertical: showAbove ? window.innerHeight - r.top + 4 : r.bottom + 4,
+        right: window.innerWidth - r.right,
+      });
     }
     setOpen((v) => !v);
   }
+
+  const panelStyle: React.CSSProperties = {
+    position: "fixed",
+    right: pos.right,
+    zIndex: 9999,
+    ...(above ? { bottom: pos.vertical } : { top: pos.vertical }),
+  };
 
   return (
     <div className="shrink-0">
@@ -87,10 +99,10 @@ function AllergenPopover({
       >
         ⚠ {flag.allergen}
       </button>
-      {open && createPortal(
+      {open && (
         <div
           ref={panelRef}
-          style={{ position: "fixed", top: pos.top, right: pos.right, zIndex: 9999 }}
+          style={panelStyle}
           className="bg-white border border-zinc-200 rounded-xl shadow-lg p-3 min-w-[220px] max-w-[330px] text-sm"
         >
           {flag.substitute_applied && flag.original_display ? (
@@ -123,8 +135,7 @@ function AllergenPopover({
               Contains <strong className="text-zinc-800">{flag.allergen}</strong>. No substitute available.
             </p>
           )}
-        </div>,
-        document.body
+        </div>
       )}
     </div>
   );
