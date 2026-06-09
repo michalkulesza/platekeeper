@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Modal,
   ModalBackdrop,
@@ -39,12 +40,17 @@ function AllergenPopover({
   onRestore: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ top: 0, right: 0 });
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (
+        panelRef.current && !panelRef.current.contains(e.target as Node) &&
+        btnRef.current && !btnRef.current.contains(e.target as Node)
+      ) setOpen(false);
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
@@ -57,18 +63,31 @@ function AllergenPopover({
   });
   if (!isActive) return null;
 
+  function handleOpen() {
+    if (btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom + 4, right: window.innerWidth - r.right });
+    }
+    setOpen((v) => !v);
+  }
+
   return (
-    <div className="relative shrink-0" ref={ref}>
+    <div className="shrink-0">
       <button
+        ref={btnRef}
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={handleOpen}
         className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-amber-700 hover:bg-amber-100 text-xs font-medium whitespace-nowrap"
         title={`Contains ${flag.allergen}`}
       >
         ⚠ {flag.allergen}
       </button>
-      {open && (
-        <div className="absolute right-0 top-full mt-1 z-50 bg-white border border-zinc-200 rounded-xl shadow-lg p-3 min-w-[220px] text-sm">
+      {open && createPortal(
+        <div
+          ref={panelRef}
+          style={{ position: "fixed", top: pos.top, right: pos.right, zIndex: 9999 }}
+          className="bg-white border border-zinc-200 rounded-xl shadow-lg p-3 min-w-[220px] text-sm"
+        >
           {flag.substitute_applied && flag.original_display ? (
             <>
               <p className="text-zinc-600 mb-2">
@@ -99,7 +118,8 @@ function AllergenPopover({
               Contains <strong className="text-zinc-800">{flag.allergen}</strong>. No substitute available.
             </p>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
