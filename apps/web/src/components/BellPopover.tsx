@@ -3,24 +3,36 @@ import { Button, Popover, PopoverContent, PopoverDialog, toast } from "@heroui/r
 import { useNavigate } from "react-router-dom";
 import { acceptInvitation, declineInvitation } from "../api/client";
 import { useHousehold } from "../context/HouseholdContext";
-import { useTimers, getRemainingSeconds, formatCountdown, formatDurationLabel } from "../context/TimerContext";
+import { useTimers, getRemainingSeconds, formatCountdown } from "../context/TimerContext";
+import { useNotificationHistory } from "../context/NotificationHistoryContext";
 
 export default function BellPopover() {
   const { invitations, refetchInvitations, refetchHouseholds } = useHousehold();
-  const { timers, pauseTimer, resumeTimer, cancelTimer, timerHistory, dismissHistoryItem, clearHistory } = useTimers();
+  const { timers, pauseTimer, resumeTimer, cancelTimer } = useTimers();
+  const { items: notifHistory, dismiss: dismissNotif, clearAll: clearNotifHistory, push: pushNotification } = useNotificationHistory();
   const navigate = useNavigate();
   const [busy, setBusy] = useState<string | null>(null);
 
   const timerList = [...timers.values()];
-  const count = invitations.length + timerList.length + timerHistory.length;
+  const count = invitations.length + timerList.length + notifHistory.length;
 
   async function handleAccept(id: string) {
+    const inv = invitations.find((i) => i.id === id);
     setBusy(id);
     try {
       await acceptInvitation(id);
       refetchInvitations();
       refetchHouseholds();
       toast.success("Joined household", { timeout: 3000 });
+      if (inv) {
+        pushNotification({
+          type: "invitation",
+          title: `Joined ${inv.household_name}`,
+          body: inv.invited_by_nickname
+            ? `Invited by ${inv.invited_by_nickname}`
+            : `Invited by ${inv.invited_by_email}`,
+        });
+      }
     } catch (e) {
       toast.danger(e instanceof Error ? e.message : "Error", { timeout: 3000 });
     } finally {
@@ -29,10 +41,20 @@ export default function BellPopover() {
   }
 
   async function handleDecline(id: string) {
+    const inv = invitations.find((i) => i.id === id);
     setBusy(id);
     try {
       await declineInvitation(id);
       refetchInvitations();
+      if (inv) {
+        pushNotification({
+          type: "invitation",
+          title: `Declined ${inv.household_name}`,
+          body: inv.invited_by_nickname
+            ? `Invited by ${inv.invited_by_nickname}`
+            : `Invited by ${inv.invited_by_email}`,
+        });
+      }
     } catch {
       // ignore
     } finally {
@@ -108,48 +130,51 @@ export default function BellPopover() {
                   </div>
                 </li>
               ))}
-              {timerHistory.length > 0 && (
+              {notifHistory.length > 0 && (
                 <>
                   <li className="px-4 py-2 flex items-center justify-between bg-zinc-50">
-                    <span className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400">Timer history</span>
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400">History</span>
                     <button
                       type="button"
-                      onClick={clearHistory}
+                      onClick={clearNotifHistory}
                       className="text-[10px] font-medium text-zinc-400 hover:text-zinc-600 transition-colors"
                     >
                       Clear all
                     </button>
                   </li>
-                  {timerHistory.map((t) => (
-                    <li key={`hist-${t.id}`} className="px-4 py-3 flex flex-col gap-2">
+                  {notifHistory.map((item) => (
+                    <li key={item.id} className="px-4 py-3 flex flex-col gap-2">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-500 mb-0.5">Timer done</p>
-                          <p className="text-sm font-medium truncate">{t.recipeTitle}</p>
-                          <p className="text-xs text-zinc-400 truncate">
-                            Step {t.stepIndex + 1} · {formatDurationLabel(t.totalSeconds)}
+                          <p className={`text-[10px] font-semibold uppercase tracking-wide mb-0.5 ${
+                            item.type === "timer_done" ? "text-emerald-500" : "text-zinc-400"
+                          }`}>
+                            {item.type === "timer_done" ? "Timer done" : "Household"}
                           </p>
-                          <p className="text-xs text-zinc-400 truncate">
-                            {t.stepText.length > 45 ? t.stepText.slice(0, 42) + "…" : t.stepText}
-                          </p>
+                          <p className="text-sm font-medium truncate">{item.title}</p>
+                          {item.body && (
+                            <p className="text-xs text-zinc-400 truncate">{item.body}</p>
+                          )}
                         </div>
                         <button
                           type="button"
-                          onClick={() => dismissHistoryItem(t.id)}
-                          className="shrink-0 text-zinc-300 hover:text-zinc-500 transition-colors mt-0.5 text-base leading-none"
+                          onClick={() => dismissNotif(item.id)}
+                          className="shrink-0 text-zinc-300 hover:text-zinc-500 transition-colors mt-0.5 text-lg leading-none"
                           aria-label="Dismiss"
                         >
                           ×
                         </button>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        className="w-full"
-                        onPress={() => navigate(`/?recipe=${t.recipeId}&step=${t.componentIndex}-${t.stepIndex}`)}
-                      >
-                        Go to step ↗
-                      </Button>
+                      {item.url && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="w-full"
+                          onPress={() => navigate(item.url!)}
+                        >
+                          Go to step ↗
+                        </Button>
+                      )}
                     </li>
                   ))}
                 </>

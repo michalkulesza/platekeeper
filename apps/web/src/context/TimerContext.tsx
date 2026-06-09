@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useNotificationHistory } from "./NotificationHistoryContext";
 
 const STORAGE_KEY = "pk-timers";
 
@@ -60,7 +61,6 @@ interface TimerContextValue {
   timers: Map<string, TimerEntry>;
   resumeInfo: ResumeInfo | null;
   expiredQueue: TimerEntry[];
-  timerHistory: TimerEntry[];
   hasRunningTimers: boolean;
   wakeLockTimersEnabled: boolean;
   setWakeLockTimersEnabled: (v: boolean) => void;
@@ -71,8 +71,6 @@ interface TimerContextValue {
   confirmResume: () => void;
   confirmClear: () => void;
   dismissExpired: () => void;
-  dismissHistoryItem: (id: string) => void;
-  clearHistory: () => void;
 }
 
 const TimerContext = createContext<TimerContextValue | null>(null);
@@ -191,10 +189,10 @@ function loadFromStorage(): { initialTimers: Map<string, TimerEntry>; resumeInfo
 }
 
 export function TimerProvider({ children }: { children: ReactNode }) {
+  const { push: pushNotification } = useNotificationHistory();
   const [timers, setTimers] = useState<Map<string, TimerEntry>>(() => loadFromStorage().initialTimers);
   const [resumeInfo, setResumeInfo] = useState<ResumeInfo | null>(() => loadFromStorage().resumeInfo);
   const [expiredQueue, setExpiredQueue] = useState<TimerEntry[]>([]);
-  const [timerHistory, setTimerHistory] = useState<TimerEntry[]>([]);
   const [wakeLockTimersEnabled, setWakeLockTimersEnabledState] = useState(
     () => localStorage.getItem("wakelock-timers") !== "0"
   );
@@ -208,9 +206,16 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     if (firedExpiredRef.current) return;
     firedExpiredRef.current = true;
     if (resumeInfo?.expired.length) {
-      resumeInfo.expired.forEach((t) => fireTimerDone(t));
+      resumeInfo.expired.forEach((t) => {
+        fireTimerDone(t);
+        pushNotification({
+          type: "timer_done",
+          title: `✓ Done — ${t.recipeTitle}`,
+          body: `Step ${t.stepIndex + 1} · ${formatDurationLabel(t.totalSeconds)}`,
+          url: `/?recipe=${t.recipeId}&step=${t.componentIndex}-${t.stepIndex}`,
+        });
+      });
       setExpiredQueue(resumeInfo.expired);
-      setTimerHistory((prev) => [...prev, ...resumeInfo.expired]);
     }
   }, []);
 
@@ -250,7 +255,12 @@ export function TimerProvider({ children }: { children: ReactNode }) {
       processedDoneRef.current.add(id);
       fireTimerDone(t);
       setExpiredQueue((prev) => [...prev, t]);
-      setTimerHistory((prev) => [...prev, t]);
+      pushNotification({
+        type: "timer_done",
+        title: `✓ Done — ${t.recipeTitle}`,
+        body: `Step ${t.stepIndex + 1} · ${formatDurationLabel(t.totalSeconds)}`,
+        url: `/?recipe=${t.recipeId}&step=${t.componentIndex}-${t.stepIndex}`,
+      });
       setTimeout(() => {
         setTimers((m) => { const n = new Map(m); n.delete(id); return n; });
         processedDoneRef.current.delete(id);
@@ -361,21 +371,12 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     setExpiredQueue([]);
   }, []);
 
-  const dismissHistoryItem = useCallback((id: string) => {
-    setTimerHistory((prev) => prev.filter((t) => t.id !== id));
-  }, []);
-
-  const clearHistory = useCallback(() => {
-    setTimerHistory([]);
-  }, []);
-
   return (
     <TimerContext.Provider
       value={{
         timers,
         resumeInfo,
         expiredQueue,
-        timerHistory,
         hasRunningTimers,
         wakeLockTimersEnabled,
         setWakeLockTimersEnabled,
@@ -386,8 +387,6 @@ export function TimerProvider({ children }: { children: ReactNode }) {
         confirmResume,
         confirmClear,
         dismissExpired,
-        dismissHistoryItem,
-        clearHistory,
       }}
     >
       {children}

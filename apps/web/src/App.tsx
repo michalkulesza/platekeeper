@@ -14,6 +14,7 @@ import RegisterPage from "./pages/RegisterPage";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { HouseholdProvider } from "./context/HouseholdContext";
 import { TimerProvider, useTimers, formatCountdown, formatDurationLabel, type TimerEntry } from "./context/TimerContext";
+import { NotificationHistoryProvider } from "./context/NotificationHistoryContext";
 import { fetchStats, getPreferences, listRecipes, listTags, RecipeOut, RecipeStats, Tag, UserPreferences } from "./api/client";
 
 function ExpiredTimersModal() {
@@ -167,6 +168,7 @@ function AppShell() {
   }
 
   return (
+    <NotificationHistoryProvider>
     <TimerProvider>
     <HouseholdProvider onContextSwitch={handleContextSwitch}>
       <div className="min-h-screen bg-background md:bg-zinc-100">
@@ -227,6 +229,7 @@ function AppShell() {
       </div>
     </HouseholdProvider>
     </TimerProvider>
+    </NotificationHistoryProvider>
   );
 }
 
