@@ -150,6 +150,23 @@ def _done_event(result: ImportResult, cache_key: str | None = None) -> dict[str,
     return {"type": "done", "result": result.model_dump()}
 
 
+async def _with_allergens(result: ImportResult, allergens: list[str] | None) -> ImportResult:
+    """Attach allergen flags to a successfully extracted recipe."""
+    if not allergens or not result.recipe:
+        return result
+    updated = []
+    for component in result.recipe.components:
+        names = [i.name for i in component.ingredients]
+        flags = await gemini_svc.analyze_allergens(names, allergens)
+        new_ingredients = [
+            ing.model_copy(update={"allergen": f.allergen, "substitute": f.substitute})
+            for ing, f in zip(component.ingredients, flags)
+        ]
+        updated.append(component.model_copy(update={"ingredients": new_ingredients}))
+    recipe = result.recipe.model_copy(update={"components": updated})
+    return result.model_copy(update={"recipe": recipe})
+
+
 async def run_import_stream(url: str, model: str = "gemini-2.5-flash-lite", available_tags: list[str] | None = None, allergens: list[str] | None = None) -> AsyncGenerator[dict[str, Any], None]:
     if not allergens:
         cached = cache_svc.get(url)
@@ -181,7 +198,8 @@ async def run_import_stream(url: str, model: str = "gemini-2.5-flash-lite", avai
 
         jsonld = _extract_jsonld_recipe(html)
         if jsonld and _is_complete(jsonld) and jsonld.kcal_per_serving is not None:
-            yield _done_event(ImportResult(stage=ImportStage.LINK, recipe=jsonld, metadata=meta), cache_key=url)
+            r = ImportResult(stage=ImportStage.LINK, recipe=jsonld, metadata=meta)
+            yield _done_event(await _with_allergens(r, allergens), cache_key=url)
             return
 
         yield _stage_event("analyzing_page", "Analyzing page with Gemini…")
@@ -191,9 +209,11 @@ async def run_import_stream(url: str, model: str = "gemini-2.5-flash-lite", avai
             if jsonld and _is_complete(jsonld):
                 # JSON-LD had the recipe but no kcal — take kcal from Gemini, keep structured data
                 jsonld = jsonld.model_copy(update={"kcal_per_serving": result.kcal_per_serving})
-                yield _done_event(ImportResult(stage=ImportStage.LINK, recipe=jsonld, metadata=meta), cache_key=url)
+                r = ImportResult(stage=ImportStage.LINK, recipe=jsonld, metadata=meta)
+                yield _done_event(await _with_allergens(r, allergens), cache_key=url)
             elif _is_complete(result):
-                yield _done_event(ImportResult(stage=ImportStage.TRANSCRIPT, recipe=result, metadata=meta), cache_key=url)
+                r = ImportResult(stage=ImportStage.TRANSCRIPT, recipe=result, metadata=meta)
+                yield _done_event(await _with_allergens(r, allergens), cache_key=url)
             else:
                 yield _done_event(ImportResult(
                     stage=ImportStage.FAILED,
@@ -234,7 +254,8 @@ async def run_import_stream(url: str, model: str = "gemini-2.5-flash-lite", avai
                 metadata.description, source_hint="instagram/tiktok caption", model=model, available_tags=available_tags, allergens=allergens
             )
             if _is_complete(result):
-                yield _done_event(ImportResult(stage=ImportStage.DESCRIPTION, recipe=result, metadata=meta), cache_key=url)
+                r = ImportResult(stage=ImportStage.DESCRIPTION, recipe=result, metadata=meta)
+                yield _done_event(await _with_allergens(r, allergens), cache_key=url)
                 return
         except Exception as exc:
             log.warning("Gemini description stage failed: %s", exc)
@@ -245,7 +266,8 @@ async def run_import_stream(url: str, model: str = "gemini-2.5-flash-lite", avai
         try:
             result = await _try_linked_url(link, model=model, available_tags=available_tags, allergens=allergens)
             if result and _is_complete(result):
-                yield _done_event(ImportResult(stage=ImportStage.LINK, recipe=result, metadata=meta), cache_key=url)
+                r = ImportResult(stage=ImportStage.LINK, recipe=result, metadata=meta)
+                yield _done_event(await _with_allergens(r, allergens), cache_key=url)
                 return
         except Exception as exc:
             log.warning("Link stage failed for %s: %s", link, exc)
@@ -259,7 +281,8 @@ async def run_import_stream(url: str, model: str = "gemini-2.5-flash-lite", avai
             result = await gemini_svc.extract_recipe(transcript, source_hint="video transcript", model=model, available_tags=available_tags, allergens=allergens)
             log.debug("Transcript extraction result: title=%r components=%d", result.title, len(result.components))
             # Last resort — return whatever Gemini found, even if partial
-            yield _done_event(ImportResult(stage=ImportStage.TRANSCRIPT, recipe=result, metadata=meta), cache_key=url)
+            r = ImportResult(stage=ImportStage.TRANSCRIPT, recipe=result, metadata=meta)
+            yield _done_event(await _with_allergens(r, allergens), cache_key=url)
             return
     except Exception as exc:
         log.warning("Transcription stage failed: %s", exc)
