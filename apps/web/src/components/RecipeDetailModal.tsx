@@ -52,8 +52,13 @@ function AllergenPopover({
         btnRef.current && !btnRef.current.contains(e.target as Node)
       ) setOpen(false);
     }
+    function handleScroll() { setOpen(false); }
     document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+    window.addEventListener("scroll", handleScroll, { capture: true });
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      window.removeEventListener("scroll", handleScroll, { capture: true });
+    };
   }, [open]);
 
   const isActive = flag.allergen && activeAllergens.some((a) => {
