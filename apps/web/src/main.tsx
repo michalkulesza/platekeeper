@@ -5,6 +5,11 @@ import App from "./App";
 
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
+  navigator.serviceWorker.addEventListener("message", (event) => {
+    if (event.data?.type === "TIMER_NAVIGATE") {
+      window.location.href = event.data.url;
+    }
+  });
 }
 
 createRoot(document.getElementById("root")!).render(

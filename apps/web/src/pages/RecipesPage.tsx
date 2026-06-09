@@ -15,6 +15,7 @@ import RecipeDetailModal from "../components/RecipeDetailModal";
 import RecipesTable from "../components/RecipesTable";
 import { RecipeOut, Tag, UserPreferences, deleteRecipe } from "../api/client";
 import { useHousehold } from "../context/HouseholdContext";
+import { useSearchParams } from "react-router-dom";
 
 function RecipeThumb({ src, alt }: { src: string; alt: string }) {
   const [loaded, setLoaded] = useState(false);
@@ -217,6 +218,7 @@ export default function RecipesPage({
   preferences,
 }: RecipesPageProps) {
   const { activeHouseholdId, activeHousehold } = useHousehold();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const activeAllergens: string[] = activeHousehold?.allergens
     ? [...(activeHousehold.allergens.predefined ?? []), ...(activeHousehold.allergens.custom ?? [])]
@@ -225,10 +227,29 @@ export default function RecipesPage({
     : [];
   const [selected, setSelected] = useState<RecipeOut | null>(null);
   const [openInEdit, setOpenInEdit] = useState(false);
+  const [scrollToStep, setScrollToStep] = useState<{ componentIndex: number; stepIndex: number } | null>(null);
   const [filterTag, setFilterTag] = useState<Tag | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<RecipeOut | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Open recipe + scroll to step when navigated from timer popup / notification
+  useEffect(() => {
+    const recipeId = searchParams.get("recipe");
+    if (!recipeId || loading) return;
+    const recipe = recipes.find((r) => r.id === recipeId);
+    if (!recipe) return;
+    const stepParam = searchParams.get("step");
+    if (stepParam) {
+      const [ci, si] = stepParam.split("-").map(Number);
+      if (!Number.isNaN(ci) && !Number.isNaN(si)) {
+        setScrollToStep({ componentIndex: ci, stepIndex: si });
+      }
+    }
+    setOpenInEdit(false);
+    setSelected(recipe);
+    setSearchParams(new URLSearchParams(), { replace: true });
+  }, [searchParams, recipes, loading]);
 
   const displayed = (filterTag
     ? recipes.filter((r) => r.tags.some((t) => t.id === filterTag.id))
@@ -459,11 +480,12 @@ export default function RecipesPage({
         recipe={selected}
         allTags={allTags}
         onTagCreated={onTagCreated}
-        onClose={() => setSelected(null)}
+        onClose={() => { setSelected(null); setScrollToStep(null); }}
         onUpdated={handleUpdated}
         onDeleted={handleModalDeleted}
         initialMode={openInEdit ? "editing" : "view"}
         activeAllergens={activeAllergens}
+        scrollToStep={scrollToStep}
       />
 
       {/* Delete confirmation modal */}

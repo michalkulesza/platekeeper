@@ -388,7 +388,7 @@ function ViewComponent({
               const durationSeconds = parseDurationSeconds(step);
               const timerId = `${recipeId}-c${componentIndex}-s${i}`;
               return (
-                <li key={i} className="flex items-start gap-2 text-sm">
+                <li key={i} id={`timer-step-${componentIndex}-${i}`} className="flex items-start gap-2 text-sm transition-colors duration-300">
                   <span className="text-zinc-400 font-medium shrink-0">{i + 1}.</span>
                   <span className="flex-1">{step}</span>
                   {durationSeconds !== null && (
@@ -471,6 +471,7 @@ interface RecipeDetailModalProps {
   onDeleted?: (id: string) => void;
   initialMode?: Mode;
   activeAllergens?: string[];
+  scrollToStep?: { componentIndex: number; stepIndex: number } | null;
 }
 
 export default function RecipeDetailModal({
@@ -482,6 +483,7 @@ export default function RecipeDetailModal({
   onDeleted,
   initialMode,
   activeAllergens = [],
+  scrollToStep,
 }: RecipeDetailModalProps) {
   const { activeHouseholdId } = useHousehold();
   const wakeLock = useScreenWakeLock();
@@ -503,6 +505,20 @@ export default function RecipeDetailModal({
       setError(null);
     }
   }, [recipe?.id]);
+
+  // Scroll to target step after modal opens (wait for open animation)
+  useEffect(() => {
+    if (!recipe || !scrollToStep) return;
+    const timer = setTimeout(() => {
+      const el = document.getElementById(
+        `timer-step-${scrollToStep.componentIndex}-${scrollToStep.stepIndex}`
+      );
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      el?.classList.add("recipe-step-highlight");
+      setTimeout(() => el?.classList.remove("recipe-step-highlight"), 1800);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [recipe?.id, scrollToStep]);
 
   if (!recipe || !draft) return null;
   const r = recipe;

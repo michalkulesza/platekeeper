@@ -131,7 +131,11 @@ export function parseDurationSeconds(text: string): number | null {
 
 function fireTimerDone(t: TimerEntry) {
   const body = t.stepText.length > 80 ? t.stepText.slice(0, 77) + "…" : t.stepText;
-  showNotif(`✓ Done — ${t.recipeTitle}`, body, `timer-${t.id}`, { renotify: true });
+  const url = `/?recipe=${t.recipeId}&step=${t.componentIndex}-${t.stepIndex}`;
+  showNotif(`✓ Done — ${t.recipeTitle}`, body, `timer-${t.id}`, {
+    renotify: true,
+    data: { url },
+  });
 }
 
 function fireTimerStart(t: TimerEntry) {
