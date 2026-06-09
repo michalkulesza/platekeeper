@@ -230,9 +230,10 @@ export default function RecipesPage({
   const [deleteTarget, setDeleteTarget] = useState<RecipeOut | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const displayed = filterTag
+  const displayed = (filterTag
     ? recipes.filter((r) => r.tags.some((t) => t.id === filterTag.id))
-    : recipes;
+    : recipes
+  ).slice().sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   const q = searchQuery.trim().toLowerCase();
   const titleMatches = q ? recipes.filter((r) => r.title.toLowerCase().includes(q)) : [];
