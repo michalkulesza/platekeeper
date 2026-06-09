@@ -797,8 +797,7 @@ export default function AddRecipeModal({ isOpen, onClose, onSaved, allTags, onTa
             </ModalBody>
             <ModalFooter className="flex flex-col gap-2 items-stretch">
               {parsed && activeHouseholdId && (
-                <div className="flex items-center justify-between px-1">
-                  <span className="text-sm text-zinc-600">Also add to my private recipes</span>
+                <div className="flex items-center gap-2 px-1">
                   <Switch
                     size="sm"
                     isSelected={sharedToPersonal}
@@ -806,6 +805,7 @@ export default function AddRecipeModal({ isOpen, onClose, onSaved, allTags, onTa
                   >
                     <Switch.Control><Switch.Thumb /></Switch.Control>
                   </Switch>
+                  <span className="text-sm text-zinc-600">Also add to my private recipes</span>
                 </div>
               )}
               <div className="flex justify-end gap-2">
