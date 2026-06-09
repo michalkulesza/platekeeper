@@ -800,6 +800,7 @@ export default function MealPlanPage({ recipes, preferences, allTags, onTagCreat
                       <Button
                         variant="secondary"
                         fullWidth
+                        className="!rounded-lg"
                         onPress={() => setViewRecipe(actionEntry.recipe)}
                       >
                         View recipe
@@ -807,6 +808,7 @@ export default function MealPlanPage({ recipes, preferences, allTags, onTagCreat
                       <Button
                         variant="secondary"
                         fullWidth
+                        className="!rounded-lg"
                         onPress={() => openPicker(actionEntry.date)}
                       >
                         Change recipe
@@ -814,6 +816,7 @@ export default function MealPlanPage({ recipes, preferences, allTags, onTagCreat
                       <Button
                         variant="danger-soft"
                         fullWidth
+                        className="!rounded-lg"
                         isDisabled={busy}
                         onPress={handleRemove}
                       >
