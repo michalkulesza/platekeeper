@@ -129,9 +129,10 @@ function loadFromStorage(): { initialTimers: Map<string, TimerEntry>; resumeInfo
         if (remaining <= 0) {
           expired.push({ ...t, status: "done", remainingAtStart: 0, startedAt: null });
         } else {
-          const paused: TimerEntry = { ...t, status: "paused", remainingAtStart: remaining, startedAt: null };
-          initialTimers.set(t.id, paused);
-          interrupted.push(paused);
+          // Keep running — re-anchor to now so the countdown continues immediately
+          const running: TimerEntry = { ...t, status: "running", remainingAtStart: remaining, startedAt: Date.now() };
+          initialTimers.set(t.id, running);
+          interrupted.push(running);
         }
       } else if (t.status === "paused") {
         initialTimers.set(t.id, t);
@@ -282,13 +283,6 @@ export function TimerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const confirmResume = useCallback(() => {
-    setTimers((prev) => {
-      const next = new Map(prev);
-      for (const [id, t] of next) {
-        if (t.status === "paused") next.set(id, { ...t, status: "running", startedAt: Date.now() });
-      }
-      return next;
-    });
     setResumeInfo(null);
   }, []);
 

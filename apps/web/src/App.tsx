@@ -21,12 +21,23 @@ function ResumeTimersModal() {
   if (!resumeInfo) return null;
   const { interrupted, expired } = resumeInfo;
   return (
-    <Modal isOpen onOpenChange={(open) => { if (!open) confirmClear(); }}>
+    <Modal isOpen onOpenChange={(open) => { if (!open) confirmResume(); }}>
       <ModalBackdrop isDismissable>
         <ModalContainer size="sm" className="!rounded-xl overflow-hidden">
           <ModalDialog>
-            <ModalHeader>Timers were running</ModalHeader>
+            <ModalHeader>Timers are running</ModalHeader>
             <ModalBody className="flex flex-col gap-4">
+              {interrupted.length > 0 && (
+                <div className="flex flex-col gap-1.5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-amber-600">Resumed automatically</p>
+                  {interrupted.map((t) => (
+                    <div key={t.id} className="flex items-center justify-between text-sm text-zinc-600">
+                      <span><span className="font-medium">{t.recipeTitle}</span> — Step {t.stepIndex + 1}</span>
+                      <span className="font-mono text-xs tabular-nums text-zinc-400">{formatCountdown(t.remainingAtStart)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
               {expired.length > 0 && (
                 <div className="flex flex-col gap-1.5">
                   <p className="text-xs font-semibold uppercase tracking-wide text-emerald-600">Finished while you were away</p>
@@ -37,24 +48,10 @@ function ResumeTimersModal() {
                   ))}
                 </div>
               )}
-              {interrupted.length > 0 && (
-                <div className="flex flex-col gap-1.5">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-amber-600">Interrupted</p>
-                  {interrupted.map((t) => (
-                    <div key={t.id} className="flex items-center justify-between text-sm text-zinc-600">
-                      <span><span className="font-medium">{t.recipeTitle}</span> — Step {t.stepIndex + 1}</span>
-                      <span className="font-mono text-xs tabular-nums text-zinc-400">{formatCountdown(t.remainingAtStart)}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
             </ModalBody>
             <ModalFooter>
               <Button variant="tertiary" onPress={confirmClear}>Clear all</Button>
-              {interrupted.length > 0
-                ? <Button variant="primary" onPress={confirmResume}>Continue</Button>
-                : <Button variant="primary" onPress={confirmClear}>OK</Button>
-              }
+              <Button variant="primary" onPress={confirmResume}>OK</Button>
             </ModalFooter>
           </ModalDialog>
         </ModalContainer>
