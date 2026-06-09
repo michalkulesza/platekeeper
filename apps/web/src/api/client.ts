@@ -8,6 +8,7 @@ export interface AllergenFlag {
   substitute: string | null;
   substitute_applied: boolean;
   original_display: string | null;
+  ingredient_name?: string | null;
 }
 
 export interface Ingredient {

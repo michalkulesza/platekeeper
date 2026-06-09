@@ -79,6 +79,7 @@ function toEditable(result: ImportResult, autoSubstitute: boolean): EditableReci
         substitute: ing.substitute ?? null,
         substitute_applied: autoSubstitute && !!ing.allergen && !!ing.substitute,
         original_display: null,
+        ingredient_name: ing.name,
       })),
     })),
   };
@@ -277,8 +278,11 @@ function EditableRecipeView({
     const flag = comp.ingredient_flags[ii];
     if (!flag?.substitute) return;
     const originalDisplay = comp.ingredients[ii];
+    const replaced = flag.ingredient_name
+      ? originalDisplay.replace(flag.ingredient_name, flag.substitute!)
+      : flag.substitute!;
     const newIngredients = comp.ingredients.map((ing, idx) =>
-      idx === ii ? flag.substitute! : ing
+      idx === ii ? replaced : ing
     );
     const newFlags = comp.ingredient_flags.map((f, idx) =>
       idx === ii
