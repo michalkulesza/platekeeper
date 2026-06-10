@@ -30,7 +30,7 @@ recipes from Instagram Reels / TikTok via an automated extraction pipeline.
 | Cooking mode | Toggle on recipe view; Screen Wake Lock API keeps screen on; auto-release on navigate away |
 | CI/CD | Trunk-based. Merge to `main` → GH Actions: tests → Docker build → GHCR → SSH to VPS → `docker compose pull && up -d`. CF Pages auto-builds FE + per-PR preview deploys |
 | Testing | FE: Vitest + RTL + MSW. BE: pytest + real Postgres (testcontainers); vendors mocked with recorded golden fixtures. Playwright e2e: signup, manual create, import happy path (stubbed importer), share link. All merge-gating |
-| Language | Recipes stored in source language (no translation). UI English-only at MVP, no i18n framework yet |
+| Language | Recipes stored in source language (no translation). UI: react-i18next, 5 languages (EN/DE/PL/FR/ES), preference stored in DB — see `docs/i18n.md` |
 | MVP library features | Text search (Postgres FTS), tags, favorites/pinning, collections/folders |
 | Recipe structure | **Group is the universal unit**: every recipe lives in a group; a simple recipe = group with one component. Library/share/favorites/tags/thumbnail/visibility all attach to the group |
 | Component roles | Free-form label ('main', 'sauce', 'marinade'…) with autocomplete suggestions; single-component groups default to 'main' and hide the badge |
