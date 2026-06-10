@@ -137,11 +137,11 @@ Download xlsx and PDF from the web app — check formatting matches the current 
 
 ---
 
-## Phase 3 — Add JWT auth to FastAPI
+## Phase 3 — Add JWT auth to FastAPI ✅
 
 Goal: mobile can authenticate with Bearer tokens while web continues using cookies untouched.
 
-### 3.1 Add JWT bearer backend
+### 3.1 Add JWT bearer backend ✅
 
 Add a second `fastapi-users` auth backend using `JWTStrategy` alongside the existing cookie backend. Expose:
 
@@ -152,11 +152,11 @@ POST /api/auth/jwt/logout   → (optional, client just discards the token)
 
 Keep the existing `/api/auth/cookie/login` endpoint intact.
 
-### 3.2 Protect routes with both backends
+### 3.2 Protect routes with both backends ✅
 
 Configure `fastapi-users` so that routes accept either a valid cookie **or** a valid Bearer token. No change to existing web behaviour.
 
-### 3.3 Verify
+### 3.3 Verify ✅
 
 Test the JWT endpoint directly (curl or Postman) — confirm it returns a token and that the token grants access to `/api/users/me`.
 

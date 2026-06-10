@@ -2,7 +2,7 @@ import uuid
 
 from fastapi import Depends
 from fastapi_users import BaseUserManager, FastAPIUsers, UUIDIDMixin
-from fastapi_users.authentication import AuthenticationBackend, CookieTransport, JWTStrategy
+from fastapi_users.authentication import AuthenticationBackend, BearerTransport, CookieTransport, JWTStrategy
 from fastapi_users.db import SQLAlchemyBaseUserTableUUID, SQLAlchemyUserDatabase
 from fastapi_users import schemas
 from sqlalchemy import String
@@ -70,5 +70,13 @@ auth_backend = AuthenticationBackend(
     get_strategy=get_jwt_strategy,
 )
 
-fastapi_users_instance = FastAPIUsers[User, uuid.UUID](get_user_manager, [auth_backend])
+bearer_transport = BearerTransport(tokenUrl="/api/auth/jwt/login")
+
+jwt_backend = AuthenticationBackend(
+    name="jwt",
+    transport=bearer_transport,
+    get_strategy=get_jwt_strategy,
+)
+
+fastapi_users_instance = FastAPIUsers[User, uuid.UUID](get_user_manager, [auth_backend, jwt_backend])
 current_active_user = fastapi_users_instance.current_user(active=True)

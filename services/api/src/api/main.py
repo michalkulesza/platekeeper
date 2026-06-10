@@ -26,6 +26,7 @@ from api.users import (
     UserUpdate,
     auth_backend,
     fastapi_users_instance,
+    jwt_backend,
 )
 from fastapi_users.db import SQLAlchemyUserDatabase
 from api.users import User
@@ -109,6 +110,11 @@ app.include_router(tags_router, prefix="/api")
 app.include_router(
     fastapi_users_instance.get_auth_router(auth_backend),
     prefix="/api/auth/cookie",
+    tags=["auth"],
+)
+app.include_router(
+    fastapi_users_instance.get_auth_router(jwt_backend),
+    prefix="/api/auth/jwt",
     tags=["auth"],
 )
 app.include_router(
