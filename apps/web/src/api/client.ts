@@ -79,12 +79,18 @@ export interface StreamCallbacks {
 
 // ── Recipe save / list ────────────────────────────────────────────────────────
 
+export interface StepIngredientRef {
+  ingredient_index: number
+  mention: string
+}
+
 export interface SaveComponent {
   name: string
   yield_note: string
   ingredients: string[]
   steps: string[]
   ingredient_flags?: AllergenFlag[]
+  step_ingredient_refs?: StepIngredientRef[][] | null
 }
 
 export interface RecipeSaveRequest {

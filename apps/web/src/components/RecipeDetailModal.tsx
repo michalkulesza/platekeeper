@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import {
   useTimers,
   getRemainingSeconds,
-  parseDurationSeconds,
+  parseDurationMatch,
   formatCountdown,
   formatDurationLabel,
   type TimerEntry,
@@ -24,6 +24,7 @@ import {
   AllergenFlag,
   RecipeOut,
   SaveComponent,
+  StepIngredientRef,
   Tag,
   UNITS,
   addTagToRecipe,
@@ -515,6 +516,172 @@ function StepTimerChip({
   )
 }
 
+// ── Ingredient pill ───────────────────────────────────────────────────────────
+
+function IngredientPill({
+  mention,
+  ingredientText,
+}: {
+  mention: string
+  ingredientText: string
+}) {
+  const [open, setOpen] = useState(false)
+  const [pos, setPos] = useState({ top: 0, left: 0 })
+  const btnRef = useRef<HTMLButtonElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        panelRef.current &&
+        !panelRef.current.contains(e.target as Node) &&
+        btnRef.current &&
+        !btnRef.current.contains(e.target as Node)
+      )
+        setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [open])
+
+  function handleOpen() {
+    if (btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect()
+      const showAbove = r.top > window.innerHeight / 2
+      setPos({
+        top: showAbove ? r.top - 4 : r.bottom + 4,
+        left: r.left,
+      })
+    }
+    setOpen((v) => !v)
+  }
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        onClick={handleOpen}
+        aria-label={ingredientText}
+        className="inline-flex items-center bg-blue-50 text-blue-700 rounded-md px-2 py-0.5 text-xs font-medium cursor-pointer hover:bg-blue-100 transition-colors"
+      >
+        {mention}
+      </button>
+      {open && (
+        <div
+          ref={panelRef}
+          style={{
+            position: 'fixed',
+            top: pos.top,
+            left: pos.left,
+            zIndex: 9999,
+            transform: pos.top < window.innerHeight / 2 ? 'none' : 'translateY(-100%)',
+          }}
+          className="bg-white border border-zinc-200 rounded-xl shadow-lg p-3 text-sm max-w-[260px]"
+        >
+          {ingredientText}
+        </div>
+      )}
+    </>
+  )
+}
+
+// ── Step text with inline pills ───────────────────────────────────────────────
+
+function StepText({
+  step,
+  stepRefs,
+  ingredients,
+  timerId,
+  recipeId,
+  recipeTitle,
+  componentIndex,
+  stepIndex,
+}: {
+  step: string
+  stepRefs: StepIngredientRef[]
+  ingredients: string[]
+  timerId: string
+  recipeId: string
+  recipeTitle: string
+  componentIndex: number
+  stepIndex: number
+}) {
+  const { t } = useTranslation()
+
+  interface Span {
+    start: number
+    end: number
+    kind: 'timer' | 'ingredient'
+    seconds?: number
+    mention?: string
+    ingredientIndex?: number
+    key: string
+  }
+
+  const spans: Span[] = []
+
+  const timerMatch = parseDurationMatch(step)
+  if (timerMatch) {
+    spans.push({ start: timerMatch.start, end: timerMatch.end, kind: 'timer', seconds: timerMatch.seconds, key: `t${timerMatch.start}` })
+  }
+
+  for (const ref of stepRefs) {
+    let idx = 0
+    while (true) {
+      const pos = step.indexOf(ref.mention, idx)
+      if (pos === -1) break
+      spans.push({ start: pos, end: pos + ref.mention.length, kind: 'ingredient', mention: ref.mention, ingredientIndex: ref.ingredient_index, key: `i${pos}-${ref.ingredient_index}` })
+      idx = pos + ref.mention.length
+    }
+  }
+
+  spans.sort((a, b) => a.start - b.start)
+
+  const filtered: Span[] = []
+  let cursor = 0
+  for (const span of spans) {
+    if (span.start >= cursor) {
+      filtered.push(span)
+      cursor = span.end
+    }
+  }
+
+  const nodes: React.ReactNode[] = []
+  let pos = 0
+  for (const span of filtered) {
+    if (pos < span.start) nodes.push(step.slice(pos, span.start))
+    if (span.kind === 'timer') {
+      nodes.push(
+        <StepTimerChip
+          key={span.key}
+          timerId={timerId}
+          totalSeconds={span.seconds!}
+          stepText={step}
+          recipeId={recipeId}
+          recipeTitle={recipeTitle}
+          componentIndex={componentIndex}
+          stepIndex={stepIndex}
+        />
+      )
+    } else {
+      const ingText = displayIngredient(ingredients[span.ingredientIndex!] ?? '', t)
+      nodes.push(
+        <IngredientPill
+          key={span.key}
+          mention={span.mention!}
+          ingredientText={ingText}
+        />
+      )
+    }
+    pos = span.end
+  }
+  if (pos < step.length) nodes.push(step.slice(pos))
+
+  return <span className="flex-1">{nodes}</span>
+}
+
 // ── View: component section ───────────────────────────────────────────────────
 
 function ViewComponent({
@@ -579,8 +746,8 @@ function ViewComponent({
           </p>
           <ol className="space-y-2">
             {comp.steps.map((step, i) => {
-              const durationSeconds = parseDurationSeconds(step)
               const timerId = `${recipeId}-c${componentIndex}-s${i}`
+              const stepRefs = comp.step_ingredient_refs?.[i] ?? []
 
               return (
                 <li
@@ -591,18 +758,16 @@ function ViewComponent({
                   <span className="text-zinc-400 font-medium shrink-0">
                     {i + 1}.
                   </span>
-                  <span className="flex-1">{step}</span>
-                  {durationSeconds !== null && (
-                    <StepTimerChip
-                      timerId={timerId}
-                      totalSeconds={durationSeconds}
-                      stepText={step}
-                      recipeId={recipeId}
-                      recipeTitle={recipeTitle}
-                      componentIndex={componentIndex}
-                      stepIndex={i}
-                    />
-                  )}
+                  <StepText
+                    step={step}
+                    stepRefs={stepRefs}
+                    ingredients={comp.ingredients}
+                    timerId={timerId}
+                    recipeId={recipeId}
+                    recipeTitle={recipeTitle}
+                    componentIndex={componentIndex}
+                    stepIndex={i}
+                  />
                 </li>
               )
             })}

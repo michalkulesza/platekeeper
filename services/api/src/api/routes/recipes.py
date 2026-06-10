@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from api.database import get_async_session
 from api.models import Recipe, RecipeOrderRequest, RecipeOut, RecipeSaveRequest, Tag, user_recipe_favourites_table
 from api.routes.context import get_active_household_id
+from api.services.gemini import match_step_ingredients
 from api.users import User, current_active_user
 
 router = APIRouter(prefix="/recipes", tags=["recipes"])
@@ -207,6 +208,11 @@ async def save_recipe(
     session: AsyncSession = Depends(get_async_session),
     household_id: uuid.UUID | None = Depends(get_active_household_id),
 ) -> RecipeOut:
+    comps = []
+    for c in body.components:
+        refs = await match_step_ingredients(c.ingredients, c.steps)
+        comps.append(c.model_copy(update={"step_ingredient_refs": refs}).model_dump())
+
     recipe = Recipe(
         user_id=user.id,
         household_id=household_id,
@@ -218,7 +224,7 @@ async def save_recipe(
         creator_handle=body.creator_handle,
         source_url=body.source_url,
         notes=body.notes,
-        components=[c.model_dump() for c in body.components],
+        components=comps,
     )
     session.add(recipe)
     await session.flush()
@@ -260,6 +266,11 @@ async def update_recipe(
     if recipe is None:
         raise HTTPException(status_code=404, detail="Recipe not found")
 
+    comps = []
+    for c in body.components:
+        refs = await match_step_ingredients(c.ingredients, c.steps)
+        comps.append(c.model_copy(update={"step_ingredient_refs": refs}).model_dump())
+
     recipe.title = body.title
     recipe.servings = body.servings
     recipe.kcal_per_serving = body.kcal_per_serving
@@ -267,7 +278,7 @@ async def update_recipe(
     recipe.creator_handle = body.creator_handle
     recipe.source_url = body.source_url
     recipe.notes = body.notes
-    recipe.components = [c.model_dump() for c in body.components]
+    recipe.components = comps
     if household_id is not None:
         recipe.shared_to_personal = body.shared_to_personal
     await _set_tags(session, recipe, body.tag_ids, user.id, household_id)

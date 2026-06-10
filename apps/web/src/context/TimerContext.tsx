@@ -131,6 +131,49 @@ export function formatDurationLabel(seconds: number): string {
   return `${s}s`
 }
 
+export interface DurationMatch {
+  seconds: number
+  start: number
+  end: number
+}
+
+export function parseDurationMatch(text: string): DurationMatch | null {
+  let m: RegExpExecArray | null
+
+  m = /\b(\d+)[–-](\d+)\s*(hours?|hrs?|minutes?|mins?|seconds?|secs?)\b/i.exec(text)
+  if (m) {
+    const n = parseInt(m[1])
+    const u = m[3].toLowerCase()
+    let seconds: number
+    if (u.startsWith('h')) seconds = n * 3600
+    else if (u.startsWith('m')) seconds = n * 60
+    else seconds = n
+    return { seconds, start: m.index, end: m.index + m[0].length }
+  }
+
+  m = /\b(\d+)\s*(?:hours?|hrs?|h)\s+(?:and\s+)?(\d+)\s*(?:minutes?|mins?|m)\b/i.exec(text)
+  if (m) {
+    return { seconds: parseInt(m[1]) * 3600 + parseInt(m[2]) * 60, start: m.index, end: m.index + m[0].length }
+  }
+
+  m = /\b(\d+)\s*(?:hours?|hrs?)\b/i.exec(text)
+  if (m) {
+    return { seconds: parseInt(m[1]) * 3600, start: m.index, end: m.index + m[0].length }
+  }
+
+  m = /\b(\d+)\s*(?:minutes?|mins?)\b/i.exec(text)
+  if (m) {
+    return { seconds: parseInt(m[1]) * 60, start: m.index, end: m.index + m[0].length }
+  }
+
+  m = /\b(\d+)\s*(?:seconds?|secs?)\b/i.exec(text)
+  if (m) {
+    return { seconds: parseInt(m[1]), start: m.index, end: m.index + m[0].length }
+  }
+
+  return null
+}
+
 export function parseDurationSeconds(text: string): number | null {
   // Range: use lower bound
   let m = text.match(

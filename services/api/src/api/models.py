@@ -227,12 +227,18 @@ class TagCreate(BaseModel):
 
 # ── Recipe save / list ────────────────────────────────────────────────────────
 
+class StepIngredientRef(BaseModel):
+    ingredient_index: int
+    mention: str
+
+
 class SaveComponent(BaseModel):
     name: str
     yield_note: str
     ingredients: list[str]
     steps: list[str]
     ingredient_flags: list[AllergenFlag] | None = None
+    step_ingredient_refs: list[list[StepIngredientRef]] | None = None
 
 
 class RecipeSaveRequest(BaseModel):
