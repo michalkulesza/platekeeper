@@ -7,7 +7,16 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import {
+  formatCountdown,
+  formatDurationLabel,
+  parseDurationMatch,
+  parseDurationSeconds,
+  type DurationMatch,
+} from '@platekeeper/shared/utils/timerUtils'
 import { useNotificationHistory } from './NotificationHistoryContext'
+
+export { formatCountdown, formatDurationLabel, parseDurationMatch, parseDurationSeconds, type DurationMatch }
 
 const STORAGE_KEY = 'pk-timers'
 
@@ -15,29 +24,18 @@ const STORAGE_KEY = 'pk-timers'
 let _swReg: ServiceWorkerRegistration | null = null
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.ready
-    .then((reg) => {
-      _swReg = reg
-    })
+    .then((reg) => { _swReg = reg })
     .catch(() => {})
 }
 
-async function showNotif(
+const showNotif = async (
   title: string,
   body: string,
   tag: string,
   opts: NotificationOptions & { renotify?: boolean } = {}
-) {
-  if (
-    typeof Notification === 'undefined' ||
-    Notification.permission !== 'granted'
-  )
-    return
-  const fullOpts = {
-    body,
-    tag,
-    icon: '/icon-192.png',
-    ...opts,
-  } as NotificationOptions
+) => {
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return
+  const fullOpts = { body, tag, icon: '/icon-192.png', ...opts } as NotificationOptions
   if (_swReg) {
     await _swReg.showNotification(title, fullOpts)
   } else {
@@ -45,7 +43,7 @@ async function showNotif(
   }
 }
 
-function closeNotif(tag: string) {
+const closeNotif = (tag: string) => {
   _swReg
     ?.getNotifications({ tag })
     .then((list) => list.forEach((n) => n.close()))
@@ -77,9 +75,7 @@ interface TimerContextValue {
   hasRunningTimers: boolean
   wakeLockTimersEnabled: boolean
   setWakeLockTimersEnabled: (v: boolean) => void
-  startTimer: (
-    params: Omit<TimerEntry, 'remainingAtStart' | 'startedAt' | 'status'>
-  ) => void
+  startTimer: (params: Omit<TimerEntry, 'remainingAtStart' | 'startedAt' | 'status'>) => void
   pauseTimer: (id: string) => void
   resumeTimer: (id: string) => void
   cancelTimer: (id: string) => void
@@ -90,129 +86,24 @@ interface TimerContextValue {
 
 const TimerContext = createContext<TimerContextValue | null>(null)
 
-export function useTimers() {
+export const useTimers = () => {
   const ctx = useContext(TimerContext)
   if (!ctx) throw new Error('useTimers must be used within TimerProvider')
-
   return ctx
 }
 
-export function getRemainingSeconds(t: TimerEntry): number {
+export const getRemainingSeconds = (t: TimerEntry): number => {
   if (t.status !== 'running' || t.startedAt === null) return t.remainingAtStart
-
-  return Math.max(
-    0,
-    t.remainingAtStart - Math.floor((Date.now() - t.startedAt) / 1000)
-  )
+  return Math.max(0, t.remainingAtStart - Math.floor((Date.now() - t.startedAt) / 1000))
 }
 
-export function formatCountdown(seconds: number): string {
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  const s = seconds % 60
-  if (h > 0)
-    return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-
-  return `${m}:${String(s).padStart(2, '0')}`
-}
-
-export function formatDurationLabel(seconds: number): string {
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  const s = seconds % 60
-  if (h > 0 && m > 0) return `${h}h ${m}m`
-  if (h > 0) return `${h}h`
-  if (m > 0 && s > 0) return `${m}m ${s}s`
-  if (m > 0) return `${m}m`
-
-  return `${s}s`
-}
-
-export interface DurationMatch {
-  seconds: number
-  start: number
-  end: number
-}
-
-export function parseDurationMatch(text: string): DurationMatch | null {
-  let m: RegExpExecArray | null
-
-  m = /\b(\d+)[–-](\d+)\s*(hours?|hrs?|minutes?|mins?|seconds?|secs?)\b/i.exec(text)
-  if (m) {
-    const n = parseInt(m[1])
-    const u = m[3].toLowerCase()
-    let seconds: number
-    if (u.startsWith('h')) seconds = n * 3600
-    else if (u.startsWith('m')) seconds = n * 60
-    else seconds = n
-    return { seconds, start: m.index, end: m.index + m[0].length }
-  }
-
-  m = /\b(\d+)\s*(?:hours?|hrs?|h)\s+(?:and\s+)?(\d+)\s*(?:minutes?|mins?|m)\b/i.exec(text)
-  if (m) {
-    return { seconds: parseInt(m[1]) * 3600 + parseInt(m[2]) * 60, start: m.index, end: m.index + m[0].length }
-  }
-
-  m = /\b(\d+)\s*(?:hours?|hrs?)\b/i.exec(text)
-  if (m) {
-    return { seconds: parseInt(m[1]) * 3600, start: m.index, end: m.index + m[0].length }
-  }
-
-  m = /\b(\d+)\s*(?:minutes?|mins?)\b/i.exec(text)
-  if (m) {
-    return { seconds: parseInt(m[1]) * 60, start: m.index, end: m.index + m[0].length }
-  }
-
-  m = /\b(\d+)\s*(?:seconds?|secs?)\b/i.exec(text)
-  if (m) {
-    return { seconds: parseInt(m[1]), start: m.index, end: m.index + m[0].length }
-  }
-
-  return null
-}
-
-export function parseDurationSeconds(text: string): number | null {
-  // Range: use lower bound
-  let m = text.match(
-    /\b(\d+)[–-](\d+)\s*(hours?|hrs?|minutes?|mins?|seconds?|secs?)\b/i
-  )
-  if (m) {
-    const n = parseInt(m[1])
-    const u = m[3].toLowerCase()
-    if (u.startsWith('h')) return n * 3600
-    if (u.startsWith('m')) return n * 60
-
-    return n
-  }
-  // "1 hour 30 minutes" / "1 hr 30 min" / "1h 30m"
-  m = text.match(
-    /\b(\d+)\s*(?:hours?|hrs?|h)\s+(?:and\s+)?(\d+)\s*(?:minutes?|mins?|m)\b/i
-  )
-  if (m) return parseInt(m[1]) * 3600 + parseInt(m[2]) * 60
-  // Hours only
-  m = text.match(/\b(\d+)\s*(?:hours?|hrs?)\b/i)
-  if (m) return parseInt(m[1]) * 3600
-  // Minutes
-  m = text.match(/\b(\d+)\s*(?:minutes?|mins?)\b/i)
-  if (m) return parseInt(m[1]) * 60
-  // Seconds
-  m = text.match(/\b(\d+)\s*(?:seconds?|secs?)\b/i)
-  if (m) return parseInt(m[1])
-
-  return null
-}
-
-function fireTimerDone(t: TimerEntry) {
-  const body =
-    t.stepText.length > 80 ? t.stepText.slice(0, 77) + '…' : t.stepText
+const fireTimerDone = (t: TimerEntry) => {
+  const body = t.stepText.length > 80 ? t.stepText.slice(0, 77) + '…' : t.stepText
   const url = `/?recipe=${t.recipeId}&step=${t.componentIndex}-${t.stepIndex}`
-  showNotif(`✓ Done — ${t.recipeTitle}`, body, `timer-${t.id}`, {
-    renotify: true,
-    data: { url },
-  })
+  showNotif(`✓ Done — ${t.recipeTitle}`, body, `timer-${t.id}`, { renotify: true, data: { url } })
 }
 
-function fireTimerStart(t: TimerEntry) {
+const fireTimerStart = (t: TimerEntry) => {
   showNotif(
     `⏱ ${t.recipeTitle}`,
     `Step ${t.stepIndex + 1} · ${formatDurationLabel(t.totalSeconds)}`,
@@ -221,14 +112,11 @@ function fireTimerStart(t: TimerEntry) {
   )
 }
 
-function saveToStorage(timers: Map<string, TimerEntry>) {
+const saveToStorage = (timers: Map<string, TimerEntry>) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify([...timers.values()]))
 }
 
-function loadFromStorage(): {
-  initialTimers: Map<string, TimerEntry>
-  resumeInfo: ResumeInfo | null
-} {
+const loadFromStorage = (): { initialTimers: Map<string, TimerEntry>; resumeInfo: ResumeInfo | null } => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return { initialTimers: new Map(), resumeInfo: null }
@@ -244,20 +132,10 @@ function loadFromStorage(): {
         const elapsed = Math.floor((now - t.startedAt) / 1000)
         const remaining = t.remainingAtStart - elapsed
         if (remaining <= 0) {
-          expired.push({
-            ...t,
-            status: 'done',
-            remainingAtStart: 0,
-            startedAt: null,
-          })
+          expired.push({ ...t, status: 'done', remainingAtStart: 0, startedAt: null })
         } else {
           // Keep running — re-anchor to now so the countdown continues immediately
-          const running: TimerEntry = {
-            ...t,
-            status: 'running',
-            remainingAtStart: remaining,
-            startedAt: Date.now(),
-          }
+          const running: TimerEntry = { ...t, status: 'running', remainingAtStart: remaining, startedAt: Date.now() }
           initialTimers.set(t.id, running)
           interrupted.push(running)
         }
@@ -267,25 +145,17 @@ function loadFromStorage(): {
       }
     }
 
-    const resumeInfo =
-      interrupted.length > 0 || expired.length > 0
-        ? { interrupted, expired }
-        : null
-
+    const resumeInfo = interrupted.length > 0 || expired.length > 0 ? { interrupted, expired } : null
     return { initialTimers, resumeInfo }
   } catch {
     return { initialTimers: new Map(), resumeInfo: null }
   }
 }
 
-export function TimerProvider({ children }: { children: ReactNode }) {
+export const TimerProvider = ({ children }: { children: ReactNode }) => {
   const { push: pushNotification } = useNotificationHistory()
-  const [timers, setTimers] = useState<Map<string, TimerEntry>>(
-    () => loadFromStorage().initialTimers
-  )
-  const [resumeInfo, setResumeInfo] = useState<ResumeInfo | null>(
-    () => loadFromStorage().resumeInfo
-  )
+  const [timers, setTimers] = useState<Map<string, TimerEntry>>(() => loadFromStorage().initialTimers)
+  const [resumeInfo, setResumeInfo] = useState<ResumeInfo | null>(() => loadFromStorage().resumeInfo)
   const [expiredQueue, setExpiredQueue] = useState<TimerEntry[]>([])
   const [wakeLockTimersEnabled, setWakeLockTimersEnabledState] = useState(
     () => localStorage.getItem('wakelock-timers') !== '0'
@@ -314,9 +184,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
   }, [])
 
   // Persist on every change
-  useEffect(() => {
-    saveToStorage(timers)
-  }, [timers])
+  useEffect(() => { saveToStorage(timers) }, [timers])
 
   // Tick: pure state update — detect expiry and drive countdown re-renders
   useEffect(() => {
@@ -325,27 +193,18 @@ export function TimerProvider({ children }: { children: ReactNode }) {
         let hasRunning = false
         let changed = false
         const next = new Map(prev)
-
         for (const [tid, t] of next) {
           if (t.status !== 'running') continue
           hasRunning = true
           if (getRemainingSeconds(t) === 0) {
-            next.set(tid, {
-              ...t,
-              status: 'done',
-              remainingAtStart: 0,
-              startedAt: null,
-            })
+            next.set(tid, { ...t, status: 'done', remainingAtStart: 0, startedAt: null })
             changed = true
           }
         }
-
         if (hasRunning || changed) return new Map(next)
-
         return prev
       })
     }, 1000)
-
     return () => clearInterval(id)
   }, [])
 
@@ -363,42 +222,28 @@ export function TimerProvider({ children }: { children: ReactNode }) {
         url: `/?recipe=${t.recipeId}&step=${t.componentIndex}-${t.stepIndex}`,
       })
       setTimeout(() => {
-        setTimers((m) => {
-          const n = new Map(m)
-          n.delete(id)
-
-          return n
-        })
+        setTimers((m) => { const n = new Map(m); n.delete(id); return n })
         processedDoneRef.current.delete(id)
       }, 5000)
     }
   }, [timers])
 
-  const hasRunningTimers = [...timers.values()].some(
-    (t) => t.status === 'running'
-  )
+  const hasRunningTimers = [...timers.values()].some((t) => t.status === 'running')
 
   // Acquire/release wake lock based on running timers
   useEffect(() => {
     if (!wakeLockTimersEnabled || !hasRunningTimers) {
       wakeLockRef.current?.release().catch(() => {})
       wakeLockRef.current = null
-
       return
     }
     let stale = false
-    navigator.wakeLock
-      ?.request('screen')
+    navigator.wakeLock?.request('screen')
       .then((s) => {
-        if (stale) {
-          s.release()
-
-          return
-        }
+        if (stale) { s.release(); return }
         wakeLockRef.current = s
       })
       .catch(() => {})
-
     return () => {
       stale = true
       wakeLockRef.current?.release().catch(() => {})
@@ -408,23 +253,14 @@ export function TimerProvider({ children }: { children: ReactNode }) {
 
   // Re-acquire after tab becomes visible
   useEffect(() => {
-    function onVisible() {
-      if (
-        document.visibilityState === 'visible' &&
-        wakeLockTimersEnabled &&
-        hasRunningTimers &&
-        !wakeLockRef.current
-      ) {
-        navigator.wakeLock
-          ?.request('screen')
-          .then((s) => {
-            wakeLockRef.current = s
-          })
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && wakeLockTimersEnabled && hasRunningTimers && !wakeLockRef.current) {
+        navigator.wakeLock?.request('screen')
+          .then((s) => { wakeLockRef.current = s })
           .catch(() => {})
       }
     }
     document.addEventListener('visibilitychange', onVisible)
-
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [wakeLockTimersEnabled, hasRunningTimers])
 
@@ -435,10 +271,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
 
   const startTimer = useCallback(
     (params: Omit<TimerEntry, 'remainingAtStart' | 'startedAt' | 'status'>) => {
-      if (
-        typeof Notification !== 'undefined' &&
-        Notification.permission === 'default'
-      ) {
+      if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
         Notification.requestPermission()
       }
       const entry: TimerEntry = {
@@ -447,12 +280,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
         startedAt: Date.now(),
         status: 'running',
       }
-      setTimers((prev) => {
-        const n = new Map(prev)
-        n.set(entry.id, entry)
-
-        return n
-      })
+      setTimers((prev) => { const n = new Map(prev); n.set(entry.id, entry); return n })
       fireTimerStart(entry)
     },
     []
@@ -463,13 +291,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
       const t = prev.get(id)
       if (!t || t.status !== 'running') return prev
       const next = new Map(prev)
-      next.set(id, {
-        ...t,
-        status: 'paused',
-        remainingAtStart: getRemainingSeconds(t),
-        startedAt: null,
-      })
-
+      next.set(id, { ...t, status: 'paused', remainingAtStart: getRemainingSeconds(t), startedAt: null })
       return next
     })
   }, [])
@@ -480,24 +302,16 @@ export function TimerProvider({ children }: { children: ReactNode }) {
       if (!t || t.status !== 'paused') return prev
       const next = new Map(prev)
       next.set(id, { ...t, status: 'running', startedAt: Date.now() })
-
       return next
     })
   }, [])
 
   const cancelTimer = useCallback((id: string) => {
-    setTimers((prev) => {
-      const n = new Map(prev)
-      n.delete(id)
-
-      return n
-    })
+    setTimers((prev) => { const n = new Map(prev); n.delete(id); return n })
     closeNotif(`timer-${id}`)
   }, [])
 
-  const confirmResume = useCallback(() => {
-    setResumeInfo(null)
-  }, [])
+  const confirmResume = useCallback(() => { setResumeInfo(null) }, [])
 
   const confirmClear = useCallback(() => {
     setTimers(new Map())
@@ -506,9 +320,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     setExpiredQueue([])
   }, [])
 
-  const dismissExpired = useCallback(() => {
-    setExpiredQueue([])
-  }, [])
+  const dismissExpired = useCallback(() => { setExpiredQueue([]) }, [])
 
   return (
     <TimerContext.Provider

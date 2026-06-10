@@ -80,7 +80,7 @@ Create `packages/shared/src/hooks/` and extract query/mutation hooks from page c
 
 Each hook accepts the API client instance (or reads it from a context).
 
-### 1.5 Move pure utilities
+### 1.5 Move pure utilities ✅
 
 Move to `packages/shared/src/utils/`:
 
