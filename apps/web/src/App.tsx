@@ -1,16 +1,19 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { ToastProvider } from '@heroui/react'
+import { ApiClientProvider } from '@platekeeper/shared/api/context'
 import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import AppShell from './components/AppShell'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
+import { webClient } from './api/client'
 
 const queryClient = new QueryClient()
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
+    <ApiClientProvider client={webClient}>
     <BrowserRouter>
       <ToastProvider placement="bottom" />
       <AuthProvider>
@@ -28,6 +31,7 @@ const App = () => (
         </Routes>
       </AuthProvider>
     </BrowserRouter>
+    </ApiClientProvider>
   </QueryClientProvider>
 )
 

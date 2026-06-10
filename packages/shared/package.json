@@ -5,8 +5,15 @@
   "type": "module",
   "exports": {
     "./types": "./src/types.ts",
-    "./api/*": "./src/api/*.ts",
-    "./hooks/*": "./src/hooks/*.ts",
+    "./api/client": "./src/api/client.ts",
+    "./api/context": "./src/api/context.ts",
+    "./hooks/useRecipes": "./src/hooks/useRecipes.ts",
+    "./hooks/useTags": "./src/hooks/useTags.ts",
+    "./hooks/useMealPlan": "./src/hooks/useMealPlan.ts",
+    "./hooks/usePreferences": "./src/hooks/usePreferences.ts",
+    "./hooks/useHouseholds": "./src/hooks/useHouseholds.ts",
+    "./hooks/useInvitations": "./src/hooks/useInvitations.ts",
+    "./hooks/useMembers": "./src/hooks/useMembers.ts",
     "./utils/*": "./src/utils/*.ts",
     "./i18n": "./src/i18n.ts",
     "./locales/*": "./src/locales/*.json"
@@ -21,6 +28,7 @@
     "react-i18next": "^17.0.0"
   },
   "devDependencies": {
+    "@tanstack/react-query": "^5.101.0",
     "@types/react": "^19.0.0",
     "typescript": "~5.7.2"
   }

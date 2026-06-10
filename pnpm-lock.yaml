@@ -117,9 +117,6 @@ importers:
 
   packages/shared:
     dependencies:
-      '@tanstack/react-query':
-        specifier: ^5.0.0
-        version: 5.101.0(react@19.2.7)
       i18next:
         specifier: ^26.0.0
         version: 26.3.1(typescript@5.7.3)
@@ -130,6 +127,9 @@ importers:
         specifier: ^17.0.0
         version: 17.0.8(i18next@26.3.1(typescript@5.7.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.7.3)
     devDependencies:
+      '@tanstack/react-query':
+        specifier: ^5.101.0
+        version: 5.101.0(react@19.2.7)
       '@types/react':
         specifier: ^19.0.0
         version: 19.2.16

@@ -65,7 +65,7 @@ Move all API functions from `apps/web/src/api/client.ts` and `apps/web/src/api/a
 const api = createApiClient({ baseUrl: '', getAuthHeaders: () => ({}), credentials: 'include' })
 ```
 
-### 1.4 Move React Query hooks
+### 1.4 Move React Query hooks ✅
 
 Create `packages/shared/src/hooks/` and extract query/mutation hooks from page components:
 
