@@ -284,8 +284,8 @@ function SortableRow({
         <ThumbCell url={recipe.thumbnail_url} title={recipe.title} />
       </div>
 
-      {/* Title — sticky left */}
-      <div className="min-w-0 sticky left-0 z-[1] bg-white group-hover:bg-zinc-50 transition-colors overflow-hidden shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] pr-1">
+      {/* Title */}
+      <div className="min-w-0 overflow-hidden">
         <p className="font-medium text-sm leading-snug line-clamp-2">
           {recipe.title}
         </p>
@@ -451,15 +451,12 @@ export default function RecipesTable({
               <GripIcon />
             </div>
             <div />
-            {/* Sticky name column */}
-            <div className="sticky left-0 z-[1] bg-zinc-50 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)]">
-              <ColHeader
-                label={t('recipes.colTitle')}
-                field="title"
-                sort={sort}
-                onToggleSort={toggleSort}
-              />
-            </div>
+            <ColHeader
+              label={t('recipes.colTitle')}
+              field="title"
+              sort={sort}
+              onToggleSort={toggleSort}
+            />
             <div className="flex justify-end">
               <ColHeader
                 label={t('recipes.colServings')}
