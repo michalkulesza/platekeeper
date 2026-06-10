@@ -106,6 +106,8 @@ function AllergenPopover({
     ...(above ? { bottom: pos.vertical } : { top: pos.vertical }),
   }
 
+  const { t } = useTranslation()
+
   return (
     <div className="shrink-0">
       <button
@@ -119,8 +121,8 @@ function AllergenPopover({
         }`}
         title={
           flag.substitute_applied
-            ? 'Substitute applied'
-            : `Contains ${flag.allergen}`
+            ? t('recipes.substituteApplied')
+            : t('recipes.contains') + ' ' + flag.allergen
         }
       >
         {flag.substitute_applied ? '✓' : `⚠ ${flag.allergen}`}
@@ -134,13 +136,13 @@ function AllergenPopover({
           {flag.substitute_applied && flag.original_display ? (
             <>
               <p className="text-zinc-600 mb-2">
-                Originally{' '}
+                {t('recipes.originally')}{' '}
                 <strong className="text-zinc-800">
                   {flag.original_display}
                 </strong>
-                , replaced with{' '}
-                <strong className="text-zinc-800">{flag.substitute}</strong> due
-                to {flag.allergen}.
+                , {t('recipes.replacedWith')}{' '}
+                <strong className="text-zinc-800">{flag.substitute}</strong>{' '}
+                {t('recipes.dueTo')} {flag.allergen}.
               </p>
               <Button
                 size="sm"
@@ -150,15 +152,15 @@ function AllergenPopover({
                   setOpen(false)
                 }}
               >
-                Restore original
+                {t('recipes.restoreOriginal')}
               </Button>
             </>
           ) : flag.substitute ? (
             <>
               <p className="text-zinc-600 mb-2">
-                Contains{' '}
-                <strong className="text-zinc-800">{flag.allergen}</strong>.
-                Suggested substitute:{' '}
+                {t('recipes.contains')}{' '}
+                <strong className="text-zinc-800">{flag.allergen}</strong>.{' '}
+                {t('recipes.suggestedSubstitute')}{' '}
                 <strong className="text-zinc-800">{flag.substitute}</strong>.
               </p>
               <div className="flex gap-2">
@@ -170,22 +172,22 @@ function AllergenPopover({
                     setOpen(false)
                   }}
                 >
-                  Replace
+                  {t('recipes.replace')}
                 </Button>
                 <Button
                   size="sm"
                   variant="tertiary"
                   onPress={() => setOpen(false)}
                 >
-                  Keep original
+                  {t('recipes.keepOriginal')}
                 </Button>
               </div>
             </>
           ) : (
             <p className="text-zinc-600">
-              Contains{' '}
-              <strong className="text-zinc-800">{flag.allergen}</strong>. No
-              substitute available.
+              {t('recipes.contains')}{' '}
+              <strong className="text-zinc-800">{flag.allergen}</strong>.{' '}
+              {t('recipes.noSubstituteAvailable')}
             </p>
           )}
         </div>
@@ -489,6 +491,8 @@ function StepTimerChip({
     )
   }
 
+  const { t } = useTranslation()
+
   return (
     <button
       type="button"
@@ -498,7 +502,7 @@ function StepTimerChip({
           ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
           : 'bg-zinc-100 text-zinc-500 hover:bg-amber-50 hover:text-amber-700'
       }`}
-      title={isRunning ? 'Pause timer' : 'Resume timer'}
+      title={isRunning ? t('common.pause') : t('common.resume')}
     >
       ⏱ {formatCountdown(remaining)} {isRunning ? '⏸' : '▶'}
     </button>
@@ -526,6 +530,8 @@ function ViewComponent({
   recipeTitle: string
   componentIndex: number
 }) {
+  const { t } = useTranslation()
+
   return (
     <div className="mb-5">
       {!single && (
@@ -536,7 +542,7 @@ function ViewComponent({
       {comp.ingredients.length > 0 && (
         <>
           <p className="text-xs font-semibold uppercase text-zinc-400 mb-1">
-            Ingredients
+            {t('recipes.sectionIngredients')}
           </p>
           <ul className="space-y-1 mb-3">
             {comp.ingredients.map((ing, i) => {
@@ -563,7 +569,7 @@ function ViewComponent({
       {comp.steps.length > 0 && (
         <>
           <p className="text-xs font-semibold uppercase text-zinc-400 mb-1">
-            Steps
+            {t('recipes.steps')}
           </p>
           <ol className="space-y-2">
             {comp.steps.map((step, i) => {
@@ -614,6 +620,8 @@ function EditComponent({
   onIngredientChange: (ii: number, val: string) => void
   onStepChange: (si: number, val: string) => void
 }) {
+  const { t } = useTranslation()
+
   return (
     <div className="mb-5">
       {!single && (
@@ -624,7 +632,7 @@ function EditComponent({
       {comp.ingredients.length > 0 && (
         <>
           <p className="text-xs font-semibold uppercase text-zinc-400 mb-1">
-            Ingredients
+            {t('recipes.sectionIngredients')}
           </p>
           <ul className="space-y-1 mb-3">
             {comp.ingredients.map((ing, ii) => (
@@ -643,7 +651,7 @@ function EditComponent({
       {comp.steps.length > 0 && (
         <>
           <p className="text-xs font-semibold uppercase text-zinc-400 mb-1">
-            Steps
+            {t('recipes.steps')}
           </p>
           <ol className="space-y-2">
             {comp.steps.map((step, si) => (
@@ -690,6 +698,7 @@ export default function RecipeDetailModal({
   activeAllergens = [],
   scrollToStep,
 }: RecipeDetailModalProps) {
+  const { t } = useTranslation()
   const wakeLock = useScreenWakeLock()
   const [mode, setMode] = useState<Mode>('view')
   const [draft, setDraft] = useState<EditState | null>(null)
@@ -859,11 +868,11 @@ export default function RecipeDetailModal({
         tag_ids: localTags.map((t) => t.id),
         shared_to_personal: draft.shared_to_personal,
       })
-      toast.success('Recipe updated', { timeout: 3000 })
+      toast.success(t('recipes.recipeUpdated'), { timeout: 3000 })
       onUpdated?.(updated)
       setMode('view')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save')
+      setError(err instanceof Error ? err.message : t('recipes.failedToSave'))
     } finally {
       setBusy(false)
     }
@@ -910,7 +919,7 @@ export default function RecipeDetailModal({
       setDraft(toEditState(updated))
     } catch (err) {
       toast.danger(
-        err instanceof Error ? err.message : 'Failed to apply substitute',
+        err instanceof Error ? err.message : t('recipes.failedToApplySubstitute'),
         { timeout: 3000 }
       )
     }
@@ -953,7 +962,7 @@ export default function RecipeDetailModal({
       setDraft(toEditState(updated))
     } catch (err) {
       toast.danger(
-        err instanceof Error ? err.message : 'Failed to restore ingredient',
+        err instanceof Error ? err.message : t('recipes.failedToRestoreIngredient'),
         { timeout: 3000 }
       )
     }
@@ -964,11 +973,11 @@ export default function RecipeDetailModal({
     setError(null)
     try {
       await deleteRecipe(r.id)
-      toast.danger('Recipe deleted', { timeout: 3000 })
+      toast.danger(t('recipes.recipeDeleted'), { timeout: 3000 })
       onDeleted?.(r.id)
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete')
+      setError(err instanceof Error ? err.message : t('recipes.failedToDelete'))
       setMode('view')
     } finally {
       setBusy(false)
@@ -1099,7 +1108,7 @@ export default function RecipeDetailModal({
                       }
                       if (e.key === 'Escape') setShowImgInput(false)
                     }}
-                    placeholder="Image URL"
+                    placeholder={t('common.imageUrl')}
                     autoFocus
                     className="w-full text-sm border-b border-primary focus:outline-none bg-transparent"
                   />
@@ -1127,7 +1136,7 @@ export default function RecipeDetailModal({
                     {mode === 'editing' ? (
                       <>
                         <label className="flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-medium pl-3 pr-2 py-1.5 rounded-full cursor-text">
-                          <span>Serves</span>
+                          <span>{t('recipes.serves')}</span>
                           <input
                             type="number"
                             min={1}
@@ -1174,19 +1183,19 @@ export default function RecipeDetailModal({
                             }
                             className="w-[3.8ch] bg-transparent text-warning-700 font-semibold text-xs text-center focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                           />
-                          <span>kcal / serving</span>
+                          <span>{t('recipes.kcalPerServing')}</span>
                         </label>
                       </>
                     ) : (
                       <>
                         {r.servings != null && (
                           <span className="text-xs text-primary font-medium bg-primary/10 px-3 py-1.5 rounded-full">
-                            Serves {r.servings}
+                            {t('recipes.serves')} {r.servings}
                           </span>
                         )}
                         {r.kcal_per_serving != null && (
                           <span className="text-xs text-warning-700 font-medium bg-warning/10 px-3 py-1.5 rounded-full">
-                            {r.kcal_per_serving} kcal / serving
+                            {r.kcal_per_serving} {t('recipes.kcalPerServing')}
                           </span>
                         )}
                       </>
@@ -1207,7 +1216,7 @@ export default function RecipeDetailModal({
                           <path d="M12.232 4.232a2.5 2.5 0 0 1 3.536 3.536l-1.225 1.224a.75.75 0 0 0 1.061 1.06l1.224-1.224a4 4 0 0 0-5.656-5.656l-3 3a4 4 0 0 0 .225 5.865.75.75 0 0 0 .977-1.138 2.5 2.5 0 0 1-.142-3.667l3-3Z" />
                           <path d="M11.603 7.963a.75.75 0 0 0-.977 1.138 2.5 2.5 0 0 1 .142 3.667l-3 3a2.5 2.5 0 0 1-3.536-3.536l1.225-1.224a.75.75 0 0 0-1.061-1.06l-1.224 1.224a4 4 0 1 0 5.656 5.656l3-3a4 4 0 0 0-.225-5.865Z" />
                         </svg>
-                        Source
+                        {t('recipes.source')}
                       </a>
                     )}
                   </div>
@@ -1221,22 +1230,22 @@ export default function RecipeDetailModal({
                       variant="secondary"
                       onPress={() => setMode('editing')}
                     >
-                      Edit
+                      {t('common.edit')}
                     </Button>
                     <Button
                       size="sm"
                       variant="danger-soft"
                       onPress={() => setMode('confirming')}
                     >
-                      Remove
+                      {t('recipes.remove')}
                     </Button>
                     {'wakeLock' in navigator && (
                       <button
                         type="button"
                         title={
                           wakeLock.active
-                            ? 'Screen always-on: tap to disable'
-                            : 'Keep screen on while reading'
+                            ? t('recipes.screenAlwaysOnDisable')
+                            : t('recipes.keepScreenOnWhileReading')
                         }
                         onClick={wakeLock.toggle}
                         className={`ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
@@ -1253,7 +1262,7 @@ export default function RecipeDetailModal({
                         >
                           <path d="M10 2a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 10 2ZM10 15a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 10 15ZM10 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM15.657 5.404a.75.75 0 1 0-1.06-1.06l-1.061 1.06a.75.75 0 0 0 1.06 1.06l1.06-1.06ZM6.464 14.596a.75.75 0 1 0-1.06-1.06l-1.06 1.06a.75.75 0 0 0 1.06 1.06l1.06-1.06ZM18 10a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5A.75.75 0 0 1 18 10ZM5 10a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5A.75.75 0 0 1 5 10ZM14.596 15.657a.75.75 0 0 0 1.06-1.06l-1.06-1.061a.75.75 0 1 0-1.06 1.06l1.06 1.06ZM5.404 6.464a.75.75 0 0 0 1.06-1.06l-1.06-1.06a.75.75 0 1 0-1.061 1.06l1.06 1.06Z" />
                         </svg>
-                        {wakeLock.active ? 'Screen on' : 'Keep on'}
+                        {wakeLock.active ? t('recipes.screenOn') : t('recipes.keepOn')}
                       </button>
                     )}
                   </div>
@@ -1265,14 +1274,14 @@ export default function RecipeDetailModal({
                       onClick={cancelMode}
                       className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-warning text-warning-foreground hover:bg-warning-400 transition-colors"
                     >
-                      ✎ Editing — tap to cancel
+                      ✎ {t('recipes.editingTapToCancel')}
                     </button>
                   </div>
                 )}
                 {mode === 'confirming' && (
                   <div className="flex items-center gap-2 pt-0.5">
                     <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-danger text-danger-foreground">
-                      Delete this recipe?
+                      {t('recipes.deleteThisRecipe')}
                     </span>
                   </div>
                 )}
@@ -1321,10 +1330,10 @@ export default function RecipeDetailModal({
               {/* Notes — always editable, auto-saved on blur */}
               <div className="mt-2 pt-4 border-t border-zinc-100">
                 <p className="text-xs font-semibold uppercase text-zinc-400 mb-1.5">
-                  Notes
+                  {t('recipes.notes')}
                   {notesSaving && (
                     <span className="ml-2 font-normal normal-case text-zinc-400">
-                      Saving…
+                      {t('common.saving')}
                     </span>
                   )}
                 </p>
@@ -1332,7 +1341,7 @@ export default function RecipeDetailModal({
                   value={localNotes}
                   onChange={(e) => setLocalNotes(e.target.value)}
                   onBlur={handleNotesSave}
-                  placeholder="Add private notes…"
+                  placeholder={t('common.addPrivateNotes')}
                   rows={3}
                   className="w-full text-sm bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:border-primary resize-none leading-relaxed placeholder:text-zinc-400"
                   style={
@@ -1349,7 +1358,7 @@ export default function RecipeDetailModal({
               {mode === 'editing' && r.household_id && (
                 <div className="flex items-center justify-between px-1">
                   <span className="text-sm text-zinc-600">
-                    Also in my private recipes
+                    {t('recipes.alsoInPrivate')}
                   </span>
                   <Switch
                     size="sm"
@@ -1372,14 +1381,14 @@ export default function RecipeDetailModal({
                       onPress={cancelMode}
                       isDisabled={busy}
                     >
-                      Cancel
+                      {t('common.cancel')}
                     </Button>
                     <Button
                       variant="primary"
                       onPress={handleSave}
                       isDisabled={busy}
                     >
-                      Save
+                      {t('common.save')}
                     </Button>
                   </>
                 )}
@@ -1390,20 +1399,20 @@ export default function RecipeDetailModal({
                       onPress={cancelMode}
                       isDisabled={busy}
                     >
-                      Cancel
+                      {t('common.cancel')}
                     </Button>
                     <Button
                       variant="danger"
                       onPress={handleDelete}
                       isDisabled={busy}
                     >
-                      Delete
+                      {t('common.delete')}
                     </Button>
                   </>
                 )}
                 {mode === 'view' && (
                   <Button variant="tertiary" onPress={handleClose}>
-                    Close
+                    {t('common.close')}
                   </Button>
                 )}
               </div>
