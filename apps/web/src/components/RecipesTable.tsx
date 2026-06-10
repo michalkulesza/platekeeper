@@ -19,7 +19,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { RecipeOut, reorderRecipes } from '../api/client'
+import { RecipeOut, reorderRecipes, toggleFavourite } from '../api/client'
 
 type SortField =
   | 'title'
@@ -31,12 +31,25 @@ type SortField =
 type SortDir = 'asc' | 'desc'
 type Sort = { field: SortField; dir: SortDir } | null
 
+function StarIcon({ filled }: { filled: boolean }) {
+  return filled ? (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+    </svg>
+  ) : (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+    </svg>
+  )
+}
+
 interface RecipesTableProps {
   recipes: RecipeOut[]
   showAddedBy: boolean
   onView: (recipe: RecipeOut) => void
   onEdit: (recipe: RecipeOut) => void
   onDelete: (recipe: RecipeOut) => void
+  onToggleFavourite: (recipe: RecipeOut) => void
 }
 
 function GripIcon() {
@@ -236,6 +249,7 @@ function SortableRow({
   onView,
   onEdit,
   onDelete,
+  onToggleFavourite,
 }: {
   recipe: RecipeOut
   showAddedBy: boolean
@@ -243,6 +257,7 @@ function SortableRow({
   onView: () => void
   onEdit: () => void
   onDelete: () => void
+  onToggleFavourite: () => void
 }) {
   // Both attributes and listeners go on the grip button (correct drag-handle pattern)
   const {
@@ -277,6 +292,19 @@ function SortableRow({
         aria-label="Drag to reorder"
       >
         <GripIcon />
+      </button>
+
+      {/* Star / favourite */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation()
+          onToggleFavourite()
+        }}
+        className={`flex items-center justify-center w-full h-8 transition-colors rounded ${recipe.is_favourite ? 'text-amber-400 hover:text-amber-300' : 'text-zinc-300 hover:text-amber-400'}`}
+        aria-label={recipe.is_favourite ? 'Remove from favourites' : 'Add to favourites'}
+      >
+        <StarIcon filled={recipe.is_favourite} />
       </button>
 
       {/* Thumbnail */}
@@ -382,6 +410,7 @@ export default function RecipesTable({
   onView,
   onEdit,
   onDelete,
+  onToggleFavourite,
 }: RecipesTableProps) {
   const { t } = useTranslation()
   const [sort, setSort] = useState<Sort>({ field: 'created_at', dir: 'desc' })
@@ -431,8 +460,8 @@ export default function RecipesTable({
   const displayed = sort ? applySortRows(localRows, sort) : localRows
 
   const cols = showAddedBy
-    ? '32px 56px minmax(135px,1fr) 72px 72px 120px 120px 100px 40px'
-    : '32px 56px minmax(135px,1fr) 72px 72px 120px 100px 40px'
+    ? '32px 28px 56px minmax(135px,1fr) 72px 72px 120px 120px 100px 40px'
+    : '32px 28px 56px minmax(135px,1fr) 72px 72px 120px 100px 40px'
 
   return (
     <div className="px-4 mt-4 pb-6">
@@ -450,6 +479,7 @@ export default function RecipesTable({
             >
               <GripIcon />
             </div>
+            <div />
             <div />
             <ColHeader
               label={t('recipes.colTitle')}
@@ -518,6 +548,7 @@ export default function RecipesTable({
                   onView={() => onView(recipe)}
                   onEdit={() => onEdit(recipe)}
                   onDelete={() => onDelete(recipe)}
+                  onToggleFavourite={() => onToggleFavourite(recipe)}
                 />
               ))}
             </SortableContext>

@@ -30,13 +30,20 @@ class AllergenFlag(BaseModel):
     original_display: str | None = None
 
 
-# ── Association table ─────────────────────────────────────────────────────────
+# ── Association tables ────────────────────────────────────────────────────────
 
 recipe_tags_table = Table(
     "recipe_tags",
     Base.metadata,
     Column("recipe_id", PG_UUID(as_uuid=True), ForeignKey("recipes.id", ondelete="CASCADE"), primary_key=True),
     Column("tag_id", PG_UUID(as_uuid=True), ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True),
+)
+
+user_recipe_favourites_table = Table(
+    "user_recipe_favourites",
+    Base.metadata,
+    Column("user_id", PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
+    Column("recipe_id", PG_UUID(as_uuid=True), ForeignKey("recipes.id", ondelete="CASCADE"), primary_key=True),
 )
 
 
@@ -238,6 +245,7 @@ class RecipeOut(BaseModel):
     household_id: uuid.UUID | None = None
     shared_to_personal: bool = True
     added_by: str | None = None
+    is_favourite: bool = False
 
 
 class RecipeOrderRequest(BaseModel):

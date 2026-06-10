@@ -107,6 +107,7 @@ export interface RecipeOut {
   household_id: string | null
   shared_to_personal: boolean
   added_by: string | null
+  is_favourite: boolean
 }
 
 export async function saveRecipe(data: RecipeSaveRequest): Promise<RecipeOut> {
@@ -214,6 +215,18 @@ export async function exportRecipes(): Promise<void> {
   a.download = 'recipes.csv'
   a.click()
   URL.revokeObjectURL(url)
+}
+
+export async function toggleFavourite(
+  recipeId: string
+): Promise<{ is_favourite: boolean }> {
+  const res = await fetch(`/api/recipes/${recipeId}/favourite`, {
+    method: 'POST',
+    credentials: 'include',
+  })
+  if (!res.ok) throw new Error('Failed to toggle favourite')
+
+  return res.json() as Promise<{ is_favourite: boolean }>
 }
 
 export async function reorderRecipes(ids: string[]): Promise<void> {

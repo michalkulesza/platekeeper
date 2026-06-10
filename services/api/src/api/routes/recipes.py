@@ -5,11 +5,11 @@ import uuid
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, delete, insert, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.database import get_async_session
-from api.models import Recipe, RecipeOrderRequest, RecipeOut, RecipeSaveRequest, Tag
+from api.models import Recipe, RecipeOrderRequest, RecipeOut, RecipeSaveRequest, Tag, user_recipe_favourites_table
 from api.routes.context import get_active_household_id
 from api.users import User, current_active_user
 
@@ -61,10 +61,20 @@ async def _set_tags(
     recipe.tags = list(result.scalars().all())
 
 
-def _build_recipe_out(recipe: Recipe) -> RecipeOut:
+async def _get_favourite_ids(session: AsyncSession, user_id: uuid.UUID) -> set[uuid.UUID]:
+    result = await session.execute(
+        select(user_recipe_favourites_table.c.recipe_id)
+        .where(user_recipe_favourites_table.c.user_id == user_id)
+    )
+    return {row[0] for row in result}
+
+
+def _build_recipe_out(recipe: Recipe, favourite_ids: set[uuid.UUID] | None = None) -> RecipeOut:
     out = RecipeOut.model_validate(recipe)
     if recipe.household_id is not None and recipe.author is not None:
         out.added_by = recipe.author.nickname or recipe.author.email
+    if favourite_ids is not None:
+        out.is_favourite = recipe.id in favourite_ids
     return out
 
 
@@ -186,7 +196,8 @@ async def list_recipes(
                else and_(Recipe.user_id == user.id, Recipe.household_id.is_(None)))
         .order_by(Recipe.position.asc().nullslast(), Recipe.created_at.desc())
     )
-    return [_build_recipe_out(r) for r in result.scalars().all()]
+    favourite_ids = await _get_favourite_ids(session, user.id)
+    return [_build_recipe_out(r, favourite_ids) for r in result.scalars().all()]
 
 
 @router.post("", response_model=RecipeOut, status_code=201)
@@ -344,6 +355,47 @@ async def link_recipe_to_household(
     await session.commit()
     await session.refresh(recipe)
     return _build_recipe_out(recipe)
+
+
+@router.post("/{recipe_id}/favourite")
+async def toggle_favourite(
+    recipe_id: uuid.UUID,
+    user: User = Depends(current_active_user),
+    session: AsyncSession = Depends(get_async_session),
+    household_id: uuid.UUID | None = Depends(get_active_household_id),
+) -> dict:
+    result = await session.execute(
+        select(Recipe).where(_recipe_filter(user.id, household_id), Recipe.id == recipe_id)
+    )
+    if result.scalar_one_or_none() is None:
+        raise HTTPException(status_code=404, detail="Recipe not found")
+
+    existing = await session.execute(
+        select(user_recipe_favourites_table).where(
+            and_(
+                user_recipe_favourites_table.c.user_id == user.id,
+                user_recipe_favourites_table.c.recipe_id == recipe_id,
+            )
+        )
+    )
+    if existing.one_or_none() is not None:
+        await session.execute(
+            delete(user_recipe_favourites_table).where(
+                and_(
+                    user_recipe_favourites_table.c.user_id == user.id,
+                    user_recipe_favourites_table.c.recipe_id == recipe_id,
+                )
+            )
+        )
+        is_favourite = False
+    else:
+        await session.execute(
+            insert(user_recipe_favourites_table).values(user_id=user.id, recipe_id=recipe_id)
+        )
+        is_favourite = True
+
+    await session.commit()
+    return {"is_favourite": is_favourite}
 
 
 @router.delete("/{recipe_id}", status_code=204)

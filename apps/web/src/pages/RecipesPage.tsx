@@ -13,7 +13,7 @@ import {
 import PageHeader from '../components/PageHeader'
 import RecipeDetailModal from '../components/RecipeDetailModal'
 import RecipesTable from '../components/RecipesTable'
-import { RecipeOut, Tag, UserPreferences, deleteRecipe } from '../api/client'
+import { RecipeOut, Tag, UserPreferences, deleteRecipe, toggleFavourite } from '../api/client'
 import { useHousehold } from '../context/HouseholdContext'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -129,12 +129,14 @@ function RecipeCard({
   onEdit,
   onDelete,
   onTagClick,
+  onToggleFavourite,
 }: {
   recipe: RecipeOut
   onView: () => void
   onEdit: () => void
   onDelete: () => void
   onTagClick: (tag: Tag) => void
+  onToggleFavourite: () => void
 }) {
   const { t } = useTranslation()
   const proxyUrl = recipe.thumbnail_url
@@ -198,7 +200,23 @@ function RecipeCard({
           </div>
         )}
       </div>
-      <div onClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center gap-1 self-center" onClick={(e) => e.stopPropagation()}>
+        <button
+          type="button"
+          onClick={onToggleFavourite}
+          className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${recipe.is_favourite ? 'text-amber-400' : 'text-zinc-300 hover:text-amber-400'}`}
+          aria-label={recipe.is_favourite ? 'Remove from favourites' : 'Add to favourites'}
+        >
+          {recipe.is_favourite ? (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+            </svg>
+          ) : (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+            </svg>
+          )}
+        </button>
         <CardMenu onView={onView} onEdit={onEdit} onDelete={onDelete} />
       </div>
     </div>
@@ -257,6 +275,8 @@ export default function RecipesPage({
   const { activeHouseholdId, activeHousehold } = useHousehold()
   const { t } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
+  const [filterFavourites, setFilterFavourites] = useState(false)
+  const [favouriteOverrides, setFavouriteOverrides] = useState<Map<string, boolean>>(new Map())
 
   const activeAllergens: string[] = activeHousehold?.allergens
     ? [
@@ -298,11 +318,38 @@ export default function RecipesPage({
     setSearchParams(new URLSearchParams(), { replace: true })
   }, [searchParams, recipes, loading])
 
-  const displayed = (
-    filterTag
-      ? recipes.filter((r) => r.tags.some((t) => t.id === filterTag.id))
-      : recipes
-  )
+  async function handleToggleFavourite(recipe: RecipeOut) {
+    const current = favouriteOverrides.has(recipe.id)
+      ? favouriteOverrides.get(recipe.id)!
+      : recipe.is_favourite
+    setFavouriteOverrides((prev) => new Map(prev).set(recipe.id, !current))
+    try {
+      const result = await toggleFavourite(recipe.id)
+      onRecipeUpdated({ ...recipe, is_favourite: result.is_favourite })
+      setFavouriteOverrides((prev) => {
+        const next = new Map(prev)
+        next.delete(recipe.id)
+        return next
+      })
+    } catch {
+      setFavouriteOverrides((prev) => {
+        const next = new Map(prev)
+        next.delete(recipe.id)
+        return next
+      })
+    }
+  }
+
+  const recipesWithOverrides = recipes.map((r) => ({
+    ...r,
+    is_favourite: favouriteOverrides.has(r.id)
+      ? favouriteOverrides.get(r.id)!
+      : r.is_favourite,
+  }))
+
+  const displayed = recipesWithOverrides
+    .filter((r) => !filterFavourites || r.is_favourite)
+    .filter((r) => !filterTag || r.tags.some((t) => t.id === filterTag.id))
     .slice()
     .sort(
       (a, b) =>
@@ -476,28 +523,48 @@ export default function RecipesPage({
           </div>
         )}
 
-        {allTags.length > 0 && (
-          <div className="flex gap-2 px-4 mt-3 overflow-x-auto pb-1 scrollbar-hide">
-            {allTags.map((tag) => {
-              const active = filterTag?.id === tag.id
+        <div className="flex items-center gap-2 px-4 mt-3 pb-1">
+          <button
+            type="button"
+            onClick={() => setFilterFavourites((v) => !v)}
+            className={`shrink-0 flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${
+              filterFavourites
+                ? 'bg-amber-400 text-white'
+                : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
+            }`}
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+            </svg>
+            {t('recipes.filterFavourites', 'Favourites')}
+          </button>
 
-              return (
-                <button
-                  key={tag.id}
-                  type="button"
-                  onClick={() => setFilterTag(active ? null : tag)}
-                  className={`shrink-0 text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${
-                    active
-                      ? 'bg-secondary text-white'
-                      : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
-                  }`}
-                >
-                  {tTag(tag.name, t)}
-                </button>
-              )
-            })}
-          </div>
-        )}
+          {allTags.length > 0 && (
+            <>
+              <div className="shrink-0 w-px h-4 bg-zinc-200 self-center" />
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide min-w-0">
+                {allTags.map((tag) => {
+                  const active = filterTag?.id === tag.id
+
+                  return (
+                    <button
+                      key={tag.id}
+                      type="button"
+                      onClick={() => setFilterTag(active ? null : tag)}
+                      className={`shrink-0 text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${
+                        active
+                          ? 'bg-secondary text-white'
+                          : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
+                      }`}
+                    >
+                      {tTag(tag.name, t)}
+                    </button>
+                  )
+                })}
+              </div>
+            </>
+          )}
+        </div>
 
         {loading ? (
           <>
@@ -535,9 +602,16 @@ export default function RecipesPage({
           </div>
         ) : displayed.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-zinc-400 px-4 text-center">
-            <p className="text-lg">{t('recipes.noRecipesWithTag')}</p>
+            <p className="text-lg">
+              {filterFavourites && !filterTag
+                ? t('recipes.noFavourites', 'No favourites yet')
+                : t('recipes.noRecipesWithTag')}
+            </p>
             <button
-              onClick={() => setFilterTag(null)}
+              onClick={() => {
+                setFilterTag(null)
+                setFilterFavourites(false)
+              }}
               className="text-sm text-primary mt-1"
             >
               {t('recipes.clearFilter')}
@@ -555,6 +629,7 @@ export default function RecipesPage({
                   onEdit={() => openEdit(r)}
                   onDelete={() => setDeleteTarget(r)}
                   onTagClick={setFilterTag}
+                  onToggleFavourite={() => handleToggleFavourite(r)}
                 />
               ))}
             </div>
@@ -567,6 +642,7 @@ export default function RecipesPage({
                 onView={openView}
                 onEdit={openEdit}
                 onDelete={(r) => setDeleteTarget(r)}
+                onToggleFavourite={handleToggleFavourite}
               />
             </div>
           </>
