@@ -712,18 +712,27 @@ function ViewComponent({
       const refs: StepIngredientRef[] = []
       const stepLower = step.toLowerCase()
       comp.ingredients.forEach((ingStr, ii) => {
-        const searchName = parseIngredient(ingStr).name.split(',')[0].trim().toLowerCase()
-        if (searchName.length < 3) return
-        let idx = 0
-        while (true) {
-          const pos = stepLower.indexOf(searchName, idx)
-          if (pos === -1) break
-          const beforeOk = pos === 0 || !/\w/.test(stepLower[pos - 1])
-          const afterOk = pos + searchName.length >= stepLower.length || !/\w/.test(stepLower[pos + searchName.length])
-          if (beforeOk && afterOk) {
-            refs.push({ ingredient_index: ii, mention: step.slice(pos, pos + searchName.length) })
+        const fullName = parseIngredient(ingStr).name.split(',')[0].trim().toLowerCase()
+        const firstWord = fullName.split(' ')[0]
+        // Try full name first; fall back to first word (handles "chicken" → "chicken thighs")
+        const candidates = [fullName]
+        if (firstWord !== fullName && firstWord.length >= 4) candidates.push(firstWord)
+        for (const searchName of candidates) {
+          if (searchName.length < 3) continue
+          let matched = false
+          let idx = 0
+          while (true) {
+            const pos = stepLower.indexOf(searchName, idx)
+            if (pos === -1) break
+            const beforeOk = pos === 0 || !/\w/.test(stepLower[pos - 1])
+            const afterOk = pos + searchName.length >= stepLower.length || !/\w/.test(stepLower[pos + searchName.length])
+            if (beforeOk && afterOk) {
+              refs.push({ ingredient_index: ii, mention: step.slice(pos, pos + searchName.length) })
+              matched = true
+            }
+            idx = pos + searchName.length
           }
-          idx = pos + searchName.length
+          if (matched) break
         }
       })
       return refs

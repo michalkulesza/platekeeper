@@ -23,6 +23,7 @@ import {
   RecipeComponent,
   RecipeOut,
   StageEvent,
+  StepIngredientRef,
   Tag,
   UserPreferences,
   UNITS,
@@ -78,6 +79,7 @@ interface EditableComponent {
   ingredients: StructuredIngredient[]
   steps: string[]
   ingredient_flags: (AllergenFlag | null)[]
+  step_ingredient_refs: StepIngredientRef[][] | null
 }
 
 interface EditableRecipe {
@@ -107,34 +109,48 @@ function toEditable(
     source_url: metadata.source_url || null,
     stage,
     suggestedTagNames: recipe?.tags ?? [],
-    components: (recipe?.components ?? []).map((c: RecipeComponent) => ({
-      name: c.name ?? c.role,
-      yield_note: c.yield_note ?? '',
-      ingredients: c.ingredients.map((ing) => {
-        const useSub = autoSubstitute && !!ing.allergen && !!ing.substitute
-        const nameToUse = useSub ? ing.substitute! : ing.name
-        // Gemini sometimes returns the full ingredient string in name with null qty/unit
-        if (!ing.qty) {
-          const fullStr = [nameToUse, ing.note ? `(${ing.note})` : ''].filter(Boolean).join(' ')
-          return parseIngredient(fullStr)
+    components: (recipe?.components ?? []).map((c: RecipeComponent) => {
+      const numSteps = c.steps.length
+      let step_ingredient_refs: StepIngredientRef[][] | null = null
+      if (c.step_refs && c.step_refs.length > 0) {
+        const arr: StepIngredientRef[][] = Array.from({ length: numSteps }, () => [])
+        for (const ref of c.step_refs) {
+          if (ref.step_index < numSteps) {
+            arr[ref.step_index].push({ ingredient_index: ref.ingredient_index, mention: ref.mention })
+          }
         }
-        return {
-          qty: ing.qty ?? '',
-          unit: ing.unit ?? '',
-          name: nameToUse,
-          note: ing.note ?? '',
-        }
-      }),
-      steps: c.steps,
-      ingredient_flags: c.ingredients.map((ing) => ({
-        allergen: ing.allergen ?? null,
-        substitute: ing.substitute ?? null,
-        substitute_applied:
-          autoSubstitute && !!ing.allergen && !!ing.substitute,
-        original_display: null,
-        ingredient_name: ing.name,
-      })),
-    })),
+        step_ingredient_refs = arr
+      }
+      return {
+        name: c.name ?? c.role,
+        yield_note: c.yield_note ?? '',
+        ingredients: c.ingredients.map((ing) => {
+          const useSub = autoSubstitute && !!ing.allergen && !!ing.substitute
+          const nameToUse = useSub ? ing.substitute! : ing.name
+          // Gemini sometimes returns the full ingredient string in name with null qty/unit
+          if (!ing.qty) {
+            const fullStr = [nameToUse, ing.note ? `(${ing.note})` : ''].filter(Boolean).join(' ')
+            return parseIngredient(fullStr)
+          }
+          return {
+            qty: ing.qty ?? '',
+            unit: ing.unit ?? '',
+            name: nameToUse,
+            note: ing.note ?? '',
+          }
+        }),
+        steps: c.steps,
+        ingredient_flags: c.ingredients.map((ing) => ({
+          allergen: ing.allergen ?? null,
+          substitute: ing.substitute ?? null,
+          substitute_applied:
+            autoSubstitute && !!ing.allergen && !!ing.substitute,
+          original_display: null,
+          ingredient_name: ing.name,
+        })),
+        step_ingredient_refs,
+      }
+    }),
   }
 }
 
@@ -836,6 +852,7 @@ export default function AddRecipeModal({
                 original_display: null,
               }
           ),
+          step_ingredient_refs: c.step_ingredient_refs,
         })),
         tag_ids: selectedTags.map((t) => t.id),
         shared_to_personal: sharedToPersonal,

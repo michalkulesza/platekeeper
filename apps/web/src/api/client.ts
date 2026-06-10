@@ -28,12 +28,19 @@ export interface Ingredient {
   substitute?: string | null
 }
 
+export interface StepRef {
+  step_index: number
+  ingredient_index: number
+  mention: string
+}
+
 export interface RecipeComponent {
   role: string
   name: string | null
   yield_note: string | null
   ingredients: Ingredient[]
   steps: string[]
+  step_refs?: StepRef[]
 }
 
 export interface Tag {

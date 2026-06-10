@@ -168,12 +168,19 @@ class Ingredient(BaseModel):
     substitute: str | None = None
 
 
+class StepRef(BaseModel):
+    step_index: int
+    ingredient_index: int
+    mention: str
+
+
 class RecipeComponent(BaseModel):
     role: str = "main"
     name: str | None = None
     yield_note: str | None = None
     ingredients: list[Ingredient] = []
     steps: list[str] = []
+    step_refs: list[StepRef] = []
 
 
 class RecipeExtraction(BaseModel):

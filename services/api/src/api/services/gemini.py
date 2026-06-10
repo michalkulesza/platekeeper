@@ -10,7 +10,7 @@ from google.genai import types
 from pydantic import BaseModel
 
 from api.config import settings
-from api.models import RecipeExtraction, StepIngredientRef
+from api.models import RecipeExtraction
 
 log = logging.getLogger(__name__)
 
@@ -81,6 +81,15 @@ For each ingredient set:
 - "allergen": the exact allergen name from the list if the ingredient contains it, else null
 - "substitute": a single best substitute ingredient name if allergen found, else null
 Only flag allergens from the provided list — never flag others.
+
+step_refs: for every ingredient mentioned in a step — by full name, key noun
+("chicken" for "chicken thighs, skin on"), plural, or common abbreviation —
+add one entry per occurrence:
+  step_index: 0-based index of the step in this component's steps list
+  ingredient_index: 0-based index of the ingredient in this component's ingredients list
+  mention: the exact substring as it appears in the step text (may be shorter
+    than the full ingredient name, e.g. "chicken" when ingredient is "chicken thighs")
+Leave step_refs as an empty list if no ingredient names appear in the steps.
 """
 
 _ALLERGEN_SYSTEM = """\
@@ -184,68 +193,3 @@ async def analyze_allergens(
     return flags[:len(ingredients)]
 
 
-class _StepMatch(BaseModel):
-    step_index: int
-    ingredient_index: int
-    mention: str
-
-
-class _StepMatchResult(BaseModel):
-    matches: list[_StepMatch]
-
-
-_STEP_MATCH_SYSTEM = """\
-You are a recipe parsing assistant. Given a numbered list of ingredients and a
-numbered list of steps, find every place where an ingredient is mentioned by
-name (including plurals, abbreviations, or synonyms) in a step.
-
-For each match return:
-- step_index: 0-based index of the step
-- ingredient_index: 0-based index of the ingredient
-- mention: the exact substring in the step text that refers to the ingredient
-
-Only include clear, unambiguous matches. Ignore generic terms like "it" or
-"the mixture". Return an empty list if nothing matches.
-"""
-
-
-async def match_step_ingredients(
-    ingredients: list[str],
-    steps: list[str],
-    model: str = _DEFAULT_MODEL,
-) -> list[list[StepIngredientRef]] | None:
-    if not ingredients or not steps:
-        return None
-
-    numbered_ing = "\n".join(f"{i}. {ing}" for i, ing in enumerate(ingredients))
-    numbered_steps = "\n".join(f"{i}. {step}" for i, step in enumerate(steps))
-    prompt = f"Ingredients:\n{numbered_ing}\n\nSteps:\n{numbered_steps}"
-
-    client = _build_client()
-    try:
-        response = await _with_retry(lambda: client.models.generate_content(
-            model=model,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                system_instruction=_STEP_MATCH_SYSTEM,
-                response_mime_type="application/json",
-                response_schema=_StepMatchResult,
-            ),
-        ))
-        data = json.loads(response.text)
-        result = _StepMatchResult.model_validate(data)
-    except Exception as exc:
-        log.warning("match_step_ingredients failed, skipping refs: %s", exc)
-        return None
-
-    refs: list[list[StepIngredientRef]] = [[] for _ in steps]
-    for m in result.matches:
-        if 0 <= m.step_index < len(steps) and 0 <= m.ingredient_index < len(ingredients):
-            refs[m.step_index].append(StepIngredientRef(
-                ingredient_index=m.ingredient_index,
-                mention=m.mention,
-            ))
-
-    if all(len(r) == 0 for r in refs):
-        return None
-    return refs
