@@ -713,10 +713,12 @@ function ViewComponent({
       const stepLower = step.toLowerCase()
       comp.ingredients.forEach((ingStr, ii) => {
         const fullName = parseIngredient(ingStr).name.split(',')[0].trim().toLowerCase()
-        const firstWord = fullName.split(' ')[0]
-        // Try full name first; fall back to first word (handles "chicken" → "chicken thighs")
+        // Try full name first, then each individual word — handles "chicken" matching
+        // "chicken thighs" and "soy" matching "filiżanka tamari soy" (non-English unit absorbed into name)
         const candidates = [fullName]
-        if (firstWord !== fullName && firstWord.length >= 4) candidates.push(firstWord)
+        for (const word of fullName.split(/\s+/)) {
+          if (word !== fullName && word.length >= 3 && !candidates.includes(word)) candidates.push(word)
+        }
         for (const searchName of candidates) {
           if (searchName.length < 3) continue
           let matched = false
