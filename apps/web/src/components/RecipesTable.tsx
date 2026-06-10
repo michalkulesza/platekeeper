@@ -431,8 +431,8 @@ export default function RecipesTable({
   const displayed = sort ? applySortRows(localRows, sort) : localRows
 
   const cols = showAddedBy
-    ? '32px 56px minmax(135px,1fr) 135px 135px 135px 135px 135px 40px'
-    : '32px 56px minmax(135px,1fr) 135px 135px 135px 135px 40px'
+    ? '32px 56px minmax(135px,1fr) 72px 72px 120px 120px 100px 40px'
+    : '32px 56px minmax(135px,1fr) 72px 72px 120px 100px 40px'
 
   return (
     <div className="px-4 mt-4 pb-6">
