@@ -30,12 +30,12 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="relative min-h-screen bg-background flex flex-col items-center justify-center px-4">
+    <main className="relative min-h-screen bg-background flex flex-col items-center justify-center px-4">
       <LanguageSwitcher />
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold tracking-tight">PlateKeeper</h1>
-          <p className="text-zinc-500 mt-1 text-sm">{t('auth.tagline')}</p>
+          <p className="text-zinc-600 mt-1 text-sm">{t('auth.tagline')}</p>
         </div>
 
         <Card>
@@ -98,7 +98,7 @@ export default function RegisterPage() {
               </Button>
             </form>
 
-            <p className="text-center text-sm text-zinc-500">
+            <p className="text-center text-sm text-zinc-600">
               {t('auth.alreadyHaveAccount')}{' '}
               <Link to="/login" className="text-primary font-medium">
                 {t('auth.signIn')}
@@ -107,6 +107,6 @@ export default function RegisterPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </main>
   )
 }

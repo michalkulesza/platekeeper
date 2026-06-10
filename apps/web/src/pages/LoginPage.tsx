@@ -34,12 +34,12 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative min-h-screen bg-background flex flex-col items-center justify-center px-4">
+    <main className="relative min-h-screen bg-background flex flex-col items-center justify-center px-4">
       <LanguageSwitcher />
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold tracking-tight">PlateKeeper</h1>
-          <p className="text-zinc-500 mt-1 text-sm">{t('auth.tagline')}</p>
+          <p className="text-zinc-600 mt-1 text-sm">{t('auth.tagline')}</p>
         </div>
 
         <Card>
@@ -88,7 +88,7 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            <div className="flex items-center gap-2 text-xs text-zinc-400">
+            <div className="flex items-center gap-2 text-xs text-zinc-600">
               <div className="flex-1 h-px bg-zinc-200" />
               <span>or</span>
               <div className="flex-1 h-px bg-zinc-200" />
@@ -110,7 +110,7 @@ export default function LoginPage() {
               </Button>
             </div>
 
-            <p className="text-center text-sm text-zinc-500">
+            <p className="text-center text-sm text-zinc-600">
               {t('auth.noAccount')}{' '}
               <Link to="/register" className="text-primary font-medium">
                 {t('auth.createOne')}
@@ -119,6 +119,6 @@ export default function LoginPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </main>
   )
 }

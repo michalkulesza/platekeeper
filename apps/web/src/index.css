@@ -1,8 +1,17 @@
 @import '@heroui/react/styles';
 
+/* Override HeroUI accent to meet WCAG AA contrast (4.5:1) */
+:root,
+.light,
+.default,
+[data-theme="light"],
+[data-theme="default"] {
+  --accent: oklch(0.50 0.195 253.83);
+}
+
 @theme {
   /* primary — maps to HeroUI accent (blue-indigo) */
-  --color-primary: oklch(0.62 0.195 253.83);
+  --color-primary: oklch(0.50 0.195 253.83);
   --color-primary-foreground: oklch(1 0 0);
 
   /* secondary — violet, used for tags */
