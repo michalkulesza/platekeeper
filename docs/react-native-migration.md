@@ -29,7 +29,7 @@ Goal: move all platform-agnostic code out of `apps/web` into `packages/shared` s
 - Register the package in `pnpm-workspace.yaml` (already listed as `packages/*`).
 - Add `@platekeeper/shared` as a workspace dependency in `apps/web/package.json`.
 
-### 1.2 Move types
+### 1.2 Move types ✅
 
 Extract all TypeScript interfaces and types from `apps/web/src/api/client.ts` into `packages/shared/src/types.ts`:
 

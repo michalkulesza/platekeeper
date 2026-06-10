@@ -1,18 +1,5 @@
-export interface AuthUser {
-  id: string
-  email: string
-  nickname: string | null
-  is_active: boolean
-  is_verified: boolean
-  is_superuser: boolean
-  active_household_id: string | null
-}
-
-export interface RegisterData {
-  email: string
-  password: string
-  nickname?: string
-}
+import type { AuthUser, RegisterData } from '@platekeeper/shared/types'
+export type { AuthUser, RegisterData }
 
 const ERROR_MESSAGES: Record<string, string> = {
   LOGIN_BAD_CREDENTIALS: 'Invalid email or password.',
