@@ -168,7 +168,10 @@
     "keepScreenOnDefaultDesc": "Ekran pozostaje aktywny, gdy otwierasz przepis",
     "logOut": "Wyloguj się",
     "loggingOut": "Wyloguję…",
-    "manage": "Zarządzaj"
+    "manage": "Zarządzaj",
+    "unitSystem": "System jednostek",
+    "metric": "Metryczny",
+    "imperial": "Imperialny"
   },
   "allergens": {
     "gluten": "Zboża zawierające gluten",
@@ -274,5 +277,25 @@
     "pl": "Polski",
     "fr": "Français",
     "es": "Español"
+  },
+  "units": {
+    "ml": "mililitr",
+    "l": "litr",
+    "tsp": "łyżeczka",
+    "tbsp": "łyżka",
+    "cup": "filiżanka",
+    "g": "gram",
+    "kg": "kilogram",
+    "piece": "sztuka",
+    "clove": "ząbek",
+    "slice": "plasterek",
+    "can": "puszka",
+    "bunch": "pęczek",
+    "pinch": "szczypta",
+    "sprig": "gałązka",
+    "handful": "garść",
+    "qtyLabel": "ilość",
+    "noteLabel": "uwaga",
+    "unitLabel": "jednostka"
   }
 }

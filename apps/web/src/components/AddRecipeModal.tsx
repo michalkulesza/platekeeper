@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Modal,
   ModalBackdrop,
@@ -24,6 +25,7 @@ import {
   StageEvent,
   Tag,
   UserPreferences,
+  UNITS,
 } from '../api/client'
 import TagRow from './TagRow'
 import { useHousehold } from '../context/HouseholdContext'
@@ -34,10 +36,46 @@ interface StepState extends StageEvent {
   status: 'active' | 'done'
 }
 
+interface StructuredIngredient {
+  qty: string
+  unit: string
+  name: string
+  note: string
+}
+
+function parseIngredient(s: string): StructuredIngredient {
+  const trimmed = s.trim()
+  if (!trimmed) return { qty: '', unit: '', name: '', note: '' }
+  let rest = trimmed
+  let note = ''
+  const noteMatch = rest.match(/^(.*?)\s*\(([^)]+)\)\s*$/)
+  if (noteMatch) {
+    rest = noteMatch[1].trim()
+    note = noteMatch[2]
+  }
+  const parts = rest.split(/\s+/)
+  let idx = 0
+  let qty = ''
+  if (parts[idx] && /^[\d¼½¾⅓⅔⅛⅜⅝⅞.,/]+$/.test(parts[idx])) {
+    qty = parts[idx++]
+  }
+  let unit = ''
+  if (parts[idx] && (UNITS as readonly string[]).includes(parts[idx].toLowerCase())) {
+    unit = parts[idx++].toLowerCase()
+  }
+  return { qty, unit, name: parts.slice(idx).join(' '), note }
+}
+
+function serializeIngredient(ing: StructuredIngredient): string {
+  return [ing.qty, ing.unit, ing.name, ing.note ? `(${ing.note})` : '']
+    .filter(Boolean)
+    .join(' ')
+}
+
 interface EditableComponent {
   name: string
   yield_note: string
-  ingredients: string[]
+  ingredients: StructuredIngredient[]
   steps: string[]
   ingredient_flags: (AllergenFlag | null)[]
 }
@@ -74,11 +112,12 @@ function toEditable(
       yield_note: c.yield_note ?? '',
       ingredients: c.ingredients.map((ing) => {
         const useSub = autoSubstitute && !!ing.allergen && !!ing.substitute
-        const nameToUse = useSub ? ing.substitute! : ing.name
-
-        return [ing.qty, ing.unit, nameToUse, ing.note ? `(${ing.note})` : null]
-          .filter(Boolean)
-          .join(' ')
+        return {
+          qty: ing.qty ?? '',
+          unit: ing.unit ?? '',
+          name: useSub ? ing.substitute! : ing.name,
+          note: ing.note ?? '',
+        }
       }),
       steps: c.steps,
       ingredient_flags: c.ingredients.map((ing) => ({
@@ -230,7 +269,7 @@ function ProgressList({ steps }: { steps: StepState[] }) {
   )
 }
 
-// ── Inline editable field ─────────────────────────────────────────────────────
+// ── Inline editable text field ────────────────────────────────────────────────
 
 function EditLine({
   value,
@@ -244,35 +283,94 @@ function EditLine({
   multiline?: boolean
 }) {
   const base =
-    'w-full bg-transparent border-b border-transparent hover:border-zinc-300 focus:border-primary focus:outline-none transition-colors resize-none'
+    'w-full bg-transparent border-b border-transparent hover:border-zinc-300 focus:border-primary focus:outline-none transition-colors resize-none overflow-hidden'
   const ref = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
-    if (ref.current) {
+    if (ref.current && multiline) {
       ref.current.style.height = 'auto'
       ref.current.style.height = `${ref.current.scrollHeight}px`
     }
-  }, [value])
+  }, [value, multiline])
 
-  if (multiline) {
+  if (!multiline) {
     return (
-      <textarea
-        ref={ref}
+      <input
+        type="text"
         value={value}
-        rows={1}
         onChange={(e) => onChange(e.target.value)}
-        className={`${base} overflow-hidden ${className}`}
+        className={`w-full bg-transparent border-b border-transparent hover:border-zinc-300 focus:border-primary focus:outline-none transition-colors ${className}`}
       />
     )
   }
 
   return (
-    <input
-      type="text"
+    <textarea
+      ref={ref}
       value={value}
+      rows={1}
       onChange={(e) => onChange(e.target.value)}
       className={`${base} ${className}`}
     />
+  )
+}
+
+// ── Structured ingredient editor ──────────────────────────────────────────────
+
+function IngredientEditor({
+  value,
+  onChange,
+}: {
+  value: StructuredIngredient
+  onChange: (v: StructuredIngredient) => void
+}) {
+  const { t } = useTranslation()
+  const inputBase =
+    'bg-transparent border-b border-transparent hover:border-zinc-300 focus:border-primary focus:outline-none transition-colors text-sm'
+
+  function update(field: keyof StructuredIngredient, val: string) {
+    onChange({ ...value, [field]: val })
+  }
+
+  return (
+    <div className="flex items-center gap-1 flex-1 min-w-0">
+      <input
+        type="text"
+        value={value.qty}
+        onChange={(e) => update('qty', e.target.value)}
+        placeholder={t('units.qtyLabel')}
+        aria-label={t('units.qtyLabel')}
+        className={`${inputBase} w-10 text-center shrink-0`}
+      />
+      <select
+        value={value.unit}
+        onChange={(e) => update('unit', e.target.value)}
+        aria-label={t('units.unitLabel')}
+        className={`${inputBase} shrink-0 cursor-pointer text-zinc-500 max-w-[7rem]`}
+      >
+        <option value="">—</option>
+        {UNITS.map((u) => (
+          <option key={u} value={u}>
+            {t(`units.${u}`)}
+          </option>
+        ))}
+      </select>
+      <input
+        type="text"
+        value={value.name}
+        onChange={(e) => update('name', e.target.value)}
+        aria-label="ingredient name"
+        className={`${inputBase} flex-1 min-w-0`}
+      />
+      <input
+        type="text"
+        value={value.note}
+        onChange={(e) => update('note', e.target.value)}
+        placeholder={t('units.noteLabel')}
+        aria-label={t('units.noteLabel')}
+        className={`${inputBase} w-16 text-zinc-400 italic shrink-0`}
+      />
+    </div>
   )
 }
 
@@ -313,7 +411,7 @@ function EditableRecipeView({
     onChange({ ...recipe, kcal })
   }
 
-  function setIngredient(ci: number, ii: number, val: string) {
+  function setIngredient(ci: number, ii: number, val: StructuredIngredient) {
     setIsAdapted(true)
     const components = recipe.components.map((c, ci2) =>
       ci2 !== ci
@@ -332,9 +430,9 @@ function EditableRecipeView({
     const comp = recipe.components[ci]
     const flag = comp.ingredient_flags[ii]
     if (!flag?.substitute) return
-    const originalDisplay = comp.ingredients[ii]
+    const originalDisplay = serializeIngredient(comp.ingredients[ii])
     const newIngredients = comp.ingredients.map((ing, idx) =>
-      idx === ii ? flag.substitute! : ing
+      idx === ii ? parseIngredient(flag.substitute!) : ing
     )
     const newFlags = comp.ingredient_flags.map((f, idx) =>
       idx === ii
@@ -353,9 +451,8 @@ function EditableRecipeView({
     const comp = recipe.components[ci]
     const flag = comp.ingredient_flags[ii]
     if (!flag?.original_display) return
-    const originalDisplay = flag.original_display
     const newIngredients = comp.ingredients.map((ing, idx) =>
-      idx === ii ? originalDisplay : ing
+      idx === ii ? parseIngredient(flag.original_display!) : ing
     )
     const newFlags = comp.ingredient_flags.map((f, idx) =>
       idx === ii
@@ -568,10 +665,9 @@ function EditableRecipeView({
                   return (
                     <li key={ii} className="flex items-start gap-2 text-sm">
                       <span className="text-zinc-300 mt-1.5 shrink-0">·</span>
-                      <EditLine
+                      <IngredientEditor
                         value={ing}
                         onChange={(v) => setIngredient(ci, ii, v)}
-                        className="flex-1"
                       />
                       {flag && (
                         <AllergenPopover
@@ -602,7 +698,6 @@ function EditableRecipeView({
                     <EditLine
                       value={step}
                       onChange={(v) => setStep(ci, si, v)}
-                      multiline
                     />
                   </li>
                 ))}
@@ -721,7 +816,7 @@ export default function AddRecipeModal({
         components: editable.components.map((c) => ({
           name: c.name,
           yield_note: c.yield_note,
-          ingredients: c.ingredients,
+          ingredients: c.ingredients.map(serializeIngredient),
           steps: c.steps,
           ingredient_flags: c.ingredient_flags.map(
             (f) =>

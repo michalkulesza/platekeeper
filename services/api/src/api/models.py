@@ -13,6 +13,26 @@ from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from api.database import Base
 
 
+# ── Unit enum ─────────────────────────────────────────────────────────────────
+
+class UnitEnum(StrEnum):
+    ML = "ml"
+    L = "l"
+    TSP = "tsp"
+    TBSP = "tbsp"
+    CUP = "cup"
+    G = "g"
+    KG = "kg"
+    PIECE = "piece"
+    CLOVE = "clove"
+    SLICE = "slice"
+    CAN = "can"
+    BUNCH = "bunch"
+    PINCH = "pinch"
+    SPRIG = "sprig"
+    HANDFUL = "handful"
+
+
 # ── Allergen helpers ──────────────────────────────────────────────────────────
 
 class AllergenData(BaseModel):
@@ -141,7 +161,7 @@ class Recipe(Base):
 
 class Ingredient(BaseModel):
     qty: str | None = None
-    unit: str | None = None
+    unit: UnitEnum | None = None
     name: str
     note: str | None = None
     allergen: str | None = None
@@ -311,6 +331,7 @@ class UserPreferences(Base):
     auto_substitute: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     personal_allergens: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     language: Mapped[str] = mapped_column(String(10), default="en", nullable=False)
+    unit_system: Mapped[str] = mapped_column(String(20), default="metric", nullable=False)
 
 
 class UserPreferencesOut(BaseModel):
@@ -320,6 +341,7 @@ class UserPreferencesOut(BaseModel):
     auto_substitute: bool = False
     personal_allergens: dict | None = None
     language: str = "en"
+    unit_system: str = "metric"
 
 
 class UserPreferencesUpdate(BaseModel):
@@ -327,3 +349,4 @@ class UserPreferencesUpdate(BaseModel):
     auto_substitute: bool | None = None
     personal_allergens: dict | None = None
     language: str | None = None
+    unit_system: str | None = None

@@ -1,3 +1,11 @@
+export const UNITS = [
+  'ml', 'l', 'tsp', 'tbsp', 'cup',
+  'g', 'kg',
+  'piece', 'clove', 'slice', 'can', 'bunch', 'pinch', 'sprig', 'handful',
+] as const
+
+export type Unit = typeof UNITS[number]
+
 export interface AllergenData {
   predefined: string[]
   custom: string[]
@@ -13,7 +21,7 @@ export interface AllergenFlag {
 
 export interface Ingredient {
   qty: string | null
-  unit: string | null
+  unit: Unit | null
   name: string
   note: string | null
   allergen?: string | null
@@ -352,6 +360,7 @@ export interface UserPreferences {
   auto_substitute: boolean
   personal_allergens: AllergenData | null
   language: string
+  unit_system: string // "metric" | "imperial"
 }
 
 export async function getPreferences(): Promise<UserPreferences> {

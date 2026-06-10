@@ -1074,6 +1074,35 @@ export default function SettingsPage({
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium">
+                {t('settings.unitSystem')}
+              </label>
+              <Select
+                selectedKey={preferences?.unit_system ?? 'metric'}
+                onSelectionChange={(key) => {
+                  updatePreferences({ unit_system: String(key) })
+                    .then(onPreferencesChange)
+                    .catch(() => {})
+                }}
+                aria-label={t('settings.unitSystem')}
+              >
+                <Select.Trigger>
+                  <Select.Value />
+                  <Select.Indicator />
+                </Select.Trigger>
+                <Select.Popover>
+                  <ListBox>
+                    <ListBoxItem key="metric" id="metric">
+                      {t('settings.metric')}
+                    </ListBoxItem>
+                    <ListBoxItem key="imperial" id="imperial">
+                      {t('settings.imperial')}
+                    </ListBoxItem>
+                  </ListBox>
+                </Select.Popover>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium">
                 {t('settings.language')}
               </label>
               <Select

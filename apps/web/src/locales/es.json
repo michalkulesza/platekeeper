@@ -156,7 +156,10 @@
     "keepScreenOnDefaultDesc": "La pantalla permanece activa al abrir una receta",
     "logOut": "Cerrar sesión",
     "loggingOut": "Cerrando sesión…",
-    "manage": "Gestionar"
+    "manage": "Gestionar",
+    "unitSystem": "Sistema de unidades",
+    "metric": "Métrico",
+    "imperial": "Imperial"
   },
   "allergens": {
     "gluten": "Cereales con gluten",
@@ -262,5 +265,25 @@
     "pl": "Polski",
     "fr": "Français",
     "es": "Español"
+  },
+  "units": {
+    "ml": "mililitro",
+    "l": "litro",
+    "tsp": "cucharadita",
+    "tbsp": "cucharada",
+    "cup": "taza",
+    "g": "gramo",
+    "kg": "kilogramo",
+    "piece": "unidad",
+    "clove": "diente",
+    "slice": "rodaja",
+    "can": "lata",
+    "bunch": "manojo",
+    "pinch": "pizca",
+    "sprig": "ramita",
+    "handful": "puñado",
+    "qtyLabel": "cant.",
+    "noteLabel": "nota",
+    "unitLabel": "unidad"
   }
 }

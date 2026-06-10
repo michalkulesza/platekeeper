@@ -160,7 +160,10 @@
     "keepScreenOnDefaultDesc": "Bildschirm bleibt wach, wenn du ein Rezept öffnest",
     "logOut": "Abmelden",
     "loggingOut": "Abmelden…",
-    "manage": "Verwalten"
+    "manage": "Verwalten",
+    "unitSystem": "Einheitensystem",
+    "metric": "Metrisch",
+    "imperial": "Imperiell"
   },
   "allergens": {
     "gluten": "Glutenhaltige Getreide",
@@ -266,5 +269,25 @@
     "pl": "Polski",
     "fr": "Français",
     "es": "Español"
+  },
+  "units": {
+    "ml": "Milliliter",
+    "l": "Liter",
+    "tsp": "Teelöffel",
+    "tbsp": "Esslöffel",
+    "cup": "Tasse",
+    "g": "Gramm",
+    "kg": "Kilogramm",
+    "piece": "Stück",
+    "clove": "Zehe",
+    "slice": "Scheibe",
+    "can": "Dose",
+    "bunch": "Bund",
+    "pinch": "Prise",
+    "sprig": "Zweig",
+    "handful": "Handvoll",
+    "qtyLabel": "Menge",
+    "noteLabel": "Notiz",
+    "unitLabel": "Einheit"
   }
 }

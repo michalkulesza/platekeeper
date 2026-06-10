@@ -38,6 +38,12 @@ async def _with_retry(fn: Callable[[], _T]) -> _T:
             log.warning("Gemini transient error (attempt %d), retrying in %ds: %s", attempt, delay, msg[:120])
             await asyncio.sleep(delay)
 
+_ALLOWED_UNITS = (
+    "volume: ml, l, tsp, tbsp, cup | "
+    "weight: g, kg | "
+    "count: piece, clove, slice, can, bunch, pinch, sprig, handful"
+)
+
 _SYSTEM = """\
 You are a recipe extraction assistant. Given text from a social media caption,
 a webpage, or a video transcript, extract all recipe information you can find.
@@ -46,10 +52,17 @@ The text may be in any language — extract faithfully in the original language.
 Return JSON matching the provided schema. If no recipe content is present, return
 an object with null title and empty components array.
 
-For ingredients, always try to separate qty/unit/name/note. Examples:
+For ingredients, always try to separate qty/unit/name/note. Use ONLY these units:
+  """ + _ALLOWED_UNITS + """
+  Convert any other unit to the closest allowed unit (e.g. oz → g, fl oz → ml).
+  Convert temperatures in step text from °F to °C. Keep cups/tbsp as-is.
+  If no unit applies, set unit to null.
+
+Examples:
   "2 cups flour" → qty="2", unit="cup", name="flour"
   "3 cloves garlic, minced" → qty="3", unit="clove", name="garlic", note="minced"
   "salt to taste" → qty=null, unit=null, name="salt", note="to taste"
+  "1 oz butter" → qty="28", unit="g", name="butter"
 
 For multi-component recipes (e.g. "for the sauce:", "for the marinade:"),
 create a separate component for each section.

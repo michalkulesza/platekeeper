@@ -164,7 +164,10 @@
     "keepScreenOnDefaultDesc": "Screen stays awake whenever you open a recipe",
     "logOut": "Log out",
     "loggingOut": "Logging out…",
-    "manage": "Manage"
+    "manage": "Manage",
+    "unitSystem": "Unit system",
+    "metric": "Metric",
+    "imperial": "Imperial"
   },
   "allergens": {
     "gluten": "Gluten-containing cereals",
@@ -276,5 +279,25 @@
     "pl": "Polski",
     "fr": "Français",
     "es": "Español"
+  },
+  "units": {
+    "ml": "milliliter",
+    "l": "liter",
+    "tsp": "teaspoon",
+    "tbsp": "tablespoon",
+    "cup": "cup",
+    "g": "gram",
+    "kg": "kilogram",
+    "piece": "piece",
+    "clove": "clove",
+    "slice": "slice",
+    "can": "can",
+    "bunch": "bunch",
+    "pinch": "pinch",
+    "sprig": "sprig",
+    "handful": "handful",
+    "qtyLabel": "qty",
+    "noteLabel": "note",
+    "unitLabel": "unit"
   }
 }

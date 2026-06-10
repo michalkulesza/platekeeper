@@ -160,7 +160,10 @@
     "keepScreenOnDefaultDesc": "L'écran reste actif à chaque ouverture d'une recette",
     "logOut": "Se déconnecter",
     "loggingOut": "Déconnexion…",
-    "manage": "Gérer"
+    "manage": "Gérer",
+    "unitSystem": "Système d'unités",
+    "metric": "Métrique",
+    "imperial": "Impérial"
   },
   "allergens": {
     "gluten": "Céréales contenant du gluten",
@@ -266,5 +269,25 @@
     "pl": "Polski",
     "fr": "Français",
     "es": "Español"
+  },
+  "units": {
+    "ml": "millilitre",
+    "l": "litre",
+    "tsp": "cuillère à café",
+    "tbsp": "cuillère à soupe",
+    "cup": "tasse",
+    "g": "gramme",
+    "kg": "kilogramme",
+    "piece": "pièce",
+    "clove": "gousse",
+    "slice": "tranche",
+    "can": "boîte",
+    "bunch": "botte",
+    "pinch": "pincée",
+    "sprig": "brin",
+    "handful": "poignée",
+    "qtyLabel": "qté",
+    "noteLabel": "note",
+    "unitLabel": "unité"
   }
 }

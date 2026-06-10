@@ -79,6 +79,7 @@ async def lifespan(app: FastAPI):
         await conn.execute(text("ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS personal_allergens JSONB"))
         await conn.execute(text("ALTER TABLE recipes ADD COLUMN IF NOT EXISTS notes TEXT"))
         await conn.execute(text("ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS language VARCHAR(10) NOT NULL DEFAULT 'en'"))
+        await conn.execute(text("ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS unit_system VARCHAR(20) NOT NULL DEFAULT 'metric'"))
     await _seed_demo_user()
     await _seed_default_tags()
     yield
