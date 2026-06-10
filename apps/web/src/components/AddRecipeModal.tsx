@@ -112,10 +112,16 @@ function toEditable(
       yield_note: c.yield_note ?? '',
       ingredients: c.ingredients.map((ing) => {
         const useSub = autoSubstitute && !!ing.allergen && !!ing.substitute
+        const nameToUse = useSub ? ing.substitute! : ing.name
+        // Gemini sometimes returns the full ingredient string in name with null qty/unit
+        if (!ing.qty) {
+          const fullStr = [nameToUse, ing.note ? `(${ing.note})` : ''].filter(Boolean).join(' ')
+          return parseIngredient(fullStr)
+        }
         return {
           qty: ing.qty ?? '',
           unit: ing.unit ?? '',
-          name: useSub ? ing.substitute! : ing.name,
+          name: nameToUse,
           note: ing.note ?? '',
         }
       }),
@@ -145,6 +151,7 @@ function AllergenPopover({
   onReplace: () => void
   onRestore: () => void
 }) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -174,7 +181,7 @@ function AllergenPopover({
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-amber-700 hover:bg-amber-100 text-xs font-medium whitespace-nowrap"
-        title={`Contains ${flag.allergen}`}
+        title={t('recipes.contains') + ' ' + flag.allergen}
       >
         ⚠ {flag.allergen}
       </button>
@@ -183,13 +190,13 @@ function AllergenPopover({
           {flag.substitute_applied && flag.original_display ? (
             <>
               <p className="text-zinc-600 mb-2">
-                Originally{' '}
+                {t('recipes.originally')}{' '}
                 <strong className="text-zinc-800">
                   {flag.original_display}
                 </strong>
-                , replaced with{' '}
-                <strong className="text-zinc-800">{flag.substitute}</strong> due
-                to {flag.allergen}.
+                , {t('recipes.replacedWith')}{' '}
+                <strong className="text-zinc-800">{flag.substitute}</strong>{' '}
+                {t('recipes.dueTo')} {flag.allergen}.
               </p>
               <Button
                 size="sm"
@@ -199,15 +206,15 @@ function AllergenPopover({
                   setOpen(false)
                 }}
               >
-                Restore original
+                {t('recipes.restoreOriginal')}
               </Button>
             </>
           ) : flag.substitute ? (
             <>
               <p className="text-zinc-600 mb-2">
-                Contains{' '}
-                <strong className="text-zinc-800">{flag.allergen}</strong>.
-                Suggested substitute:{' '}
+                {t('recipes.contains')}{' '}
+                <strong className="text-zinc-800">{flag.allergen}</strong>.{' '}
+                {t('recipes.suggestedSubstitute')}{' '}
                 <strong className="text-zinc-800">{flag.substitute}</strong>.
               </p>
               <div className="flex gap-2">
@@ -219,22 +226,22 @@ function AllergenPopover({
                     setOpen(false)
                   }}
                 >
-                  Replace
+                  {t('recipes.replace')}
                 </Button>
                 <Button
                   size="sm"
                   variant="tertiary"
                   onPress={() => setOpen(false)}
                 >
-                  Keep original
+                  {t('recipes.keepOriginal')}
                 </Button>
               </div>
             </>
           ) : (
             <p className="text-zinc-600">
-              Contains{' '}
-              <strong className="text-zinc-800">{flag.allergen}</strong>. No
-              substitute available.
+              {t('recipes.contains')}{' '}
+              <strong className="text-zinc-800">{flag.allergen}</strong>.{' '}
+              {t('recipes.noSubstituteAvailable')}
             </p>
           )}
         </div>
@@ -397,6 +404,7 @@ function EditableRecipeView({
   onTagRemove: (tagId: string) => void
   onTagCreate: (name: string) => Promise<Tag>
 }) {
+  const { t } = useTranslation()
   const [isAdapted, setIsAdapted] = useState(false)
   const [showImgInput, setShowImgInput] = useState(false)
   const [imgDraft, setImgDraft] = useState('')
@@ -520,7 +528,7 @@ function EditableRecipeView({
           )}
           <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
             <span className="text-white text-[10px] font-semibold uppercase tracking-wide">
-              Edit
+              {t('common.edit')}
             </span>
           </div>
         </button>
@@ -547,7 +555,7 @@ function EditableRecipeView({
             }
             if (e.key === 'Escape') setShowImgInput(false)
           }}
-          placeholder="Image URL"
+          placeholder={t('common.imageUrl')}
           autoFocus
           className="w-full text-sm border-b border-primary focus:outline-none bg-transparent mb-2"
         />
@@ -570,7 +578,7 @@ function EditableRecipeView({
           <div className="flex flex-wrap gap-2">
             {originalHandle && (
               <span className="inline-flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-full bg-zinc-100 text-zinc-500">
-                By: @{originalHandle}
+                {t('addRecipe.by', { handle: originalHandle })}
               </span>
             )}
             {recipe.source_url && (
@@ -593,12 +601,12 @@ function EditableRecipeView({
                     d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
                   />
                 </svg>
-                Source
+                {t('recipes.source')}
               </a>
             )}
             {isAdapted && (
               <span className="inline-flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-full bg-success/10 text-success-700 animate-appearance-in">
-                ✎ Adapted by: @{myHandle}
+                ✎ {t('addRecipe.adaptedBy', { handle: myHandle })}
               </span>
             )}
           </div>
@@ -607,7 +615,7 @@ function EditableRecipeView({
           <div className="flex gap-2">
             {recipe.servings !== '' && (
               <label className="flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-medium pl-3 pr-2 py-1.5 rounded-full cursor-text">
-                <span>Serves</span>
+                <span>{t('recipes.serves')}</span>
                 <input
                   type="number"
                   min={1}
@@ -637,7 +645,7 @@ function EditableRecipeView({
                   }}
                   className="w-[3.8ch] bg-transparent text-warning-700 font-semibold text-xs text-center focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
-                <span>kcal / serving</span>
+                <span>{t('recipes.kcalPerServing')}</span>
               </label>
             )}
           </div>
@@ -656,7 +664,7 @@ function EditableRecipeView({
           {comp.ingredients.length > 0 && (
             <>
               <p className="text-xs font-semibold uppercase text-zinc-400 mb-1">
-                Ingredients
+                {t('recipes.sectionIngredients')}
               </p>
               <ul className="space-y-1 mb-3">
                 {comp.ingredients.map((ing, ii) => {
@@ -687,7 +695,7 @@ function EditableRecipeView({
           {comp.steps.length > 0 && (
             <>
               <p className="text-xs font-semibold uppercase text-zinc-400 mb-1">
-                Steps
+                {t('recipes.steps')}
               </p>
               <ol className="space-y-2">
                 {comp.steps.map((step, si) => (
@@ -729,6 +737,7 @@ export default function AddRecipeModal({
   onTagCreated,
   preferences,
 }: AddRecipeModalProps) {
+  const { t } = useTranslation()
   const { activeHouseholdId, activeHousehold } = useHousehold()
   const [url, setUrl] = useState('')
   const [loading, setLoading] = useState(false)
@@ -783,12 +792,12 @@ export default function AddRecipeModal({
     setError(null)
     try {
       await linkRecipeToHousehold(id)
-      toast.success('Recipe added to household', { timeout: 3000 })
+      toast.success(t('addRecipe.recipeAddedToHousehold'), { timeout: 3000 })
       onSaved?.()
       reset()
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add recipe')
+      setError(err instanceof Error ? err.message : t('addRecipe.failedToAdd'))
     } finally {
       setLinking(false)
     }
@@ -831,12 +840,12 @@ export default function AddRecipeModal({
         tag_ids: selectedTags.map((t) => t.id),
         shared_to_personal: sharedToPersonal,
       })
-      toast.success('Recipe saved', { timeout: 3000 })
+      toast.success(t('addRecipe.recipeSaved'), { timeout: 3000 })
       onSaved?.()
       reset()
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save recipe')
+      setError(err instanceof Error ? err.message : t('addRecipe.failedToSave'))
     } finally {
       setSaving(false)
     }
@@ -891,7 +900,7 @@ export default function AddRecipeModal({
           )
           setSelectedTags(suggested)
         } else {
-          setError(res.error ?? 'Import failed')
+          setError(res.error ?? t('addRecipe.importFailed'))
         }
         setLoading(false)
       },
@@ -919,13 +928,13 @@ export default function AddRecipeModal({
         >
           <ModalDialog>
             <ModalHeader>
-              {parsed ? 'Edit Recipe' : 'Import Recipe'}
+              {parsed ? t('addRecipe.editRecipe') : t('addRecipe.importRecipe')}
             </ModalHeader>
             <ModalBody>
               {!parsed && activeHouseholdId && personalRecipes.length > 0 && (
                 <div className="flex flex-col gap-2">
                   <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
-                    From Personal Library
+                    {t('addRecipe.fromPersonalLibrary')}
                   </p>
                   <div className="relative">
                     <svg
@@ -943,7 +952,7 @@ export default function AddRecipeModal({
                     </svg>
                     <input
                       type="text"
-                      placeholder="Search your recipes…"
+                      placeholder={t('recipes.searchPlaceholder')}
                       value={librarySearch}
                       onChange={(e) => setLibrarySearch(e.target.value)}
                       className="w-full pl-9 pr-3 py-1.5 text-sm rounded-lg border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -976,7 +985,7 @@ export default function AddRecipeModal({
                               </span>
                             </div>
                             <span className="text-xs text-primary shrink-0 font-semibold">
-                              Add
+                              {t('common.add')}
                             </span>
                           </button>
                         </li>
@@ -987,13 +996,13 @@ export default function AddRecipeModal({
                         .includes(librarySearch.toLowerCase())
                     ).length === 0 && (
                       <li className="text-sm text-zinc-400 px-3 py-2">
-                        No matches
+                        {t('recipes.noResults')}
                       </li>
                     )}
                   </ul>
                   <div className="flex items-center gap-2 text-xs text-zinc-400 pt-1">
                     <div className="flex-1 h-px bg-zinc-200" />
-                    <span>or import from URL</span>
+                    <span>{t('addRecipe.orImportFromUrl')}</span>
                     <div className="flex-1 h-px bg-zinc-200" />
                   </div>
                 </div>
@@ -1025,12 +1034,12 @@ export default function AddRecipeModal({
                         className="text-sm font-medium"
                         htmlFor="recipe-url"
                       >
-                        Recipe URL
+                        {t('addRecipe.recipeUrl')}
                       </label>
                       <input
                         id="recipe-url"
                         type="url"
-                        placeholder="Instagram, TikTok, or any recipe page URL"
+                        placeholder={t('addRecipe.urlPlaceholder')}
                         value={url}
                         onChange={(e) => setUrl(e.target.value)}
                         required
@@ -1043,7 +1052,7 @@ export default function AddRecipeModal({
                       onPress={handlePaste}
                       className="shrink-0 mb-0.5"
                     >
-                      Paste
+                      {t('addRecipe.paste')}
                     </Button>
                   </div>
                 </form>
@@ -1053,7 +1062,7 @@ export default function AddRecipeModal({
 
               {error && (
                 <div className="bg-danger-50 text-danger rounded-lg p-3 text-sm mt-2">
-                  <strong>Import failed</strong>
+                  <strong>{t('addRecipe.importFailed')}</strong>
                   <p className="mt-1">{error}</p>
                 </div>
               )}
@@ -1086,7 +1095,7 @@ export default function AddRecipeModal({
                     </Switch.Control>
                   </Switch>
                   <span className="text-sm text-zinc-600">
-                    Also add to my private recipes
+                    {t('addRecipe.alsoAddToPrivate')}
                   </span>
                 </div>
               )}
@@ -1096,7 +1105,7 @@ export default function AddRecipeModal({
                   onPress={handleClose}
                   isDisabled={loading || saving}
                 >
-                  {parsed ? 'Discard' : 'Cancel'}
+                  {parsed ? t('addRecipe.discard') : t('common.cancel')}
                 </Button>
                 {parsed ? (
                   <Button
@@ -1104,7 +1113,7 @@ export default function AddRecipeModal({
                     onPress={handleSave}
                     isDisabled={saving}
                   >
-                    Save
+                    {t('common.save')}
                   </Button>
                 ) : (
                   <Button
@@ -1113,7 +1122,7 @@ export default function AddRecipeModal({
                     form="import-form"
                     isDisabled={loading}
                   >
-                    Import
+                    {t('addRecipe.import')}
                   </Button>
                 )}
               </div>

@@ -272,7 +272,23 @@
     "addTag": "Add tag"
   },
   "addRecipe": {
-    "urlPlaceholder": "Instagram, TikTok, or any recipe page URL"
+    "urlPlaceholder": "Instagram, TikTok, or any recipe page URL",
+    "editRecipe": "Edit Recipe",
+    "importRecipe": "Import Recipe",
+    "fromPersonalLibrary": "From Personal Library",
+    "orImportFromUrl": "or import from URL",
+    "recipeUrl": "Recipe URL",
+    "paste": "Paste",
+    "importFailed": "Import failed",
+    "by": "By: @{{handle}}",
+    "adaptedBy": "Adapted by: @{{handle}}",
+    "alsoAddToPrivate": "Also add to my private recipes",
+    "discard": "Discard",
+    "import": "Import",
+    "recipeSaved": "Recipe saved",
+    "failedToSave": "Failed to save recipe",
+    "recipeAddedToHousehold": "Recipe added to household",
+    "failedToAdd": "Failed to add recipe"
   },
   "defaultTags": {
     "Vegetarian": "Vegetarian",

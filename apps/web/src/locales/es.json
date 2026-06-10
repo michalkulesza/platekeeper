@@ -260,6 +260,25 @@
     "noTagsAvailable": "No hay etiquetas disponibles",
     "allTagsAdded": "Todas las etiquetas ya añadidas"
   },
+  "addRecipe": {
+    "urlPlaceholder": "URL de Instagram, TikTok o cualquier página de recetas",
+    "editRecipe": "Editar receta",
+    "importRecipe": "Importar receta",
+    "fromPersonalLibrary": "De mi biblioteca personal",
+    "orImportFromUrl": "o importar desde URL",
+    "recipeUrl": "URL de la receta",
+    "paste": "Pegar",
+    "importFailed": "Importación fallida",
+    "by": "Por: @{{handle}}",
+    "adaptedBy": "Adaptado por: @{{handle}}",
+    "alsoAddToPrivate": "Añadir también a mis recetas privadas",
+    "discard": "Descartar",
+    "import": "Importar",
+    "recipeSaved": "Receta guardada",
+    "failedToSave": "No se pudo guardar la receta",
+    "recipeAddedToHousehold": "Receta añadida al hogar",
+    "failedToAdd": "No se pudo añadir la receta"
+  },
   "shoppingList": {
     "title": "Lista de compras",
     "comingSoon": "Lista de compras próximamente."

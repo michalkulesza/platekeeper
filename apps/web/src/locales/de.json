@@ -264,6 +264,25 @@
     "noTagsAvailable": "Keine Tags vorhanden",
     "allTagsAdded": "Alle Tags bereits hinzugefügt"
   },
+  "addRecipe": {
+    "urlPlaceholder": "Instagram, TikTok oder eine beliebige Rezept-URL",
+    "editRecipe": "Rezept bearbeiten",
+    "importRecipe": "Rezept importieren",
+    "fromPersonalLibrary": "Aus persönlicher Bibliothek",
+    "orImportFromUrl": "oder von URL importieren",
+    "recipeUrl": "Rezept-URL",
+    "paste": "Einfügen",
+    "importFailed": "Import fehlgeschlagen",
+    "by": "Von: @{{handle}}",
+    "adaptedBy": "Angepasst von: @{{handle}}",
+    "alsoAddToPrivate": "Auch zu meinen privaten Rezepten hinzufügen",
+    "discard": "Verwerfen",
+    "import": "Importieren",
+    "recipeSaved": "Rezept gespeichert",
+    "failedToSave": "Rezept konnte nicht gespeichert werden",
+    "recipeAddedToHousehold": "Rezept zum Haushalt hinzugefügt",
+    "failedToAdd": "Rezept konnte nicht hinzugefügt werden"
+  },
   "shoppingList": {
     "title": "Einkaufsliste",
     "comingSoon": "Einkaufsliste kommt bald."
