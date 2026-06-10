@@ -1,4 +1,5 @@
 import { Modal, ModalBackdrop, ModalContainer, ModalDialog, ModalHeader, ModalBody } from "@heroui/react";
+import { useTranslation } from "react-i18next";
 import { useHousehold } from "../context/HouseholdContext";
 
 interface HouseholdSwitcherProps {
@@ -8,6 +9,7 @@ interface HouseholdSwitcherProps {
 
 export default function HouseholdSwitcher({ isOpen, onClose }: HouseholdSwitcherProps) {
   const { households, activeHouseholdId, switchHousehold } = useHousehold();
+  const { t } = useTranslation();
 
   async function handleSwitch(id: string | null) {
     onClose();
@@ -17,7 +19,7 @@ export default function HouseholdSwitcher({ isOpen, onClose }: HouseholdSwitcher
   }
 
   const options = [
-    { id: null, name: "Personal", color: null },
+    { id: null, name: t("households.personal"), color: null },
     ...households.map((h) => ({ id: h.id, name: h.name, color: h.color })),
   ];
 
@@ -26,7 +28,7 @@ export default function HouseholdSwitcher({ isOpen, onClose }: HouseholdSwitcher
       <ModalBackdrop isDismissable>
         <ModalContainer size="sm" className="!rounded-xl overflow-hidden">
           <ModalDialog>
-            <ModalHeader className="pb-2">Switch context</ModalHeader>
+            <ModalHeader className="pb-2">{t("households.switchContext")}</ModalHeader>
             <ModalBody className="px-2 pb-4">
               <ul className="flex flex-col gap-1">
                 {options.map((opt) => {

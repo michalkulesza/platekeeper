@@ -16,7 +16,35 @@
     "decline": "Odrzuć",
     "clearAll": "Wyczyść wszystko",
     "doneCheck": "Gotowe ✓",
-    "goToStep": "Przejdź do kroku ↗"
+    "goToStep": "Przejdź do kroku ↗",
+    "view": "Zobacz",
+    "edit": "Edytuj",
+    "delete": "Usuń",
+    "deleting": "Usuwam…"
+  },
+  "recipes": {
+    "searchPlaceholder": "Szukaj przepisów…",
+    "noResults": "Brak wyników",
+    "sectionRecipes": "Przepisy",
+    "sectionIngredients": "Składniki",
+    "servings_one": "{{count}} porcja",
+    "servings_few": "{{count}} porcje",
+    "servings_many": "{{count}} porcji",
+    "servings_other": "{{count}} porcji",
+    "noRecipesYet": "Brak przepisów.",
+    "addPrompt": "Naciśnij + Dodaj, aby zaimportować przepis.",
+    "noRecipesWithTag": "Brak przepisów z tym tagiem.",
+    "clearFilter": "Wyczyść filtr",
+    "recipeDeleted": "Przepis usunięty",
+    "failedToDelete": "Nie udało się usunąć przepisu",
+    "deleteTitle": "Usunąć przepis?",
+    "deleteConfirm": "{{title}} zostanie trwale usunięty.",
+    "colTitle": "Tytuł",
+    "colServings": "Porcje",
+    "colKcal": "Kcal",
+    "colAuthor": "Autor",
+    "colAddedBy": "Dodane przez",
+    "colAdded": "Dodane"
   },
   "nav": {
     "recipes": "Przepisy",
@@ -195,6 +223,18 @@
     "viewRecipe": "Wyświetl przepis",
     "changeRecipe": "Zmień przepis",
     "removeFromPlan": "Usuń z planu"
+  },
+  "households": {
+    "switchContext": "Przełącz kontekst",
+    "personal": "Osobiste"
+  },
+  "tags": {
+    "noTags": "Brak tagów",
+    "searchOrCreate": "Szukaj lub utwórz…",
+    "creating": "Tworzę…",
+    "createTag": "Utwórz '{{name}}'",
+    "noTagsAvailable": "Brak dostępnych tagów",
+    "allTagsAdded": "Wszystkie tagi już dodane"
   },
   "shoppingList": {
     "title": "Lista zakupów",

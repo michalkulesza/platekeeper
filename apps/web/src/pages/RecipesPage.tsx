@@ -16,6 +16,7 @@ import RecipesTable from "../components/RecipesTable";
 import { RecipeOut, Tag, UserPreferences, deleteRecipe } from "../api/client";
 import { useHousehold } from "../context/HouseholdContext";
 import { useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 function RecipeThumb({ src, alt }: { src: string; alt: string }) {
   const [loaded, setLoaded] = useState(false);
@@ -41,6 +42,7 @@ function CardMenu({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -71,19 +73,19 @@ function CardMenu({
             className="w-full text-left px-4 py-2.5 text-sm hover:bg-zinc-50 transition-colors"
             onClick={(e) => { e.stopPropagation(); setOpen(false); onView(); }}
           >
-            View
+            {t("common.view")}
           </button>
           <button
             className="w-full text-left px-4 py-2.5 text-sm hover:bg-zinc-50 transition-colors"
             onClick={(e) => { e.stopPropagation(); setOpen(false); onEdit(); }}
           >
-            Edit
+            {t("common.edit")}
           </button>
           <button
             className="w-full text-left px-4 py-2.5 text-sm text-danger hover:bg-danger-50 transition-colors"
             onClick={(e) => { e.stopPropagation(); setOpen(false); onDelete(); }}
           >
-            Delete
+            {t("common.delete")}
           </button>
         </div>
       )}
@@ -115,6 +117,7 @@ function RecipeCard({
   onDelete: () => void;
   onTagClick: (tag: Tag) => void;
 }) {
+  const { t } = useTranslation();
   const proxyUrl = recipe.thumbnail_url
     ? `/api/proxy/image?url=${encodeURIComponent(recipe.thumbnail_url)}`
     : null;
@@ -136,7 +139,7 @@ function RecipeCard({
         <div className="flex gap-2 mt-1.5 flex-wrap">
           {recipe.servings != null && (
             <span className="text-xs text-primary font-medium bg-primary/10 px-2 py-0.5 rounded-full">
-              {recipe.servings} servings
+              {t("recipes.servings", { count: recipe.servings })}
             </span>
           )}
           {recipe.kcal_per_serving != null && (
@@ -218,6 +221,7 @@ export default function RecipesPage({
   preferences,
 }: RecipesPageProps) {
   const { activeHouseholdId, activeHousehold } = useHousehold();
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const activeAllergens: string[] = activeHousehold?.allergens
@@ -298,11 +302,11 @@ export default function RecipesPage({
     setDeleting(true);
     try {
       await deleteRecipe(deleteTarget.id);
-      toast.danger("Recipe deleted", { timeout: 3000 });
+      toast.danger(t("recipes.recipeDeleted"), { timeout: 3000 });
       onRecipeDeleted(deleteTarget.id);
       setDeleteTarget(null);
     } catch {
-      toast.danger("Failed to delete recipe", { timeout: 3000 });
+      toast.danger(t("recipes.failedToDelete"), { timeout: 3000 });
     } finally {
       setDeleting(false);
     }
@@ -317,7 +321,7 @@ export default function RecipesPage({
         type="text"
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
-        placeholder="Search recipes…"
+        placeholder={t("recipes.searchPlaceholder")}
         className="w-full pl-9 pr-8 py-2 text-sm rounded-full bg-white border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-zinc-400"
       />
       {searchQuery && (
@@ -336,7 +340,7 @@ export default function RecipesPage({
 
   return (
     <>
-      <PageHeader title="Recipes" searchSlot={searchInput} />
+      <PageHeader title={t("nav.recipes")} searchSlot={searchInput} />
 
       {/* Mobile search */}
       <div className="md:hidden px-4 mt-3">{searchInput}</div>
@@ -348,13 +352,13 @@ export default function RecipesPage({
           <div className="absolute left-2 right-2 top-2 z-40 bg-white rounded-xl shadow-xl border border-zinc-200 overflow-hidden">
             <div className="max-h-[60vh] overflow-y-auto">
               {titleMatches.length === 0 && ingredientMatches.length === 0 ? (
-                <p className="px-4 py-8 text-sm text-zinc-400 text-center">No results</p>
+                <p className="px-4 py-8 text-sm text-zinc-400 text-center">{t("recipes.noResults")}</p>
               ) : (
                 <>
                   {titleMatches.length > 0 && (
                     <>
                       <div className="px-4 py-2 bg-zinc-50 border-b border-zinc-100">
-                        <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wide">Recipes</span>
+                        <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wide">{t("recipes.sectionRecipes")}</span>
                       </div>
                       {titleMatches.map((r) => (
                         <SearchResultItem key={r.id} recipe={r} onClick={() => { setSearchQuery(""); openView(r); }} />
@@ -364,7 +368,7 @@ export default function RecipesPage({
                   {ingredientMatches.length > 0 && (
                     <>
                       <div className="px-4 py-2 bg-zinc-50 border-b border-zinc-100">
-                        <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wide">Ingredients</span>
+                        <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wide">{t("recipes.sectionIngredients")}</span>
                       </div>
                       {ingredientMatches.map(({ recipe, matchedIngredient }) => (
                         <SearchResultItem
@@ -429,20 +433,14 @@ export default function RecipesPage({
         </>
       ) : displayed.length === 0 && recipes.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-zinc-400 px-4 text-center">
-          <p className="text-lg">No recipes yet.</p>
-          <p className="text-sm mt-1">
-            Tap the{" "}
-            <button onClick={onAddRecipe} className="text-primary font-medium">
-              + Add
-            </button>{" "}
-            button to import one.
-          </p>
+          <p className="text-lg">{t("recipes.noRecipesYet")}</p>
+          <p className="text-sm mt-1">{t("recipes.addPrompt")}</p>
         </div>
       ) : displayed.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-zinc-400 px-4 text-center">
-          <p className="text-lg">No recipes with this tag.</p>
+          <p className="text-lg">{t("recipes.noRecipesWithTag")}</p>
           <button onClick={() => setFilterTag(null)} className="text-sm text-primary mt-1">
-            Clear filter
+            {t("recipes.clearFilter")}
           </button>
         </div>
       ) : (
@@ -496,18 +494,18 @@ export default function RecipesPage({
         <ModalBackdrop isDismissable>
           <ModalContainer size="sm" className="!rounded-xl">
             <ModalDialog>
-              <ModalHeader className="text-base font-semibold">Delete recipe?</ModalHeader>
+              <ModalHeader className="text-base font-semibold">{t("recipes.deleteTitle")}</ModalHeader>
               <ModalBody>
                 <p className="text-sm text-zinc-600">
-                  <span className="font-medium">{deleteTarget?.title}</span> will be permanently removed.
+                  {t("recipes.deleteConfirm", { title: deleteTarget?.title })}
                 </p>
               </ModalBody>
               <ModalFooter className="flex justify-end gap-2">
                 <Button variant="tertiary" onPress={() => setDeleteTarget(null)} isDisabled={deleting}>
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
                 <Button variant="danger" onPress={confirmDelete} isDisabled={deleting}>
-                  {deleting ? "Deleting…" : "Delete"}
+                  {deleting ? t("common.deleting") : t("common.delete")}
                 </Button>
               </ModalFooter>
             </ModalDialog>

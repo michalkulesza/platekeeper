@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Tag } from "../api/client";
 
 interface TagRowProps {
@@ -10,6 +11,7 @@ interface TagRowProps {
 }
 
 export default function TagRow({ tags, allTags, onAdd, onRemove, onCreateTag }: TagRowProps) {
+  const { t } = useTranslation();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [creating, setCreating] = useState(false);
@@ -62,7 +64,7 @@ export default function TagRow({ tags, allTags, onAdd, onRemove, onCreateTag }: 
   return (
     <div className="flex flex-wrap gap-1.5 items-center" ref={containerRef}>
       {tags.length === 0 && (
-        <span className="text-xs text-zinc-400 italic">No tags</span>
+        <span className="text-xs text-zinc-400 italic">{t("tags.noTags")}</span>
       )}
       {tags.map((tag) => (
         <span
@@ -109,7 +111,7 @@ export default function TagRow({ tags, allTags, onAdd, onRemove, onCreateTag }: 
                     else if (canCreate) handleCreate();
                   }
                 }}
-                placeholder="Search or create…"
+                placeholder={t("tags.searchOrCreate")}
                 className="w-full text-sm bg-transparent focus:outline-none placeholder-zinc-400"
               />
             </div>
@@ -131,12 +133,12 @@ export default function TagRow({ tags, allTags, onAdd, onRemove, onCreateTag }: 
                   className="w-full text-left px-3 py-2 text-sm text-primary hover:bg-primary/5 transition-colors disabled:opacity-50"
                   onClick={handleCreate}
                 >
-                  {creating ? "Creating…" : `Create "${trimmedSearch}"`}
+                  {creating ? t("tags.creating") : t("tags.createTag", { name: trimmedSearch })}
                 </button>
               )}
               {filtered.length === 0 && !canCreate && (
                 <p className="px-3 py-2 text-sm text-zinc-400">
-                  {allTags.length === 0 ? "No tags available" : "All tags already added"}
+                  {allTags.length === 0 ? t("tags.noTagsAvailable") : t("tags.allTagsAdded")}
                 </p>
               )}
             </div>

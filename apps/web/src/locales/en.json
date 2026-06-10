@@ -16,7 +16,33 @@
     "decline": "Decline",
     "clearAll": "Clear all",
     "doneCheck": "Done ✓",
-    "goToStep": "Go to step ↗"
+    "goToStep": "Go to step ↗",
+    "view": "View",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleting": "Deleting…"
+  },
+  "recipes": {
+    "searchPlaceholder": "Search recipes…",
+    "noResults": "No results",
+    "sectionRecipes": "Recipes",
+    "sectionIngredients": "Ingredients",
+    "servings_one": "{{count}} serving",
+    "servings_other": "{{count}} servings",
+    "noRecipesYet": "No recipes yet.",
+    "addPrompt": "Tap the + Add button to import one.",
+    "noRecipesWithTag": "No recipes with this tag.",
+    "clearFilter": "Clear filter",
+    "recipeDeleted": "Recipe deleted",
+    "failedToDelete": "Failed to delete recipe",
+    "deleteTitle": "Delete recipe?",
+    "deleteConfirm": "{{title}} will be permanently removed.",
+    "colTitle": "Title",
+    "colServings": "Servings",
+    "colKcal": "Kcal",
+    "colAuthor": "Author",
+    "colAddedBy": "Added by",
+    "colAdded": "Added"
   },
   "nav": {
     "recipes": "Recipes",
@@ -189,6 +215,18 @@
     "viewRecipe": "View recipe",
     "changeRecipe": "Change recipe",
     "removeFromPlan": "Remove from plan"
+  },
+  "households": {
+    "switchContext": "Switch context",
+    "personal": "Personal"
+  },
+  "tags": {
+    "noTags": "No tags",
+    "searchOrCreate": "Search or create…",
+    "creating": "Creating…",
+    "createTag": "Create \"{{name}}\"",
+    "noTagsAvailable": "No tags available",
+    "allTagsAdded": "All tags already added"
   },
   "shoppingList": {
     "title": "Shopping List",

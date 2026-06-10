@@ -16,7 +16,33 @@
     "decline": "Rechazar",
     "clearAll": "Borrar todo",
     "doneCheck": "Listo ✓",
-    "goToStep": "Ir al paso ↗"
+    "goToStep": "Ir al paso ↗",
+    "view": "Ver",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "deleting": "Eliminando…"
+  },
+  "recipes": {
+    "searchPlaceholder": "Buscar recetas…",
+    "noResults": "Sin resultados",
+    "sectionRecipes": "Recetas",
+    "sectionIngredients": "Ingredientes",
+    "servings_one": "{{count}} ración",
+    "servings_other": "{{count}} raciones",
+    "noRecipesYet": "Aún no hay recetas.",
+    "addPrompt": "Pulsa + Añadir para importar una.",
+    "noRecipesWithTag": "No hay recetas con esta etiqueta.",
+    "clearFilter": "Quitar filtro",
+    "recipeDeleted": "Receta eliminada",
+    "failedToDelete": "Error al eliminar la receta",
+    "deleteTitle": "¿Eliminar receta?",
+    "deleteConfirm": "{{title}} se eliminará permanentemente.",
+    "colTitle": "Título",
+    "colServings": "Raciones",
+    "colKcal": "Kcal",
+    "colAuthor": "Autor",
+    "colAddedBy": "Añadido por",
+    "colAdded": "Añadido"
   },
   "nav": {
     "recipes": "Recetas",
@@ -189,6 +215,18 @@
     "viewRecipe": "Ver receta",
     "changeRecipe": "Cambiar receta",
     "removeFromPlan": "Quitar del plan"
+  },
+  "households": {
+    "switchContext": "Cambiar contexto",
+    "personal": "Personal"
+  },
+  "tags": {
+    "noTags": "Sin etiquetas",
+    "searchOrCreate": "Buscar o crear…",
+    "creating": "Creando…",
+    "createTag": "Crear \"{{name}}\"",
+    "noTagsAvailable": "No hay etiquetas disponibles",
+    "allTagsAdded": "Todas las etiquetas ya añadidas"
   },
   "shoppingList": {
     "title": "Lista de compras",

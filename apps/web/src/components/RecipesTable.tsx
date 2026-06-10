@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import i18n from "../i18n";
 import { createPortal } from "react-dom";
 import {
@@ -96,6 +97,7 @@ function RowMenu({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, right: 0 });
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -144,19 +146,19 @@ function RowMenu({
             className="w-full text-left px-4 py-2 text-sm hover:bg-zinc-50 transition-colors"
             onClick={() => { setOpen(false); onView(); }}
           >
-            View
+            {t("common.view")}
           </button>
           <button
             className="w-full text-left px-4 py-2 text-sm hover:bg-zinc-50 transition-colors"
             onClick={() => { setOpen(false); onEdit(); }}
           >
-            Edit
+            {t("common.edit")}
           </button>
           <button
             className="w-full text-left px-4 py-2 text-sm text-danger hover:bg-danger-50 transition-colors"
             onClick={() => { setOpen(false); onDelete(); }}
           >
-            Delete
+            {t("common.delete")}
           </button>
         </div>,
         document.body
@@ -284,6 +286,7 @@ export default function RecipesTable({
   onEdit,
   onDelete,
 }: RecipesTableProps) {
+  const { t } = useTranslation();
   const [sort, setSort] = useState<Sort>({ field: "created_at", dir: "desc" });
   const [localRows, setLocalRows] = useState<RecipeOut[]>(recipes);
 
@@ -356,12 +359,12 @@ export default function RecipesTable({
             <GripIcon />
           </div>
           <div />
-          <ColHeader label="Title" field="title" />
-          <div className="flex justify-end"><ColHeader label="Servings" field="servings" align="right" /></div>
-          <div className="flex justify-end"><ColHeader label="Kcal" field="kcal_per_serving" align="right" /></div>
-          <ColHeader label="Author" field="creator_handle" />
-          {showAddedBy && <ColHeader label="Added by" field="added_by" />}
-          <ColHeader label="Added" field="created_at" />
+          <ColHeader label={t("recipes.colTitle")} field="title" />
+          <div className="flex justify-end"><ColHeader label={t("recipes.colServings")} field="servings" align="right" /></div>
+          <div className="flex justify-end"><ColHeader label={t("recipes.colKcal")} field="kcal_per_serving" align="right" /></div>
+          <ColHeader label={t("recipes.colAuthor")} field="creator_handle" />
+          {showAddedBy && <ColHeader label={t("recipes.colAddedBy")} field="added_by" />}
+          <ColHeader label={t("recipes.colAdded")} field="created_at" />
           <div />
         </div>
 
