@@ -212,7 +212,7 @@ Only include clear, unambiguous matches. Ignore generic terms like "it" or
 async def match_step_ingredients(
     ingredients: list[str],
     steps: list[str],
-    model: str = "gemini-2.5-flash-lite-preview-06-17",
+    model: str = _DEFAULT_MODEL,
 ) -> list[list[StepIngredientRef]] | None:
     if not ingredients or not steps:
         return None
@@ -234,8 +234,8 @@ async def match_step_ingredients(
         ))
         data = json.loads(response.text)
         result = _StepMatchResult.model_validate(data)
-    except Exception:
-        log.warning("match_step_ingredients failed, skipping refs")
+    except Exception as exc:
+        log.warning("match_step_ingredients failed, skipping refs: %s", exc)
         return None
 
     refs: list[list[StepIngredientRef]] = [[] for _ in steps]

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   useTimers,
@@ -705,6 +705,31 @@ function ViewComponent({
 }) {
   const { t } = useTranslation()
 
+  // Client-side fallback: when AI matching wasn't run, do simple name matching
+  const clientRefs = useMemo<StepIngredientRef[][] | null>(() => {
+    if (comp.step_ingredient_refs != null) return null
+    return comp.steps.map((step) => {
+      const refs: StepIngredientRef[] = []
+      const stepLower = step.toLowerCase()
+      comp.ingredients.forEach((ingStr, ii) => {
+        const searchName = parseIngredient(ingStr).name.split(',')[0].trim().toLowerCase()
+        if (searchName.length < 3) return
+        let idx = 0
+        while (true) {
+          const pos = stepLower.indexOf(searchName, idx)
+          if (pos === -1) break
+          const beforeOk = pos === 0 || !/\w/.test(stepLower[pos - 1])
+          const afterOk = pos + searchName.length >= stepLower.length || !/\w/.test(stepLower[pos + searchName.length])
+          if (beforeOk && afterOk) {
+            refs.push({ ingredient_index: ii, mention: step.slice(pos, pos + searchName.length) })
+          }
+          idx = pos + searchName.length
+        }
+      })
+      return refs
+    })
+  }, [comp.step_ingredient_refs, comp.ingredients, comp.steps])
+
   return (
     <div className="mb-5">
       {!single && (
@@ -747,7 +772,7 @@ function ViewComponent({
           <ol className="space-y-2">
             {comp.steps.map((step, i) => {
               const timerId = `${recipeId}-c${componentIndex}-s${i}`
-              const stepRefs = comp.step_ingredient_refs?.[i] ?? []
+              const stepRefs = comp.step_ingredient_refs?.[i] ?? clientRefs?.[i] ?? []
 
               return (
                 <li
