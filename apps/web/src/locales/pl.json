@@ -27,7 +27,7 @@
     "thumbnail": "Miniatura"
   },
   "recipes": {
-    "searchPlaceholder": "Szukaj przepisów…",
+    "searchPlaceholder": "Wyszukaj",
     "noResults": "Brak wyników",
     "sectionRecipes": "Przepisy",
     "sectionIngredients": "Składniki",
@@ -76,18 +76,18 @@
     "chooseLanguage": "Wybierz język"
   },
   "timers": {
-    "timerDone_one": "Timer gotowy",
-    "timerDone_few": "{{count}} timery gotowe",
-    "timerDone_many": "{{count}} timerów gotowych",
-    "timerDone_other": "{{count}} timerów gotowych",
+    "timerDone_one": "Minutnik gotowy",
+    "timerDone_few": "{{count}} minutniki gotowe",
+    "timerDone_many": "{{count}} minutników gotowych",
+    "timerDone_other": "{{count}} minutników gotowych",
     "running": "Timery działają",
     "resumedAutomatically": "Wznowione automatycznie",
     "finishedWhileAway": "Zakończone podczas Twojej nieobecności",
-    "noTimers": "Brak aktywnych timerów.",
-    "keepScreenOn": "Trzymaj ekran włączony podczas timera",
+    "noTimers": "Brak aktywnych minutników.",
+    "keepScreenOn": "Trzymaj ekran włączony podczas minutnika",
     "keepScreenOnDesc": "Zapobiega uśpieniu ekranu podczas gotowania",
-    "timerRunning": "Timer działa",
-    "timerPaused": "Timer wstrzymany"
+    "timerRunning": "Minutnik działa",
+    "timerPaused": "Minutnik wstrzymany"
   },
   "bell": {
     "notifications": "Powiadomienia",
@@ -95,7 +95,7 @@
     "householdInvitation": "Zaproszenie do gospodarstwa",
     "from": "Od {{name}}",
     "history": "Historia",
-    "timerDone": "Timer gotowy",
+    "timerDone": "Minutnik gotowy",
     "household": "Gospodarstwo"
   },
   "settings": {
@@ -140,7 +140,7 @@
     "reanalyzedRecipes_few": "Przeanalizowano ponownie {{count}} przepisy",
     "reanalyzedRecipes_many": "Przeanalizowano ponownie {{count}} przepisów",
     "reanalyzedRecipes_other": "Przeanalizowano ponownie {{count}} przepisów",
-    "timers": "Timery",
+    "timers": "Minutniki",
     "saveChanges": "Zapisz zmiany",
     "saved": "Zapisano",
     "nameLabel": "Nazwa",
