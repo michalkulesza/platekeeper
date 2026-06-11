@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
 import {
   ActivityIndicator,
   FlatList,
@@ -25,6 +25,21 @@ const RecipesScreen = ({ navigation }: Props) => {
   const { tags } = useTags()
   const [query, setQuery] = useState('')
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null)
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={() => navigation.navigate('ImportRecipe')}
+          style={styles.headerAddBtn}
+          accessibilityLabel={t('nav.addRecipe')}
+          accessibilityRole="button"
+        >
+          <Text style={styles.headerAddText}>+</Text>
+        </TouchableOpacity>
+      ),
+    })
+  }, [navigation, t])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -173,6 +188,8 @@ const RecipesScreen = ({ navigation }: Props) => {
 }
 
 const styles = StyleSheet.create({
+  headerAddBtn: { paddingHorizontal: 4, paddingVertical: 2 },
+  headerAddText: { fontSize: 26, color: '#7c3aed', lineHeight: 30, fontWeight: '400' },
   list: { flex: 1, backgroundColor: '#f9fafb' },
   listContent: { paddingBottom: 24 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
