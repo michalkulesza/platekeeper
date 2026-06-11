@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import Constants from 'expo-constants'
 import * as KeepAwake from 'expo-keep-awake'
 import * as Notifications from 'expo-notifications'
 import {
@@ -23,15 +24,19 @@ export { formatCountdown, formatDurationLabel, parseDurationMatch, type Duration
 const STORAGE_KEY = 'pk-timers'
 const KEEP_AWAKE_TAG = 'pk-timer'
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-})
+const isExpoGo = Constants.executionEnvironment === 'storeClient'
+
+if (!isExpoGo) {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  })
+}
 
 export interface TimerEntry {
   id: string
@@ -119,9 +124,9 @@ export const TimerProvider = ({ children }: { children: ReactNode }) => {
   const processedDoneRef = useRef<Set<string>>(new Set())
   const loadedRef = useRef(false)
 
-  // Request permissions on mount
+  // Request permissions on mount (not available in Expo Go SDK 53+)
   useEffect(() => {
-    void Notifications.requestPermissionsAsync()
+    if (!isExpoGo) void Notifications.requestPermissionsAsync()
   }, [])
 
   // Load persisted timers on mount
