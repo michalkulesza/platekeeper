@@ -1,7 +1,9 @@
-import { useCallback, useLayoutEffect, useMemo } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
 import {
   ActivityIndicator,
+  Dimensions,
   Image,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -21,7 +23,10 @@ import {
 } from '../context/TimerContext'
 import BellModal from '../components/BellModal'
 import type { RecipesStackParamList } from '../navigation/RecipesStack'
-import type { RecipeOut, SaveComponent, Ingredient } from '@platekeeper/shared/types'
+import type { RecipeOut, SaveComponent, Ingredient, StepIngredientRef } from '@platekeeper/shared/types'
+import { displayIngredient, buildClientStepRefs } from '@platekeeper/shared/utils/ingredientUtils'
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
 type Props = NativeStackScreenProps<RecipesStackParamList, 'RecipeDetail'>
 
@@ -112,6 +117,112 @@ const TimerButton = ({
   )
 }
 
+// ── Step text with tappable ingredient pills ───────────────────────────────────
+
+interface Segment {
+  type: 'text' | 'mention'
+  text: string
+  ingredientIndex?: number
+}
+
+const buildSegments = (step: string, stepRefs: StepIngredientRef[]): Segment[] => {
+  const spans: { start: number; end: number; mention: string; ingredientIndex: number }[] = []
+  for (const ref of stepRefs) {
+    let idx = 0
+    while (true) {
+      const pos = step.indexOf(ref.mention, idx)
+      if (pos === -1) break
+      spans.push({ start: pos, end: pos + ref.mention.length, mention: ref.mention, ingredientIndex: ref.ingredient_index })
+      idx = pos + ref.mention.length
+    }
+  }
+  spans.sort((a, b) => a.start - b.start)
+  const filtered: typeof spans = []
+  let cursor = 0
+  for (const span of spans) {
+    if (span.start >= cursor) {
+      filtered.push(span)
+      cursor = span.end
+    }
+  }
+  const result: Segment[] = []
+  let pos = 0
+  for (const span of filtered) {
+    if (pos < span.start) result.push({ type: 'text', text: step.slice(pos, span.start) })
+    result.push({ type: 'mention', text: span.mention, ingredientIndex: span.ingredientIndex })
+    pos = span.end
+  }
+  if (pos < step.length) result.push({ type: 'text', text: step.slice(pos) })
+  return result
+}
+
+const StepText = ({
+  step,
+  stepRefs,
+  rawIngredients,
+}: {
+  step: string
+  stepRefs: StepIngredientRef[]
+  rawIngredients: string[]
+}) => {
+  const { t } = useTranslation()
+  const [tooltip, setTooltip] = useState<{ text: string; x: number; y: number } | null>(null)
+
+  const segments = useMemo(() => buildSegments(step, stepRefs), [step, stepRefs])
+  const hasMentions = segments.some((s) => s.type === 'mention')
+
+  if (!hasMentions) {
+    return <Text style={styles.stepText}>{step}</Text>
+  }
+
+  return (
+    <>
+      <Text style={styles.stepText}>
+        {segments.map((seg, i) => {
+          if (seg.type === 'text') return <Text key={i}>{seg.text}</Text>
+          return (
+            <Text
+              key={i}
+              style={styles.ingredientMention}
+              onPress={(e) => {
+                const ingText = displayIngredient(rawIngredients[seg.ingredientIndex!] ?? '', t)
+                const { pageX, pageY } = e.nativeEvent
+                setTooltip({ text: ingText, x: pageX, y: pageY })
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={t('recipes.showIngredientAmount')}
+            >
+              {seg.text}
+            </Text>
+          )
+        })}
+      </Text>
+      {tooltip && (
+        <Modal transparent animationType="none" onRequestClose={() => setTooltip(null)}>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            onPress={() => setTooltip(null)}
+            activeOpacity={1}
+            accessibilityLabel={t('recipes.dismissIngredientTooltip')}
+          >
+            <View
+              style={[
+                styles.ingredientTooltip,
+                {
+                  top: tooltip.y > 80 ? tooltip.y - 52 : tooltip.y + 16,
+                  left: Math.max(8, Math.min(tooltip.x - 110, SCREEN_WIDTH - 228)),
+                },
+              ]}
+            >
+              <Text style={styles.ingredientTooltipText}>{tooltip.text}</Text>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      )}
+    </>
+  )
+}
+
 // ── Step row with optional timer ───────────────────────────────────────────────
 
 const StepRow = ({
@@ -119,11 +230,15 @@ const StepRow = ({
   index,
   recipe,
   componentIndex,
+  stepRefs,
+  rawIngredients,
 }: {
   step: string
   index: number
   recipe: RecipeOut
   componentIndex: number
+  stepRefs: StepIngredientRef[]
+  rawIngredients: string[]
 }) => {
   const durationMatch = useMemo(() => parseDurationMatch(step), [step])
   const timerId = `${recipe.id}-c${componentIndex}-s${index}`
@@ -132,7 +247,7 @@ const StepRow = ({
     <View style={styles.stepRow}>
       <Text style={styles.stepNum}>{index + 1}.</Text>
       <View style={styles.stepBody}>
-        <Text style={styles.stepText}>{step}</Text>
+        <StepText step={step} stepRefs={stepRefs} rawIngredients={rawIngredients} />
         {durationMatch && (
           <TimerButton
             timerId={timerId}
@@ -189,6 +304,14 @@ const ComponentSection = ({
     [component.ingredients],
   )
 
+  const stepRefs = useMemo<StepIngredientRef[][]>(
+    () =>
+      component.step_ingredient_refs != null
+        ? component.step_ingredient_refs
+        : buildClientStepRefs(component.steps, component.ingredients),
+    [component.step_ingredient_refs, component.steps, component.ingredients],
+  )
+
   return (
     <View style={styles.componentBlock}>
       {component.name ? (
@@ -214,6 +337,8 @@ const ComponentSection = ({
               index={i}
               recipe={recipe}
               componentIndex={index}
+              stepRefs={stepRefs[i] ?? []}
+              rawIngredients={component.ingredients}
             />
           ))}
         </View>
@@ -414,6 +539,27 @@ const styles = StyleSheet.create({
   },
   stepBody: { flex: 1 },
   stepText: { fontSize: 15, color: '#111', lineHeight: 22 },
+  ingredientMention: {
+    color: '#1d4ed8',
+    backgroundColor: '#eff6ff',
+    borderRadius: 4,
+  },
+  ingredientTooltip: {
+    position: 'absolute',
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#e4e4e7',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    maxWidth: 220,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  ingredientTooltipText: { fontSize: 14, color: '#111' },
   timerChip: {
     flexDirection: 'row',
     alignItems: 'center',

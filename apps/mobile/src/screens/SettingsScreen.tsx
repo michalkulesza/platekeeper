@@ -94,16 +94,25 @@ const AllergenSection = ({
   allergens,
   scopeLabel,
   onSave,
+  onReanalyze,
 }: {
   allergens: AllergenData
   scopeLabel: string
   onSave: (data: AllergenData) => Promise<void>
+  onReanalyze: (callbacks: {
+    onStart: (total: number) => void
+    onProgress: (done: number, total: number) => void
+    onComplete: (analyzed: number) => void
+    onError: (msg: string) => void
+  }) => void
 }) => {
   const { t } = useTranslation()
   const [predefined, setPredefined] = useState<string[]>(allergens.predefined ?? [])
   const [custom, setCustom] = useState<string[]>(allergens.custom ?? [])
   const [tagInput, setTagInput] = useState('')
   const [saving, setSaving] = useState(false)
+  const [reanalyzing, setReanalyzing] = useState(false)
+  const [reanalyzeProgress, setReanalyzeProgress] = useState<{ done: number; total: number } | null>(null)
   const [expanded, setExpanded] = useState<'allergens' | 'intolerances' | 'custom' | null>(null)
 
   const togglePredefined = (key: string) => {
@@ -132,6 +141,25 @@ const AllergenSection = ({
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleReanalyze = () => {
+    setReanalyzing(true)
+    setReanalyzeProgress({ done: 0, total: 0 })
+    onReanalyze({
+      onStart: (total) => setReanalyzeProgress({ done: 0, total }),
+      onProgress: (done, total) => setReanalyzeProgress({ done, total }),
+      onComplete: (analyzed) => {
+        setReanalyzing(false)
+        setReanalyzeProgress(null)
+        Alert.alert(t('common.ok'), t('settings.reanalyzedRecipes', { count: analyzed }))
+      },
+      onError: (msg) => {
+        setReanalyzing(false)
+        setReanalyzeProgress(null)
+        Alert.alert(t('common.ok'), msg)
+      },
+    })
   }
 
   const renderGroup = (
@@ -261,6 +289,24 @@ const AllergenSection = ({
       >
         <Text style={styles.saveBtnText}>
           {saving ? t('common.saving') : t('common.save')}
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.reanalyzeBtn, reanalyzing && styles.saveBtnDisabled]}
+        onPress={handleReanalyze}
+        disabled={reanalyzing}
+        accessibilityLabel={t('settings.reAnalyzeRecipes')}
+        accessibilityRole="button"
+      >
+        <Text style={styles.reanalyzeBtnText}>
+          {reanalyzing
+            ? reanalyzeProgress && reanalyzeProgress.total > 0
+              ? t('settings.analyzingProgress', {
+                  done: reanalyzeProgress.done,
+                  total: reanalyzeProgress.total,
+                })
+              : t('settings.starting')
+            : t('settings.reAnalyzeRecipes')}
         </Text>
       </TouchableOpacity>
     </View>
@@ -618,6 +664,7 @@ const SettingsScreen = ({ navigation }: Props) => {
             allergens={currentAllergens}
             scopeLabel={allergenScopeLabel}
             onSave={handleSaveAllergens}
+            onReanalyze={api.streamReanalyze}
           />
         </View>
       </View>
@@ -884,6 +931,16 @@ const styles = StyleSheet.create({
   },
   saveBtnDisabled: { opacity: 0.6 },
   saveBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  reanalyzeBtn: {
+    backgroundColor: '#f3f4f6',
+    borderRadius: 8,
+    paddingVertical: 11,
+    alignItems: 'center',
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+  },
+  reanalyzeBtnText: { color: '#374151', fontSize: 14, fontWeight: '600' },
 })
 
 export default SettingsScreen

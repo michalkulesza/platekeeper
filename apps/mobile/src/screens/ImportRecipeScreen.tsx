@@ -30,6 +30,11 @@ import type {
   StepIngredientRef,
   Tag,
 } from '@platekeeper/shared/types'
+import {
+  parseIngredient,
+  serializeIngredient,
+} from '@platekeeper/shared/utils/ingredientUtils'
+import type { StructuredIngredient } from '@platekeeper/shared/utils/ingredientUtils'
 import type { RecipesStackParamList } from '../navigation/RecipesStack'
 
 type Props = NativeStackScreenProps<RecipesStackParamList, 'ImportRecipe'>
@@ -38,13 +43,6 @@ type Props = NativeStackScreenProps<RecipesStackParamList, 'ImportRecipe'>
 
 interface StepState extends StageEvent {
   status: 'active' | 'done'
-}
-
-interface StructuredIngredient {
-  qty: string
-  unit: string
-  name: string
-  note: string
 }
 
 interface EditableComponent {
@@ -68,32 +66,6 @@ interface EditableRecipe {
 }
 
 // ── Pure helpers ───────────────────────────────────────────────────────────────
-
-const parseIngredient = (s: string): StructuredIngredient => {
-  const trimmed = s.trim()
-  if (!trimmed) return { qty: '', unit: '', name: '', note: '' }
-  let rest = trimmed
-  let note = ''
-  const noteMatch = rest.match(/^(.*?)\s*\(([^)]+)\)\s*$/)
-  if (noteMatch) {
-    rest = noteMatch[1].trim()
-    note = noteMatch[2]
-  }
-  const parts = rest.split(/\s+/)
-  let idx = 0
-  let qty = ''
-  if (parts[idx] && /^[\d¼½¾⅓⅔⅛⅜⅝⅞.,/]+$/.test(parts[idx])) {
-    qty = parts[idx++]
-  }
-  let unit = ''
-  if (parts[idx] && (UNITS as readonly string[]).includes(parts[idx].toLowerCase())) {
-    unit = parts[idx++].toLowerCase()
-  }
-  return { qty, unit, name: parts.slice(idx).join(' '), note }
-}
-
-const serializeIngredient = (ing: StructuredIngredient): string =>
-  [ing.qty, ing.unit, ing.name, ing.note ? `(${ing.note})` : ''].filter(Boolean).join(' ')
 
 const toEditable = (result: ImportResult, autoSubstitute: boolean): EditableRecipe => {
   const { recipe, metadata } = result
