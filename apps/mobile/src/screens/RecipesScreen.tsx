@@ -4,6 +4,7 @@ import {
   FlatList,
   Image,
   ListRenderItemInfo,
+  Modal,
   StyleSheet,
   Text,
   TextInput,
@@ -25,6 +26,15 @@ import BellModal from '../components/BellModal'
 import type { RecipesStackParamList } from '../navigation/RecipesStack'
 
 type Props = NativeStackScreenProps<RecipesStackParamList, 'RecipesList'>
+type SortMode = 'newest' | 'oldest' | 'title_asc' | 'title_desc' | 'manual'
+
+const SORT_OPTIONS: { key: SortMode; labelKey: string }[] = [
+  { key: 'newest', labelKey: 'recipes.sortNewest' },
+  { key: 'oldest', labelKey: 'recipes.sortOldest' },
+  { key: 'title_asc', labelKey: 'recipes.sortTitleAZ' },
+  { key: 'title_desc', labelKey: 'recipes.sortTitleZA' },
+  { key: 'manual', labelKey: 'recipes.sortManual' },
+]
 
 const RecipesScreen = ({ navigation }: Props) => {
   const { t } = useTranslation()
@@ -36,22 +46,26 @@ const RecipesScreen = ({ navigation }: Props) => {
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null)
   const [filterFavourites, setFilterFavourites] = useState(false)
   const [favouriteOverrides, setFavouriteOverrides] = useState<Map<string, boolean>>(new Map())
+  const [sort, setSort] = useState<SortMode>('newest')
+  const [sortModalVisible, setSortModalVisible] = useState(false)
   const [reordering, setReordering] = useState(false)
 
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
         <View style={styles.headerBtns}>
-          <TouchableOpacity
-            onPress={() => setReordering((v) => !v)}
-            style={styles.headerBtn}
-            accessibilityLabel={reordering ? t('common.save') : t('recipes.dragToReorder')}
-            accessibilityRole="button"
-          >
-            <Text style={[styles.headerBtnText, reordering && styles.headerBtnActive]}>
-              {reordering ? t('common.save') : '⇅'}
-            </Text>
-          </TouchableOpacity>
+          {sort === 'manual' && (
+            <TouchableOpacity
+              onPress={() => setReordering((v) => !v)}
+              style={styles.headerBtn}
+              accessibilityLabel={reordering ? t('common.save') : t('recipes.dragToReorder')}
+              accessibilityRole="button"
+            >
+              <Text style={[styles.headerBtnText, reordering && styles.headerBtnActive]}>
+                {reordering ? t('common.save') : '⇅'}
+              </Text>
+            </TouchableOpacity>
+          )}
           {!reordering && (
             <TouchableOpacity
               onPress={() => navigation.navigate('ImportRecipe')}
@@ -66,7 +80,7 @@ const RecipesScreen = ({ navigation }: Props) => {
         </View>
       ),
     })
-  }, [navigation, t, reordering])
+  }, [navigation, t, reordering, sort])
 
   const recipesWithOverrides = useMemo(
     () =>
@@ -80,13 +94,21 @@ const RecipesScreen = ({ navigation }: Props) => {
   const filtered = useMemo(() => {
     if (reordering) return recipesWithOverrides
     const q = query.trim().toLowerCase()
-    return recipesWithOverrides.filter((r) => {
+    const base = recipesWithOverrides.filter((r) => {
       const matchesQuery = !q || r.title.toLowerCase().includes(q)
       const matchesTag = !selectedTagId || r.tags.some((tag) => tag.id === selectedTagId)
       const matchesFav = !filterFavourites || r.is_favourite
       return matchesQuery && matchesTag && matchesFav
     })
-  }, [recipesWithOverrides, query, selectedTagId, filterFavourites, reordering])
+    if (sort === 'manual') return base
+    return [...base].sort((a, b) => {
+      if (sort === 'title_asc') return a.title.localeCompare(b.title)
+      if (sort === 'title_desc') return b.title.localeCompare(a.title)
+      if (sort === 'oldest')
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    })
+  }, [recipesWithOverrides, query, selectedTagId, filterFavourites, sort, reordering])
 
   const handleTagPress = useCallback(
     (tagId: string) => {
@@ -264,6 +286,8 @@ const RecipesScreen = ({ navigation }: Props) => {
     [filterFavourites, t],
   )
 
+  const sortLabel = SORT_OPTIONS.find((o) => o.key === sort)?.labelKey ?? 'recipes.sortNewest'
+
   const listHeader = useMemo(
     () =>
       reordering ? null : (
@@ -282,6 +306,16 @@ const RecipesScreen = ({ navigation }: Props) => {
             keyExtractor={(item) => item.id}
             renderItem={renderTag}
             ListHeaderComponent={favChip}
+            ListFooterComponent={
+              <TouchableOpacity
+                onPress={() => setSortModalVisible(true)}
+                style={[styles.chip, styles.sortChip]}
+                accessibilityLabel={t('recipes.sortBy')}
+                accessibilityRole="button"
+              >
+                <Text style={styles.chipText}>{'↕ '}{t(sortLabel)}</Text>
+              </TouchableOpacity>
+            }
             horizontal
             showsHorizontalScrollIndicator={false}
             style={styles.tagList}
@@ -289,7 +323,47 @@ const RecipesScreen = ({ navigation }: Props) => {
           />
         </View>
       ),
-    [t, query, tags, renderTag, reordering, favChip],
+    [t, query, tags, renderTag, reordering, favChip, sortLabel],
+  )
+
+  const sortModal = (
+    <Modal
+      visible={sortModalVisible}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setSortModalVisible(false)}
+    >
+      <TouchableOpacity
+        style={styles.sortModalOverlay}
+        activeOpacity={1}
+        onPress={() => setSortModalVisible(false)}
+        accessibilityLabel={t('common.cancel')}
+        accessibilityRole="button"
+      >
+        <View style={styles.sortModalSheet}>
+          <Text style={styles.sortModalTitle}>{t('recipes.sortBy')}</Text>
+          {SORT_OPTIONS.map((opt) => (
+            <TouchableOpacity
+              key={opt.key}
+              style={[styles.sortModalRow, sort === opt.key && styles.sortModalRowActive]}
+              onPress={() => {
+                setSort(opt.key)
+                if (opt.key !== 'manual') setReordering(false)
+                setSortModalVisible(false)
+              }}
+              accessibilityLabel={t(opt.labelKey)}
+              accessibilityRole="menuitem"
+              accessibilityState={{ selected: sort === opt.key }}
+            >
+              <Text style={[styles.sortModalRowText, sort === opt.key && styles.sortModalRowTextActive]}>
+                {t(opt.labelKey)}
+              </Text>
+              {sort === opt.key && <Text style={styles.sortModalCheck}>✓</Text>}
+            </TouchableOpacity>
+          ))}
+        </View>
+      </TouchableOpacity>
+    </Modal>
   )
 
   if (isLoading) {
@@ -310,19 +384,24 @@ const RecipesScreen = ({ navigation }: Props) => {
 
   if (reordering) {
     return (
-      <DraggableFlatList
-        data={filtered}
-        keyExtractor={(item) => item.id}
-        renderItem={renderDraggableItem}
-        onDragEnd={handleDragEnd}
-        contentContainerStyle={styles.listContent}
-        containerStyle={styles.list}
-      />
+      <>
+        {sortModal}
+        <DraggableFlatList
+          data={filtered}
+          keyExtractor={(item) => item.id}
+          renderItem={renderDraggableItem}
+          onDragEnd={handleDragEnd}
+          contentContainerStyle={styles.listContent}
+          containerStyle={styles.list}
+        />
+      </>
     )
   }
 
   return (
-    <FlatList
+    <>
+      {sortModal}
+      <FlatList
       data={filtered}
       keyExtractor={(item) => item.id}
       renderItem={renderRecipe}
@@ -350,6 +429,7 @@ const RecipesScreen = ({ navigation }: Props) => {
       style={styles.list}
       contentContainerStyle={styles.listContent}
     />
+    </>
   )
 }
 
@@ -437,6 +517,39 @@ const styles = StyleSheet.create({
   favStar: { fontSize: 20, color: '#d1d5db' },
   favStarActive: { color: '#f59e0b' },
   favChip: { marginRight: 4 },
+  sortChip: { marginLeft: 4 },
+  sortModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'flex-end',
+  },
+  sortModalSheet: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingBottom: 32,
+    paddingTop: 8,
+  },
+  sortModalTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#9ca3af',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  sortModalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+  },
+  sortModalRowActive: { backgroundColor: '#f5f3ff' },
+  sortModalRowText: { fontSize: 15, color: '#111' },
+  sortModalRowTextActive: { color: '#7c3aed', fontWeight: '600' },
+  sortModalCheck: { fontSize: 16, color: '#7c3aed' },
 })
 
 export default RecipesScreen

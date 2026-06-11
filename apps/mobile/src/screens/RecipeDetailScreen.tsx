@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import {
   ActivityIndicator,
   Dimensions,
@@ -12,6 +12,8 @@ import {
 } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Feather } from '@expo/vector-icons'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import * as KeepAwake from 'expo-keep-awake'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useRecipes } from '@platekeeper/shared/hooks/useRecipes'
 import {
@@ -349,10 +351,33 @@ const ComponentSection = ({
 
 // ── Main screen ────────────────────────────────────────────────────────────────
 
+const KEEP_AWAKE_RECIPE_TAG = 'recipe-detail'
+const KEEP_AWAKE_STORAGE_KEY = 'recipe-keep-screen-default'
+
 const RecipeDetailScreen = ({ route, navigation }: Props) => {
   const { recipeId } = route.params
   const { t } = useTranslation()
   const { recipes, isLoading, error } = useRecipes()
+  const [keepScreenOn, setKeepScreenOn] = useState(false)
+
+  useEffect(() => {
+    AsyncStorage.getItem(KEEP_AWAKE_STORAGE_KEY).then((val) => {
+      const enabled = val === '1'
+      setKeepScreenOn(enabled)
+      if (enabled) void KeepAwake.activateKeepAwakeAsync(KEEP_AWAKE_RECIPE_TAG)
+    })
+    return () => { KeepAwake.deactivateKeepAwake(KEEP_AWAKE_RECIPE_TAG) }
+  }, [])
+
+  const handleToggleKeepScreenOn = useCallback(() => {
+    setKeepScreenOn((prev) => {
+      const next = !prev
+      void AsyncStorage.setItem(KEEP_AWAKE_STORAGE_KEY, next ? '1' : '0')
+      if (next) void KeepAwake.activateKeepAwakeAsync(KEEP_AWAKE_RECIPE_TAG)
+      else KeepAwake.deactivateKeepAwake(KEEP_AWAKE_RECIPE_TAG)
+      return next
+    })
+  }, [])
 
   const recipe: RecipeOut | undefined = useMemo(
     () => recipes.find((r) => r.id === recipeId),
@@ -368,6 +393,16 @@ const RecipeDetailScreen = ({ route, navigation }: Props) => {
       headerRight: () => (
         <View style={styles.headerBtns}>
           <TouchableOpacity
+            onPress={handleToggleKeepScreenOn}
+            style={styles.headerBtn}
+            accessibilityLabel={keepScreenOn ? t('recipes.screenAlwaysOnDisable') : t('recipes.keepScreenOnWhileReading')}
+            accessibilityRole="button"
+          >
+            <Text style={[styles.keepScreenBtn, keepScreenOn && styles.keepScreenBtnActive]}>
+              ☀
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
             onPress={handleEdit}
             style={styles.headerBtn}
             accessibilityLabel={t('common.edit')}
@@ -379,7 +414,7 @@ const RecipeDetailScreen = ({ route, navigation }: Props) => {
         </View>
       ),
     })
-  }, [navigation, handleEdit, t])
+  }, [navigation, handleEdit, handleToggleKeepScreenOn, keepScreenOn, t])
 
   if (isLoading) {
     return (
@@ -478,6 +513,8 @@ const styles = StyleSheet.create({
   errorText: { color: '#dc2626', fontSize: 15, textAlign: 'center' },
   headerBtns: { flexDirection: 'row', alignItems: 'center' },
   headerBtn: { paddingHorizontal: 4, paddingVertical: 2, marginRight: 2 },
+  keepScreenBtn: { fontSize: 18, color: '#d1d5db' },
+  keepScreenBtnActive: { color: '#f59e0b' },
   thumbnail: { width: '100%', height: 220 },
   title: {
     fontSize: 22,

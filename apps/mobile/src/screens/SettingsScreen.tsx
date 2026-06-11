@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native'
 import { useTranslation } from 'react-i18next'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { usePreferences } from '@platekeeper/shared/hooks/usePreferences'
 import { useHouseholds } from '@platekeeper/shared/hooks/useHouseholds'
@@ -405,6 +406,8 @@ const TimersSection = () => {
 
 // ── Main screen ───────────────────────────────────────────────────────────────
 
+const KEEP_AWAKE_STORAGE_KEY = 'recipe-keep-screen-default'
+
 const SettingsScreen = ({ navigation }: Props) => {
   const { t, i18n } = useTranslation()
   const { user, logout } = useAuth()
@@ -412,6 +415,18 @@ const SettingsScreen = ({ navigation }: Props) => {
   const { households, activeHouseholdId, activeHousehold, refetchHouseholds } = useHousehold()
   const { create: createHousehold } = useHouseholds()
   const api = useApiClient()
+  const [keepScreenDefault, setKeepScreenDefault] = useState(false)
+
+  useEffect(() => {
+    AsyncStorage.getItem(KEEP_AWAKE_STORAGE_KEY).then((val) => {
+      setKeepScreenDefault(val === '1')
+    })
+  }, [])
+
+  const handleKeepScreenDefaultToggle = useCallback((val: boolean) => {
+    setKeepScreenDefault(val)
+    void AsyncStorage.setItem(KEEP_AWAKE_STORAGE_KEY, val ? '1' : '0')
+  }, [])
 
   const handleLanguageChange = useCallback(
     (code: string) => {
@@ -597,6 +612,22 @@ const SettingsScreen = ({ navigation }: Props) => {
                   </TouchableOpacity>
                 )
               })}
+            </View>
+          </View>
+          {/* Keep screen on default */}
+          <View style={[styles.card, styles.keepScreenCard]}>
+            <View style={styles.switchRow}>
+              <View style={styles.switchLabelBlock}>
+                <Text style={styles.cardLabel}>{t('settings.keepScreenOnDefault')}</Text>
+                <Text style={styles.cardDesc}>{t('settings.keepScreenOnDefaultDesc')}</Text>
+              </View>
+              <Switch
+                value={keepScreenDefault}
+                onValueChange={handleKeepScreenDefaultToggle}
+                accessibilityLabel={t('settings.keepScreenOnDefault')}
+                trackColor={{ false: '#d1d5db', true: '#93c5fd' }}
+                thumbColor={keepScreenDefault ? '#2563eb' : '#9ca3af'}
+              />
             </View>
           </View>
         </>
@@ -941,6 +972,7 @@ const styles = StyleSheet.create({
     borderColor: '#d1d5db',
   },
   reanalyzeBtnText: { color: '#374151', fontSize: 14, fontWeight: '600' },
+  keepScreenCard: { marginTop: 8 },
 })
 
 export default SettingsScreen
