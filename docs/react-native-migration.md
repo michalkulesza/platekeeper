@@ -162,11 +162,11 @@ Test the JWT endpoint directly (curl or Postman) — confirm it returns a token 
 
 ---
 
-## Phase 4 — Scaffold the Expo app
+## Phase 4 — Scaffold the Expo app ✅
 
 Goal: a working shell app that can authenticate, navigate between tabs, and call the API.
 
-### 4.1 Create `apps/mobile`
+### 4.1 Create `apps/mobile` ✅
 
 ```
 pnpm create expo-app apps/mobile --template blank-typescript
@@ -174,7 +174,7 @@ pnpm create expo-app apps/mobile --template blank-typescript
 
 Configure `pnpm-workspace.yaml` if needed so the mobile app is part of the monorepo.
 
-### 4.2 Install dependencies
+### 4.2 Install dependencies ✅
 
 ```
 react-native-ui-lib
@@ -189,11 +189,11 @@ expo-constants
 @platekeeper/shared (workspace)
 ```
 
-### 4.3 Configure environment
+### 4.3 Configure environment ✅
 
 Add `EXPO_PUBLIC_API_URL` to `apps/mobile/.env` (local dev points to the running FastAPI, e.g. `http://10.0.2.2:8000` for Android emulator).
 
-### 4.4 Wire up providers
+### 4.4 Wire up providers ✅
 
 In `apps/mobile/src/App.tsx`:
 - `QueryClientProvider`
@@ -201,7 +201,7 @@ In `apps/mobile/src/App.tsx`:
 - `AuthProvider` (mobile flavour — stores JWT in `expo-secure-store`)
 - `NavigationContainer`
 
-### 4.5 Build navigation skeleton
+### 4.5 Build navigation skeleton ✅
 
 Bottom tab navigator with 4 tabs:
 - Recipes
@@ -211,7 +211,7 @@ Bottom tab navigator with 4 tabs:
 
 Plus a separate Auth stack (Login, Register) shown when unauthenticated.
 
-### 4.6 Initialise the shared API client
+### 4.6 Initialise the shared API client ✅
 
 ```typescript
 const api = createApiClient({
