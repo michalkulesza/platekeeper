@@ -13,6 +13,8 @@ import {
 } from '@heroui/react'
 import { CalendarDate, getLocalTimeZone, today } from '@internationalized/date'
 import type { MealPlanEntry, RecipeOut, Tag, UserPreferences } from '@platekeeper/shared/types'
+import { ymToYYYYMM, ymdToISODate, toISODate, formatWeekdayShort, weekdayShortByIndex, formatMonthYear, formatMonthLong } from '@platekeeper/shared/utils/dateUtils'
+import { proxyUrl } from '../utils/imageUtils'
 import { deleteMealPlanEntry, listMealPlan, setMealPlanEntry } from '../api/client'
 import RecipeDetailModal from '../components/RecipeDetailModal'
 import PageHeader from '../components/PageHeader'
@@ -20,36 +22,16 @@ import { useHousehold } from '../context/HouseholdContext'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const proxyUrl = (url: string | null | undefined): string | null => {
-  if (!url) return null
-
-  return `/api/proxy/image?url=${encodeURIComponent(url)}`
-}
-
-const shortDayName = (dayIndex: number, locale: string): string => {
-  return new Date(2024, 0, 7 + dayIndex).toLocaleDateString(locale, {
-    weekday: 'short',
-  })
-}
-
-const longMonthName = (year: number, month: number, locale: string): string => {
-  return new Date(year, month - 1, 1).toLocaleDateString(locale, {
-    month: 'long',
-  })
-}
-
 // ── Export ────────────────────────────────────────────────────────────────────
 
 const exportMealPlan = async (year: number, month: number) => {
-  const monthStr = `${year}-${String(month).padStart(2, '0')}`
+  const monthStr = ymToYYYYMM(year, month)
   const res = await fetch(`/api/export/meal-plan.xlsx?month=${monthStr}`)
   if (!res.ok) return
   const blob = await res.blob()
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
-  const monthName = new Date(year, month - 1, 1).toLocaleString(i18n.language, {
-    month: 'long',
-  })
+  const monthName = formatMonthLong(new Date(year, month - 1, 1), i18n.language)
   a.href = url
   a.download = `meal-plan-${monthStr}-${monthName}.xlsx`
   a.click()
@@ -85,7 +67,7 @@ const buildWeekRows = (
       if (monday) {
         const d = new Date(monday)
         d.setDate(d.getDate() + i)
-        const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+        const ds = toISODate(d)
         row.push(byDate.get(ds) ?? null)
       } else {
         row.push(null)
@@ -108,9 +90,7 @@ const printMealPlan = (entries: MealPlanEntry[], year: number, month: number) =>
     'Sunday',
   ]
   const rows = buildWeekRows(entries, year, month)
-  const monthName = new Date(year, month - 1, 1).toLocaleString(i18n.language, {
-    month: 'long',
-  })
+  const monthName = formatMonthLong(new Date(year, month - 1, 1), i18n.language)
 
   const headerCells = DAY_HEADERS.map((d) => `<th>${d}</th>`).join('')
 
@@ -232,7 +212,7 @@ const DayRow = ({
 }) => {
   const { t } = useTranslation()
   const date = new Date(year, month - 1, day)
-  const dayName = shortDayName(date.getDay(), locale)
+  const dayName = formatWeekdayShort(date, locale)
   const thumb = proxyUrl(entry?.recipe.thumbnail_url)
 
   return (
@@ -365,7 +345,7 @@ const DesktopCalendar = ({
   const firstDow = new Date(viewYear, viewMonth - 1, 1).getDay()
   const startPad = (firstDow - weekStart + 7) % 7
   const dayHeaders = Array.from({ length: 7 }, (_, i) =>
-    shortDayName((weekStart + i) % 7, locale)
+    weekdayShortByIndex((weekStart + i) % 7, locale)
   )
 
   type Cell = {
@@ -382,7 +362,7 @@ const DesktopCalendar = ({
     const m = viewMonth === 1 ? 12 : viewMonth - 1
     const y = viewMonth === 1 ? viewYear - 1 : viewYear
     cells.push({
-      dateStr: `${y}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
+      dateStr: ymdToISODate(y, m, day),
       day,
       isCurrentMonth: false,
       isToday: false,
@@ -390,7 +370,7 @@ const DesktopCalendar = ({
   }
 
   for (let day = 1; day <= daysInMonth; day++) {
-    const dateStr = `${viewYear}-${String(viewMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+    const dateStr = ymdToISODate(viewYear, viewMonth, day)
     const isToday =
       day === todayDate.day &&
       viewMonth === todayDate.month &&
@@ -403,7 +383,7 @@ const DesktopCalendar = ({
     const m = viewMonth === 12 ? 1 : viewMonth + 1
     const y = viewMonth === 12 ? viewYear + 1 : viewYear
     cells.push({
-      dateStr: `${y}-${String(m).padStart(2, '0')}-${String(nd).padStart(2, '0')}`,
+      dateStr: ymdToISODate(y, m, nd),
       day: nd++,
       isCurrentMonth: false,
       isToday: false,
@@ -415,7 +395,7 @@ const DesktopCalendar = ({
       {/* Navigation */}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold">
-          {longMonthName(viewYear, viewMonth, locale)} {viewYear}
+          {formatMonthYear(new Date(viewYear, viewMonth - 1, 1), locale)}
         </h2>
         <div className="flex items-center gap-2">
           <button
@@ -613,7 +593,7 @@ const MealPlanPage = ({
 
   useEffect(() => {
     setLoading(true)
-    const month = `${viewYear}-${String(viewMonth).padStart(2, '0')}`
+    const month = ymToYYYYMM(viewYear, viewMonth)
     listMealPlan(month)
       .then(setEntries)
       .catch(() => setEntries([]))
@@ -762,7 +742,7 @@ const MealPlanPage = ({
         >
           <div className="flex items-center justify-between px-4 py-3">
             <h2 className="text-base font-semibold">
-              {longMonthName(viewYear, viewMonth, locale)} {viewYear}
+              {formatMonthYear(new Date(viewYear, viewMonth - 1, 1), locale)}
             </h2>
             <div className="flex items-center gap-1">
               <button
@@ -814,7 +794,7 @@ const MealPlanPage = ({
             </div>
           ) : (
             Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
-              const dateStr = `${viewYear}-${String(viewMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+              const dateStr = ymdToISODate(viewYear, viewMonth, day)
               const entry = entriesByDate.get(dateStr)
               const isToday =
                 day === todayDate.day &&

@@ -293,7 +293,14 @@
   },
   "shoppingList": {
     "title": "Lista zakupów",
-    "comingSoon": "Lista zakupów wkrótce."
+    "comingSoon": "Lista zakupów wkrótce.",
+    "exportPdf": "Eksportuj PDF",
+    "exporting": "Eksportowanie…",
+    "exportError": "Nie udało się wyeksportować PDF",
+    "month": "Miesiąc",
+    "emptyList": "Brak składników w tym miesiącu.",
+    "ingredient": "Składnik",
+    "quantity": "Ilość"
   },
   "defaultTags": {
     "Vegetarian": "Wegetariańskie",

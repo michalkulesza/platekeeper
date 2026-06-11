@@ -32,6 +32,7 @@ import {
 } from '../api/client'
 import TagRow from './TagRow'
 import { useHousehold } from '../context/HouseholdContext'
+import { proxyUrl } from '../utils/imageUtils'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -517,9 +518,7 @@ const EditableRecipeView = ({
     setShowImgInput(false)
   }
 
-  const proxyUrl = recipe.thumbnail_url
-    ? `/api/proxy/image?url=${encodeURIComponent(recipe.thumbnail_url)}`
-    : null
+  const proxied = proxyUrl(recipe.thumbnail_url)
 
   const originalHandle = recipe.creator_handle
   const myHandle = currentUsername()
@@ -533,9 +532,9 @@ const EditableRecipeView = ({
           onClick={openImgEditor}
           className="relative w-16 h-16 rounded-lg shrink-0 overflow-hidden bg-zinc-100 group cursor-pointer"
         >
-          {proxyUrl ? (
+          {proxied ? (
             <img
-              src={proxyUrl}
+              src={proxied}
               alt="thumbnail"
               className="w-full h-full object-cover"
             />
@@ -995,7 +994,7 @@ const AddRecipeModal = ({
                             <div className="flex items-center gap-2 min-w-0">
                               {r.thumbnail_url && (
                                 <img
-                                  src={`/api/proxy/image?url=${encodeURIComponent(r.thumbnail_url)}`}
+                                  src={proxyUrl(r.thumbnail_url)!}
                                   className="w-8 h-8 rounded object-cover shrink-0"
                                 />
                               )}

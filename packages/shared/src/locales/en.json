@@ -314,7 +314,14 @@
   },
   "shoppingList": {
     "title": "Shopping List",
-    "comingSoon": "Shopping list coming soon."
+    "comingSoon": "Shopping list coming soon.",
+    "exportPdf": "Export PDF",
+    "exporting": "Exporting…",
+    "exportError": "Failed to export PDF",
+    "month": "Month",
+    "emptyList": "No ingredients for this month.",
+    "ingredient": "Ingredient",
+    "quantity": "Quantity"
   },
   "languages": {
     "en": "English",

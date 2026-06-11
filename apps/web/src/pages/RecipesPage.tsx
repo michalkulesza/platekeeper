@@ -19,6 +19,7 @@ import { useHousehold } from '../context/HouseholdContext'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { tTag } from '@platekeeper/shared/utils/tagUtils'
+import { proxyUrl } from '../utils/imageUtils'
 
 const RecipeThumb = ({ src, alt }: { src: string; alt: string }) => {
   const [loaded, setLoaded] = useState(false)
@@ -140,9 +141,7 @@ const RecipeCard = ({
   onToggleFavourite: () => void
 }) => {
   const { t } = useTranslation()
-  const proxyUrl = recipe.thumbnail_url
-    ? `/api/proxy/image?url=${encodeURIComponent(recipe.thumbnail_url)}`
-    : null
+  const thumb = proxyUrl(recipe.thumbnail_url)
 
   return (
     <div
@@ -154,7 +153,7 @@ const RecipeCard = ({
       }}
       className="flex gap-3 items-start p-3 rounded-xl bg-white shadow-sm w-full text-left active:opacity-70 transition-opacity cursor-pointer"
     >
-      {proxyUrl && <RecipeThumb src={proxyUrl} alt={recipe.title} />}
+      {thumb && <RecipeThumb src={thumb} alt={recipe.title} />}
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-sm leading-snug line-clamp-2">
           {recipe.title}
@@ -233,9 +232,7 @@ const SearchResultItem = ({
   matchedIngredient?: string
   onClick: () => void
 }) => {
-  const proxyUrl = recipe.thumbnail_url
-    ? `/api/proxy/image?url=${encodeURIComponent(recipe.thumbnail_url)}`
-    : null
+  const thumb = proxyUrl(recipe.thumbnail_url)
 
   return (
     <button
@@ -243,9 +240,9 @@ const SearchResultItem = ({
       onClick={onClick}
       className="flex items-center gap-3 px-4 py-3 w-full text-left hover:bg-zinc-50 transition-colors border-b border-zinc-100 last:border-b-0"
     >
-      {proxyUrl ? (
+      {thumb ? (
         <img
-          src={proxyUrl}
+          src={thumb}
           alt=""
           className="w-10 h-10 rounded-lg object-cover shrink-0"
         />

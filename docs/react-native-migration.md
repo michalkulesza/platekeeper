@@ -228,26 +228,27 @@ Expose via React context so all shared hooks can call it.
 
 ---
 
-## Phase 5 — Build v1 mobile screens
+## Phase 5 — Build v1 mobile screens ✅
 
-Each screen uses `react-native-ui-lib` components and the shared React Query hooks from `@platekeeper/shared`.
+Each screen uses plain React Native components and the shared React Query hooks from `@platekeeper/shared`.
 
-### 5.1 Auth screens
+### 5.1 Auth screens ✅
 - **LoginScreen** — email + password form, calls `/api/auth/jwt/login`, stores token in `expo-secure-store`.
 - **RegisterScreen** — same flow with register then auto-login.
 
-### 5.2 Recipes tab
+### 5.2 Recipes tab ✅
 - **RecipesScreen** — list of recipes (search + tag filter). Tap opens detail.
 - **RecipeDetailScreen** — full recipe view: ingredients, steps, notes, tags. Read-only for v1; add/edit in a later iteration.
+- **RecipesStack** — native-stack navigator wrapping RecipesScreen + RecipeDetailScreen, used as the Recipes tab.
 
-### 5.3 Meal Plan tab
-- **MealPlanScreen** — month calendar with recipe dots, week list below. Tap a day to assign/remove a recipe.
+### 5.3 Meal Plan tab ✅
+- **MealPlanScreen** — month calendar with prev/next arrows, scrollable week list. Tap a day to open a recipe-picker modal sheet to assign or remove a recipe.
 
-### 5.4 Shopping List tab
-- **ShoppingListScreen** — aggregated ingredient list. PDF export button → calls `/api/export/meal-plan.pdf`, opens in native share sheet via `expo-sharing`.
+### 5.4 Shopping List tab ✅
+- **ShoppingListScreen** — aggregated ingredient list built from current month's meal plan entries. PDF export button → calls `/api/export/meal-plan.pdf`, writes to cache via `expo-file-system` (File/Paths API), opens in native share sheet via `expo-sharing`.
 
-### 5.5 Settings tab
-- **SettingsScreen** — language picker, unit system toggle (metric/imperial), week start day. Writes to `/api/preferences`.
+### 5.5 Settings tab ✅
+- **SettingsScreen** — language picker (all 5 locales), unit system toggle (metric/imperial), week start day picker (Sun/Mon/Sat). Reads/writes `/api/preferences`. Logout button retained.
 
 ---
 

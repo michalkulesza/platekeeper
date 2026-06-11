@@ -21,6 +21,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import type { RecipeOut } from '@platekeeper/shared/types'
 import { reorderRecipes, toggleFavourite } from '../api/client'
+import { proxyUrl } from '../utils/imageUtils'
 
 type SortField =
   | 'title'
@@ -117,18 +118,16 @@ const formatDate = (iso: string): string =>
 
 const ThumbCell = ({ url, title }: { url: string | null; title: string }) => {
   const [loaded, setLoaded] = useState(false)
-  const proxyUrl = url
-    ? `/api/proxy/image?url=${encodeURIComponent(url)}`
-    : null
+  const proxied = proxyUrl(url)
 
   return (
     <div className="w-12 h-12 rounded-lg overflow-hidden bg-zinc-100 shrink-0 relative">
-      {!loaded && proxyUrl && (
+      {!loaded && proxied && (
         <div className="absolute inset-0 animate-pulse bg-zinc-200" />
       )}
-      {proxyUrl ? (
+      {proxied ? (
         <img
-          src={proxyUrl}
+          src={proxied}
           alt={title}
           onLoad={() => setLoaded(true)}
           className={`w-full h-full object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}

@@ -285,7 +285,14 @@
   },
   "shoppingList": {
     "title": "Liste de courses",
-    "comingSoon": "Liste de courses bientôt disponible."
+    "comingSoon": "Liste de courses bientôt disponible.",
+    "exportPdf": "Exporter en PDF",
+    "exporting": "Exportation…",
+    "exportError": "Échec de l'export PDF",
+    "month": "Mois",
+    "emptyList": "Aucun ingrédient pour ce mois.",
+    "ingredient": "Ingrédient",
+    "quantity": "Quantité"
   },
   "defaultTags": {
     "Vegetarian": "Végétarien",

@@ -36,6 +36,7 @@ import {
   updateRecipe,
 } from '../api/client'
 import TagRow from './TagRow'
+import { proxyUrl } from '../utils/imageUtils'
 
 // ── Allergen popover ──────────────────────────────────────────────────────────
 
@@ -951,9 +952,7 @@ const RecipeDetailModal = ({
 
   const displayThumb =
     mode === 'editing' ? draft.thumbnail_url : r.thumbnail_url
-  const proxyUrl = displayThumb
-    ? `/api/proxy/image?url=${encodeURIComponent(displayThumb)}`
-    : null
+  const proxied = proxyUrl(displayThumb)
 
   const openImgEditor = () => {
     setImgDraft(draft?.thumbnail_url ?? '')
@@ -1224,10 +1223,10 @@ const RecipeDetailModal = ({
             {/* ── Sticky header ── */}
             <ModalHeader className="flex-col gap-0 p-0">
               {/* Hero image (or solid colour in edit/confirm mode) */}
-              {proxyUrl ? (
+              {proxied ? (
                 <div className="relative w-full h-48 shrink-0">
                   <img
-                    src={proxyUrl}
+                    src={proxied}
                     alt={r.title}
                     className="absolute inset-0 w-full h-full object-cover"
                   />
