@@ -1,10 +1,9 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   FlatList,
   ListRenderItemInfo,
   Modal,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -12,55 +11,20 @@ import {
   View,
 } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { useMealPlan } from '@platekeeper/shared/hooks/useMealPlan'
+import { useQueries, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRecipes } from '@platekeeper/shared/hooks/useRecipes'
+import { useApiClient } from '@platekeeper/shared/api/context'
 import type { MealPlanEntry, RecipeOut } from '@platekeeper/shared/types'
-
 import { toYYYYMM, toISODate, formatWeekdayShort, formatMonthYear } from '@platekeeper/shared/utils/dateUtils'
 
-// ─── helpers ───────────────────────────────────────────────────────────────
+const DAYS_BEFORE = 60
+const DAYS_AFTER = 180
+const DAY_ROW_HEIGHT = 72
+const MONTH_HEADER_HEIGHT = 36
 
-const getDaysInMonth = (year: number, month: number): Date[] => {
-  const days: Date[] = []
-  const date = new Date(year, month, 1)
-  while (date.getMonth() === month) {
-    days.push(new Date(date))
-    date.setDate(date.getDate() + 1)
-  }
-  return days
-}
-
-interface WeekGroup {
-  weekLabel: string
-  days: Date[]
-}
-
-const groupByWeek = (days: Date[]): WeekGroup[] => {
-  const groups: WeekGroup[] = []
-  let current: Date[] = []
-
-  for (const day of days) {
-    current.push(day)
-    if (day.getDay() === 0 || day === days[days.length - 1]) {
-      const first = current[0]
-      const last = current[current.length - 1]
-      groups.push({
-        weekLabel: `${first.getDate()} – ${last.getDate()}`,
-        days: current,
-      })
-      current = []
-    }
-  }
-  if (current.length > 0) {
-    const first = current[0]
-    const last = current[current.length - 1]
-    groups.push({
-      weekLabel: `${first.getDate()} – ${last.getDate()}`,
-      days: current,
-    })
-  }
-  return groups
-}
+type ListItem =
+  | { type: 'month'; key: string; label: string }
+  | { type: 'day'; key: string; date: Date; isoDate: string }
 
 // ─── RecipePicker modal ─────────────────────────────────────────────────────
 
@@ -185,42 +149,40 @@ const RecipePicker = ({
   )
 }
 
-// ─── Day cell ───────────────────────────────────────────────────────────────
+// ─── Day row ────────────────────────────────────────────────────────────────
 
-interface DayCellProps {
+interface DayRowProps {
   date: Date
   entry: MealPlanEntry | undefined
+  isToday: boolean
   onPress: (date: Date) => void
 }
 
-const DayCell = ({ date, entry, onPress }: DayCellProps) => {
-  const { i18n } = useTranslation()
-  const dayShort = formatWeekdayShort(date, i18n.language)
-  const dayLong = new Intl.DateTimeFormat(i18n.language, { weekday: 'long', day: 'numeric', month: 'long' }).format(date)
-  const today = new Date()
-  const isToday =
-    date.getDate() === today.getDate() &&
-    date.getMonth() === today.getMonth() &&
-    date.getFullYear() === today.getFullYear()
+const DayRow = ({ date, entry, isToday, onPress }: DayRowProps) => {
+  const { t, i18n } = useTranslation()
+  const weekday = formatWeekdayShort(date, i18n.language)
+  const dayLabel = new Intl.DateTimeFormat(i18n.language, { day: 'numeric', month: 'short' }).format(date)
 
   return (
     <TouchableOpacity
-      style={[styles.dayCell, isToday && styles.dayCellToday]}
+      style={[styles.dayRow, isToday && styles.dayRowToday]}
       onPress={() => onPress(date)}
-      accessibilityLabel={`${dayLong}${entry ? ': ' + entry.recipe.title : ''}`}
+      accessibilityLabel={`${dayLabel}${entry ? ': ' + entry.recipe.title : ''}`}
       accessibilityRole="button"
     >
-      <View style={styles.dayCellHeader}>
-        <Text style={styles.dayName}>{dayShort}</Text>
-        <Text style={[styles.dayNum, isToday && styles.dayNumToday]}>{date.getDate()}</Text>
+      <View style={styles.dayRowLeft}>
+        <Text style={[styles.dayRowWeekday, isToday && styles.dayRowTextToday]}>{weekday}</Text>
+        <Text style={[styles.dayRowNum, isToday && styles.dayRowTextToday]}>{date.getDate()}</Text>
+        <Text style={[styles.dayRowMonth, isToday && styles.dayRowTextToday]}>{dayLabel.replace(/^\d+\s*/, '')}</Text>
       </View>
-      {entry ? (
-        <Text style={styles.dayRecipe} numberOfLines={2}>
-          {entry.recipe.title}
-        </Text>
-      ) : (
-        <Text style={styles.dayEmpty}>{'+'}</Text>
-      )}
+      <View style={styles.dayRowDivider} />
+      <View style={styles.dayRowContent}>
+        {entry ? (
+          <Text style={styles.dayRowRecipe} numberOfLines={2}>{entry.recipe.title}</Text>
+        ) : (
+          <Text style={styles.dayRowEmpty}>{t('mealPlan.addDish')}</Text>
+        )}
+      </View>
     </TouchableOpacity>
   )
 }
@@ -228,34 +190,109 @@ const DayCell = ({ date, entry, onPress }: DayCellProps) => {
 // ─── Main screen ─────────────────────────────────────────────────────────────
 
 const MealPlanScreen = () => {
-  const { t, i18n } = useTranslation()
-  const [currentDate, setCurrentDate] = useState(() => new Date())
+  const { i18n } = useTranslation()
   const [pickerDate, setPickerDate] = useState<Date | null>(null)
-
-  const month = useMemo(() => toYYYYMM(currentDate), [currentDate])
-  const { entries, isLoading, error, setEntry, deleteEntry } = useMealPlan(month)
+  const listRef = useRef<FlatList>(null)
+  const api = useApiClient()
+  const qc = useQueryClient()
   const { recipes } = useRecipes()
+
+  const today = useMemo(() => {
+    const d = new Date()
+    d.setHours(0, 0, 0, 0)
+    return d
+  }, [])
+
+  const todayIso = useMemo(() => toISODate(today), [today])
+
+  const { items, offsets, todayIndex, months } = useMemo(() => {
+    const items: ListItem[] = []
+    const offsets: number[] = []
+    const monthSet = new Set<string>()
+    let offset = 0
+    let todayIndex = 0
+    let prevMonth = ''
+
+    const d = new Date(today)
+    d.setDate(d.getDate() - DAYS_BEFORE)
+
+    for (let i = 0; i < DAYS_BEFORE + DAYS_AFTER + 1; i++) {
+      const monthKey = toYYYYMM(d)
+      monthSet.add(monthKey)
+
+      if (monthKey !== prevMonth) {
+        prevMonth = monthKey
+        offsets.push(offset)
+        items.push({
+          type: 'month',
+          key: `month-${monthKey}`,
+          label: formatMonthYear(d, i18n.language),
+        })
+        offset += MONTH_HEADER_HEIGHT
+      }
+
+      const iso = toISODate(d)
+      if (iso === todayIso) todayIndex = items.length
+
+      offsets.push(offset)
+      items.push({ type: 'day', key: iso, date: new Date(d), isoDate: iso })
+      offset += DAY_ROW_HEIGHT
+
+      d.setDate(d.getDate() + 1)
+    }
+
+    return { items, offsets, todayIndex, months: Array.from(monthSet) }
+  }, [today, todayIso, i18n.language])
+
+  const queries = useQueries({
+    queries: months.map((month) => ({
+      queryKey: ['mealPlan', month],
+      queryFn: () => api.listMealPlan(month),
+    })),
+  })
 
   const entriesByDate = useMemo(() => {
     const map = new Map<string, MealPlanEntry>()
-    for (const entry of entries) {
-      map.set(entry.date, entry)
+    for (const q of queries) {
+      for (const entry of (q.data ?? [])) {
+        map.set(entry.date, entry)
+      }
     }
     return map
-  }, [entries])
+  }, [queries])
 
-  const weeks = useMemo(() => {
-    const days = getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth())
-    return groupByWeek(days)
-  }, [currentDate])
+  const isLoading = queries.length > 0 && queries.every((q) => q.isLoading)
 
-  const goToPrevMonth = useCallback(() => {
-    setCurrentDate((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))
-  }, [])
+  const setEntry = useMutation({
+    mutationFn: ({ date, recipeId }: { date: string; recipeId: string }) =>
+      api.setMealPlanEntry(date, recipeId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['mealPlan'] }),
+  })
 
-  const goToNextMonth = useCallback(() => {
-    setCurrentDate((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1))
-  }, [])
+  const deleteEntry = useMutation({
+    mutationFn: api.deleteMealPlanEntry,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['mealPlan'] }),
+  })
+
+  useEffect(() => {
+    if (offsets[todayIndex] === undefined) return
+    const timer = setTimeout(() => {
+      listRef.current?.scrollToOffset({
+        offset: Math.max(0, offsets[todayIndex] - 120),
+        animated: false,
+      })
+    }, 50)
+    return () => clearTimeout(timer)
+  }, [todayIndex, offsets])
+
+  const getItemLayout = useCallback(
+    (_: unknown, index: number) => ({
+      length: items[index]?.type === 'month' ? MONTH_HEADER_HEIGHT : DAY_ROW_HEIGHT,
+      offset: offsets[index] ?? 0,
+      index,
+    }),
+    [items, offsets],
+  )
 
   const handleDayPress = useCallback((date: Date) => {
     setPickerDate(date)
@@ -280,6 +317,27 @@ const MealPlanScreen = () => {
     setPickerDate(null)
   }, [])
 
+  const renderItem = useCallback(
+    ({ item }: ListRenderItemInfo<ListItem>) => {
+      if (item.type === 'month') {
+        return (
+          <View style={styles.monthRow}>
+            <Text style={styles.monthRowLabel}>{item.label}</Text>
+          </View>
+        )
+      }
+      return (
+        <DayRow
+          date={item.date}
+          entry={entriesByDate.get(item.isoDate)}
+          isToday={item.isoDate === todayIso}
+          onPress={handleDayPress}
+        />
+      )
+    },
+    [entriesByDate, todayIso, handleDayPress],
+  )
+
   const pickerDateStr = pickerDate ? toISODate(pickerDate) : ''
   const pickerCurrentRecipeId = pickerDate
     ? (entriesByDate.get(pickerDateStr)?.recipe.id ?? null)
@@ -287,63 +345,26 @@ const MealPlanScreen = () => {
 
   return (
     <View style={styles.container}>
-      {/* Month header */}
-      <View style={styles.monthHeader}>
-        <TouchableOpacity
-          onPress={goToPrevMonth}
-          style={styles.arrowBtn}
-          accessibilityLabel={t('mealPlan.prevMonth')}
-          accessibilityRole="button"
-        >
-          <Text style={styles.arrowText}>{'‹'}</Text>
-        </TouchableOpacity>
-        <Text style={styles.monthTitle}>
-          {formatMonthYear(currentDate, i18n.language)}
-        </Text>
-        <TouchableOpacity
-          onPress={goToNextMonth}
-          style={styles.arrowBtn}
-          accessibilityLabel={t('mealPlan.nextMonth')}
-          accessibilityRole="button"
-        >
-          <Text style={styles.arrowText}>{'›'}</Text>
-        </TouchableOpacity>
-      </View>
-
       {isLoading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" accessibilityLabel={t('common.loading')} />
-        </View>
-      ) : error ? (
-        <View style={styles.center}>
-          <Text style={styles.errorText}>{error.message}</Text>
+          <ActivityIndicator size="large" />
         </View>
       ) : (
-        <ScrollView style={styles.scroll}>
-          {weeks.map((week, wi) => (
-            <View key={wi} style={styles.weekBlock}>
-              <Text style={styles.weekLabel}>{week.weekLabel}</Text>
-              <View style={styles.weekRow}>
-                {week.days.map((day) => {
-                  const iso = toISODate(day)
-                  return (
-                    <DayCell
-                      key={iso}
-                      date={day}
-                      entry={entriesByDate.get(iso)}
-                      onPress={handleDayPress}
-                    />
-                  )
-                })}
-              </View>
-            </View>
-          ))}
-        </ScrollView>
+        <FlatList
+          ref={listRef}
+          data={items}
+          keyExtractor={(item) => item.key}
+          renderItem={renderItem}
+          getItemLayout={getItemLayout}
+          style={styles.list}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+        />
       )}
 
       {pickerDate && (
         <RecipePicker
-          visible={pickerDate !== null}
+          visible
           date={pickerDateStr}
           currentRecipeId={pickerCurrentRecipeId}
           recipes={recipes}
@@ -358,41 +379,76 @@ const MealPlanScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f9fafb' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  errorText: { color: '#dc2626', fontSize: 15, textAlign: 'center' },
-  monthHeader: {
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  list: { flex: 1 },
+  listContent: { paddingBottom: 40 },
+  monthRow: {
+    height: MONTH_HEADER_HEIGHT,
+    justifyContent: 'flex-end',
+    paddingHorizontal: 16,
+    paddingBottom: 6,
+    backgroundColor: '#f9fafb',
+  },
+  monthRowLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#9ca3af',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  dayRow: {
+    height: DAY_ROW_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: '#f3f4f6',
+    paddingHorizontal: 16,
   },
-  arrowBtn: { padding: 8 },
-  arrowText: { fontSize: 24, color: '#374151', lineHeight: 28 },
-  monthTitle: { fontSize: 18, fontWeight: '700', color: '#111' },
-  scroll: { flex: 1 },
-  weekBlock: { marginTop: 12, marginHorizontal: 12 },
-  weekLabel: { fontSize: 11, fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 },
-  weekRow: { flexDirection: 'row', gap: 4 },
-  dayCell: {
-    flex: 1,
-    minHeight: 72,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 6,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
+  dayRowToday: {
+    borderLeftWidth: 3,
+    borderLeftColor: '#7c3aed',
+    paddingLeft: 13,
   },
-  dayCellToday: { borderColor: '#2563eb', borderWidth: 2 },
-  dayCellHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  dayName: { fontSize: 10, color: '#9ca3af', fontWeight: '500' },
-  dayNum: { fontSize: 13, fontWeight: '700', color: '#374151' },
-  dayNumToday: { color: '#2563eb' },
-  dayRecipe: { fontSize: 10, color: '#374151', lineHeight: 13 },
-  dayEmpty: { fontSize: 18, color: '#d1d5db', textAlign: 'center', marginTop: 4 },
+  dayRowLeft: {
+    width: 52,
+    alignItems: 'center',
+  },
+  dayRowWeekday: {
+    fontSize: 11,
+    color: '#9ca3af',
+    fontWeight: '500',
+    textTransform: 'uppercase',
+  },
+  dayRowNum: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111',
+    lineHeight: 24,
+  },
+  dayRowMonth: {
+    fontSize: 10,
+    color: '#9ca3af',
+  },
+  dayRowTextToday: {
+    color: '#7c3aed',
+  },
+  dayRowDivider: {
+    width: 1,
+    height: 36,
+    backgroundColor: '#e5e7eb',
+    marginHorizontal: 14,
+  },
+  dayRowContent: { flex: 1 },
+  dayRowRecipe: {
+    fontSize: 14,
+    color: '#111',
+    fontWeight: '500',
+  },
+  dayRowEmpty: {
+    fontSize: 13,
+    color: '#d1d5db',
+  },
   // picker
   pickerContainer: { flex: 1, backgroundColor: '#fff' },
   pickerHeader: {
