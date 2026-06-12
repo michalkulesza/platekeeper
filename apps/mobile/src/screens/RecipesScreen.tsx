@@ -1,6 +1,7 @@
-import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Image,
   ListRenderItemInfo,
@@ -11,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
+import { Swipeable } from 'react-native-gesture-handler'
 import { useTranslation } from 'react-i18next'
 import DraggableFlatList, {
   ScaleDecorator,
@@ -49,6 +51,63 @@ const RecipesScreen = ({ navigation }: Props) => {
   const [sort, setSort] = useState<SortMode>('newest')
   const [sortModalVisible, setSortModalVisible] = useState(false)
   const [reordering, setReordering] = useState(false)
+  const swipeableRefs = useRef<Map<string, Swipeable>>(new Map())
+  const openSwipeableId = useRef<string | null>(null)
+
+  const handleDelete = useCallback(
+    (recipe: RecipeOut) => {
+      Alert.alert(
+        t('recipes.deleteTitle'),
+        t('recipes.deleteConfirm', { title: recipe.title }),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          {
+            text: t('common.delete'),
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await api.deleteRecipe(recipe.id)
+                await qc.invalidateQueries({ queryKey: ['recipes'] })
+              } catch {
+                Alert.alert(t('recipes.failedToDelete'))
+              }
+            },
+          },
+        ],
+      )
+    },
+    [api, qc, t],
+  )
+
+  const renderSwipeActions = useCallback(
+    (item: RecipeOut) => (
+      <View style={styles.swipeActions}>
+        <TouchableOpacity
+          style={styles.swipeEdit}
+          onPress={() => {
+            swipeableRefs.current.get(item.id)?.close()
+            navigation.navigate('EditRecipe', { recipeId: item.id })
+          }}
+          accessibilityLabel={t('common.edit')}
+          accessibilityRole="button"
+        >
+          <Text style={styles.swipeActionText}>{t('common.edit')}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.swipeDelete}
+          onPress={() => {
+            swipeableRefs.current.get(item.id)?.close()
+            handleDelete(item)
+          }}
+          accessibilityLabel={t('common.delete')}
+          accessibilityRole="button"
+        >
+          <Text style={styles.swipeActionText}>{t('common.delete')}</Text>
+        </TouchableOpacity>
+      </View>
+    ),
+    [handleDelete, navigation, t],
+  )
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -186,49 +245,69 @@ const RecipesScreen = ({ navigation }: Props) => {
         ? favouriteOverrides.get(item.id)!
         : item.is_favourite
       return (
-        <TouchableOpacity
-          style={styles.card}
-          onPress={() => handleRecipePress(item)}
-          accessibilityLabel={item.title}
-          accessibilityRole="button"
+        <Swipeable
+          ref={(ref) => {
+            if (ref) swipeableRefs.current.set(item.id, ref)
+            else swipeableRefs.current.delete(item.id)
+          }}
+          renderRightActions={() => renderSwipeActions(item)}
+          onSwipeableOpen={() => {
+            if (openSwipeableId.current && openSwipeableId.current !== item.id) {
+              swipeableRefs.current.get(openSwipeableId.current)?.close()
+            }
+            openSwipeableId.current = item.id
+          }}
+          onSwipeableClose={() => {
+            if (openSwipeableId.current === item.id) openSwipeableId.current = null
+          }}
+          friction={2}
+          rightThreshold={40}
+          containerStyle={styles.swipeContainer}
         >
-          {item.thumbnail_url ? (
-            <Image
-              source={{ uri: item.thumbnail_url }}
-              style={styles.cardImage}
-              resizeMode="cover"
-            />
-          ) : (
-            <View style={styles.cardImagePlaceholder} />
-          )}
-          <View style={styles.cardBody}>
-            <Text style={styles.cardTitle} numberOfLines={2}>
-              {item.title}
-            </Text>
-            {item.tags.length > 0 && (
-              <Text style={styles.cardTags} numberOfLines={1}>
-                {item.tags.map((tg) => tg.name).join(', ')}
-              </Text>
-            )}
-            {item.servings != null && (
-              <Text style={styles.cardMeta}>
-                {t('recipes.serves')}: {item.servings}
-              </Text>
-            )}
-          </View>
           <TouchableOpacity
-            style={styles.favBtn}
-            onPress={() => handleToggleFavourite(item)}
-            accessibilityLabel={isFav ? t('recipes.removeFromFavourites') : t('recipes.addToFavourites')}
+            style={[styles.card, styles.cardInSwipeable]}
+            onPress={() => handleRecipePress(item)}
+            accessibilityLabel={item.title}
             accessibilityRole="button"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Text style={[styles.favStar, isFav && styles.favStarActive]}>★</Text>
+            {item.thumbnail_url ? (
+              <Image
+                source={{ uri: item.thumbnail_url }}
+                style={styles.cardImage}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={styles.cardImagePlaceholder} />
+            )}
+            <View style={styles.cardBody}>
+              <Text style={styles.cardTitle} numberOfLines={2}>
+                {item.title}
+              </Text>
+              {item.tags.length > 0 && (
+                <Text style={styles.cardTags} numberOfLines={1}>
+                  {item.tags.map((tg) => tg.name).join(', ')}
+                </Text>
+              )}
+              {item.servings != null && (
+                <Text style={styles.cardMeta}>
+                  {t('recipes.serves')}: {item.servings}
+                </Text>
+              )}
+            </View>
+            <TouchableOpacity
+              style={styles.favBtn}
+              onPress={() => handleToggleFavourite(item)}
+              accessibilityLabel={isFav ? t('recipes.removeFromFavourites') : t('recipes.addToFavourites')}
+              accessibilityRole="button"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={[styles.favStar, isFav && styles.favStarActive]}>★</Text>
+            </TouchableOpacity>
           </TouchableOpacity>
-        </TouchableOpacity>
+        </Swipeable>
       )
     },
-    [handleRecipePress, handleToggleFavourite, favouriteOverrides, t],
+    [handleRecipePress, handleToggleFavourite, renderSwipeActions, favouriteOverrides, t],
   )
 
   const renderDraggableItem = useCallback(
@@ -518,6 +597,24 @@ const styles = StyleSheet.create({
   favStarActive: { color: '#f59e0b' },
   favChip: { marginRight: 4 },
   sortChip: { marginLeft: 4 },
+  swipeContainer: { marginHorizontal: 12, marginTop: 8 },
+  cardInSwipeable: { marginHorizontal: 0, marginTop: 0 },
+  swipeActions: { flexDirection: 'row' },
+  swipeEdit: {
+    backgroundColor: '#7c3aed',
+    width: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  swipeDelete: {
+    backgroundColor: '#dc2626',
+    width: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderTopRightRadius: 10,
+    borderBottomRightRadius: 10,
+  },
+  swipeActionText: { color: '#fff', fontSize: 13, fontWeight: '600' },
   sortModalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.35)',
