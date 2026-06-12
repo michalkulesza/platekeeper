@@ -22,6 +22,7 @@ import {
   useTimers,
   getRemainingSeconds,
   formatCountdown,
+  type DurationMatch,
 } from '../context/TimerContext'
 import BellModal from '../components/BellModal'
 import type { RecipesStackParamList } from '../navigation/RecipesStack'
@@ -34,7 +35,7 @@ type Props = NativeStackScreenProps<RecipesStackParamList, 'RecipeDetail'>
 
 // ── Timer button for a step ────────────────────────────────────────────────────
 
-const TimerButton = ({
+const TimerSpan = ({
   timerId,
   recipe,
   componentIndex,
@@ -50,13 +51,13 @@ const TimerButton = ({
   seconds: number
 }) => {
   const { t } = useTranslation()
-  const { timers, startTimer, pauseTimer, resumeTimer, cancelTimer } = useTimers()
+  const { timers, startTimer, pauseTimer, resumeTimer } = useTimers()
   const timer = timers.get(timerId)
 
   if (!timer) {
     return (
-      <TouchableOpacity
-        style={styles.timerChip}
+      <Text
+        style={styles.timerSpan}
         onPress={() =>
           startTimer({
             id: timerId,
@@ -68,12 +69,11 @@ const TimerButton = ({
             totalSeconds: seconds,
           })
         }
-        accessibilityLabel={t('timers.startTimer')}
         accessibilityRole="button"
+        accessibilityLabel={t('timers.startTimer')}
       >
-        <Feather name="clock" size={12} color="#d97706" />
-        <Text style={styles.timerChipText}>{formatDurationLabel(seconds)}</Text>
-      </TouchableOpacity>
+        {`⏱ ${formatDurationLabel(seconds)}`}
+      </Text>
     )
   }
 
@@ -82,62 +82,52 @@ const TimerButton = ({
   const isDone = timer.status === 'done' || remaining === 0
 
   return (
-    <View style={[styles.timerChip, isDone && styles.timerChipDone]}>
-      <Text
-        style={[
-          styles.timerChipText,
-          { color: isDone ? '#10b981' : isRunning ? '#d97706' : '#9ca3af' },
-        ]}
-      >
-        {isDone ? t('common.doneCheck') : formatCountdown(remaining)}
-      </Text>
-      {!isDone && (
-        <>
-          <TouchableOpacity
-            onPress={() => (isRunning ? pauseTimer(timerId) : resumeTimer(timerId))}
-            accessibilityLabel={isRunning ? t('common.pause') : t('common.resume')}
-            accessibilityRole="button"
-            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-          >
-            <Feather
-              name={isRunning ? 'pause' : 'play'}
-              size={12}
-              color={isRunning ? '#d97706' : '#9ca3af'}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => cancelTimer(timerId)}
-            accessibilityLabel={t('common.cancel')}
-            accessibilityRole="button"
-            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-          >
-            <Feather name="x" size={12} color="#9ca3af" />
-          </TouchableOpacity>
-        </>
-      )}
-    </View>
+    <Text
+      style={[
+        styles.timerSpan,
+        { color: isDone ? '#10b981' : isRunning ? '#d97706' : '#9ca3af' },
+      ]}
+      onPress={isDone ? undefined : () => (isRunning ? pauseTimer(timerId) : resumeTimer(timerId))}
+      accessibilityRole="button"
+      accessibilityLabel={isDone ? t('common.done') : isRunning ? t('common.pause') : t('common.resume')}
+    >
+      {isDone ? `✓ ${t('common.done')}` : `⏱ ${formatCountdown(remaining)}`}
+    </Text>
   )
 }
 
 // ── Step text with tappable ingredient pills ───────────────────────────────────
 
-interface Segment {
-  type: 'text' | 'mention'
-  text: string
-  ingredientIndex?: number
-}
+type Segment =
+  | { type: 'text'; text: string }
+  | { type: 'mention'; text: string; ingredientIndex: number }
+  | { type: 'timer'; seconds: number }
 
-const buildSegments = (step: string, stepRefs: StepIngredientRef[]): Segment[] => {
-  const spans: { start: number; end: number; mention: string; ingredientIndex: number }[] = []
+const buildSegments = (
+  step: string,
+  stepRefs: StepIngredientRef[],
+  durationMatch: DurationMatch | null,
+): Segment[] => {
+  const spans: { start: number; end: number; seg: Segment }[] = []
+
   for (const ref of stepRefs) {
     let idx = 0
     while (true) {
       const pos = step.indexOf(ref.mention, idx)
       if (pos === -1) break
-      spans.push({ start: pos, end: pos + ref.mention.length, mention: ref.mention, ingredientIndex: ref.ingredient_index })
+      const beforeOk = pos === 0 || !/\w/.test(step[pos - 1])
+      const afterOk = pos + ref.mention.length >= step.length || !/\w/.test(step[pos + ref.mention.length])
+      if (beforeOk && afterOk) {
+        spans.push({ start: pos, end: pos + ref.mention.length, seg: { type: 'mention', text: ref.mention, ingredientIndex: ref.ingredient_index } })
+      }
       idx = pos + ref.mention.length
     }
   }
+
+  if (durationMatch) {
+    spans.push({ start: durationMatch.start, end: durationMatch.end, seg: { type: 'timer', seconds: durationMatch.seconds } })
+  }
+
   spans.sort((a, b) => a.start - b.start)
   const filtered: typeof spans = []
   let cursor = 0
@@ -151,7 +141,7 @@ const buildSegments = (step: string, stepRefs: StepIngredientRef[]): Segment[] =
   let pos = 0
   for (const span of filtered) {
     if (pos < span.start) result.push({ type: 'text', text: step.slice(pos, span.start) })
-    result.push({ type: 'mention', text: span.mention, ingredientIndex: span.ingredientIndex })
+    result.push(span.seg)
     pos = span.end
   }
   if (pos < step.length) result.push({ type: 'text', text: step.slice(pos) })
@@ -162,41 +152,49 @@ const StepText = ({
   step,
   stepRefs,
   rawIngredients,
+  durationMatch,
+  timerProps,
 }: {
   step: string
   stepRefs: StepIngredientRef[]
   rawIngredients: string[]
+  durationMatch?: DurationMatch | null
+  timerProps?: Omit<React.ComponentProps<typeof TimerSpan>, 'seconds'>
 }) => {
   const { t } = useTranslation()
   const [tooltip, setTooltip] = useState<{ text: string; x: number; y: number } | null>(null)
 
-  const segments = useMemo(() => buildSegments(step, stepRefs), [step, stepRefs])
-  const hasMentions = segments.some((s) => s.type === 'mention')
-
-  if (!hasMentions) {
-    return <Text style={styles.stepText}>{step}</Text>
-  }
+  const segments = useMemo(
+    () => buildSegments(step, stepRefs, durationMatch ?? null),
+    [step, stepRefs, durationMatch],
+  )
 
   return (
     <>
       <Text style={styles.stepText}>
         {segments.map((seg, i) => {
           if (seg.type === 'text') return <Text key={i}>{seg.text}</Text>
-          return (
-            <Text
-              key={i}
-              style={styles.ingredientMention}
-              onPress={(e) => {
-                const ingText = displayIngredient(rawIngredients[seg.ingredientIndex!] ?? '', t)
-                const { pageX, pageY } = e.nativeEvent
-                setTooltip({ text: ingText, x: pageX, y: pageY })
-              }}
-              accessibilityRole="button"
-              accessibilityLabel={t('recipes.showIngredientAmount')}
-            >
-              {seg.text}
-            </Text>
-          )
+          if (seg.type === 'mention') {
+            return (
+              <Text
+                key={i}
+                style={styles.ingredientMention}
+                onPress={(e) => {
+                  const ingText = displayIngredient(rawIngredients[seg.ingredientIndex] ?? '', t)
+                  const { pageX, pageY } = e.nativeEvent
+                  setTooltip({ text: ingText, x: pageX, y: pageY })
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={t('recipes.showIngredientAmount')}
+              >
+                {seg.text}
+              </Text>
+            )
+          }
+          if (seg.type === 'timer' && timerProps) {
+            return <TimerSpan key={i} {...timerProps} seconds={seg.seconds} />
+          }
+          return null
         })}
       </Text>
       {tooltip && (
@@ -249,34 +247,17 @@ const StepRow = ({
     <View style={styles.stepRow}>
       <Text style={styles.stepNum}>{index + 1}.</Text>
       <View style={styles.stepBody}>
-        {durationMatch ? (
-          <View style={styles.stepInline}>
-            {durationMatch.start > 0 && (
-              <StepText
-                step={step.slice(0, durationMatch.start)}
-                stepRefs={stepRefs}
-                rawIngredients={rawIngredients}
-              />
-            )}
-            <TimerButton
-              timerId={timerId}
-              recipe={recipe}
-              componentIndex={componentIndex}
-              stepIndex={index}
-              stepText={step}
-              seconds={durationMatch.seconds}
-            />
-            {durationMatch.end < step.length && (
-              <StepText
-                step={step.slice(durationMatch.end)}
-                stepRefs={stepRefs}
-                rawIngredients={rawIngredients}
-              />
-            )}
-          </View>
-        ) : (
-          <StepText step={step} stepRefs={stepRefs} rawIngredients={rawIngredients} />
-        )}
+        <StepText
+          step={step}
+          stepRefs={stepRefs}
+          rawIngredients={rawIngredients}
+          durationMatch={durationMatch}
+          timerProps={
+            durationMatch
+              ? { timerId, recipe, componentIndex, stepIndex: index, stepText: step }
+              : undefined
+          }
+        />
       </View>
     </View>
   )
@@ -592,7 +573,7 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   stepBody: { flex: 1 },
-  stepInline: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' },
+  timerSpan: { color: '#d97706', fontWeight: '700' },
   stepText: { fontSize: 15, color: '#111', lineHeight: 22 },
   ingredientMention: {
     color: '#1d4ed8',
@@ -615,23 +596,6 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   ingredientTooltipText: { fontSize: 14, color: '#111' },
-  timerChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: '#fffbeb',
-    borderWidth: 1,
-    borderColor: '#fde68a',
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    alignSelf: 'flex-start',
-  },
-  timerChipDone: {
-    backgroundColor: '#f0fdf4',
-    borderColor: '#bbf7d0',
-  },
-  timerChipText: { fontSize: 12, fontWeight: '600', color: '#d97706' },
 })
 
 export default RecipeDetailScreen
