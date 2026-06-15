@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
+import { colors } from '../theme/colors'
 
 const ShoppingListScreen = () => {
   const { t } = useTranslation()
@@ -12,9 +13,9 @@ const ShoppingListScreen = () => {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f9fafb', padding: 32 },
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.secondaryBackground, padding: 32 },
   emoji: { fontSize: 48, marginBottom: 16 },
-  message: { fontSize: 16, color: '#6b7280', textAlign: 'center' },
+  message: { fontSize: 16, color: colors.secondaryLabel, textAlign: 'center' },
 })
 
 export default ShoppingListScreen
