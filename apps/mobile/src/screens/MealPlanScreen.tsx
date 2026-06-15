@@ -6,15 +6,16 @@ import {
   LayoutChangeEvent,
   ListRenderItemInfo,
   Modal,
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { useNavigation } from '@react-navigation/native'
 import { useQueries, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as Sharing from 'expo-sharing'
 import { File, Paths } from 'expo-file-system'
 import { useRecipes } from '@platekeeper/shared/hooks/useRecipes'
@@ -23,6 +24,7 @@ import type { MealPlanEntry, RecipeOut } from '@platekeeper/shared/types'
 import { toYYYYMM, toISODate, formatWeekdayShort, formatMonthYear } from '@platekeeper/shared/utils/dateUtils'
 import { getToken } from '../api/client'
 import BellModal from '../components/BellModal'
+import { colors } from '../theme/colors'
 
 const DAYS_BEFORE = 60
 const DAYS_AFTER = 180
@@ -70,8 +72,12 @@ const RecipePicker = ({
 
   const renderItem = useCallback(
     ({ item }: ListRenderItemInfo<RecipeOut>) => (
-      <TouchableOpacity
-        style={[styles.pickerItem, item.id === currentRecipeId && styles.pickerItemActive]}
+      <Pressable
+        style={({ pressed }) => [
+          styles.pickerItem,
+          item.id === currentRecipeId && styles.pickerItemActive,
+          pressed && { opacity: 0.7 },
+        ]}
         onPress={() => {
           setSearch('')
           onPick(item.id)
@@ -85,7 +91,7 @@ const RecipePicker = ({
         >
           {item.title}
         </Text>
-      </TouchableOpacity>
+      </Pressable>
     ),
     [currentRecipeId, onPick],
   )
@@ -101,14 +107,14 @@ const RecipePicker = ({
         <View style={styles.pickerHeader}>
           <Text style={styles.pickerTitle}>{t('mealPlan.chooseDish')}</Text>
           <Text style={styles.pickerDate}>{date}</Text>
-          <TouchableOpacity
+          <Pressable
             onPress={handleClose}
-            style={styles.pickerClose}
+            style={({ pressed }) => [styles.pickerClose, pressed && { opacity: 0.7 }]}
             accessibilityLabel={t('common.close')}
             accessibilityRole="button"
           >
             <Text style={styles.pickerCloseText}>{t('common.close')}</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         <TextInput
@@ -122,8 +128,8 @@ const RecipePicker = ({
         />
 
         {currentRecipeId && (
-          <TouchableOpacity
-            style={styles.removeButton}
+          <Pressable
+            style={({ pressed }) => [styles.removeButton, pressed && { opacity: 0.7 }]}
             onPress={() => {
               setSearch('')
               onRemove()
@@ -132,7 +138,7 @@ const RecipePicker = ({
             accessibilityRole="button"
           >
             <Text style={styles.removeButtonText}>{t('mealPlan.removeFromPlan')}</Text>
-          </TouchableOpacity>
+          </Pressable>
         )}
 
         {filtered.length === 0 ? (
@@ -171,8 +177,8 @@ const DayRow = ({ date, entry, isToday, onPress }: DayRowProps) => {
   const dayLabel = new Intl.DateTimeFormat(i18n.language, { day: 'numeric', month: 'short' }).format(date)
 
   return (
-    <TouchableOpacity
-      style={[styles.dayRow, isToday && styles.dayRowToday]}
+    <Pressable
+      style={({ pressed }) => [styles.dayRow, isToday && styles.dayRowToday, pressed && { opacity: 0.7 }]}
       onPress={() => onPress(date)}
       accessibilityLabel={`${dayLabel}${entry ? ': ' + entry.recipe.title : ''}`}
       accessibilityRole="button"
@@ -190,7 +196,7 @@ const DayRow = ({ date, entry, isToday, onPress }: DayRowProps) => {
           <Text style={styles.dayRowEmpty}>{t('mealPlan.addDish')}</Text>
         )}
       </View>
-    </TouchableOpacity>
+    </Pressable>
   )
 }
 
@@ -199,6 +205,7 @@ const DayRow = ({ date, entry, isToday, onPress }: DayRowProps) => {
 const MealPlanScreen = () => {
   const { t, i18n } = useTranslation()
   const navigation = useNavigation()
+  const insets = useSafeAreaInsets()
   const [pickerDate, setPickerDate] = useState<Date | null>(null)
   const [exporting, setExporting] = useState(false)
   const api = useApiClient()
@@ -242,17 +249,17 @@ const MealPlanScreen = () => {
     navigation.setOptions({
       headerRight: () => (
         <View style={styles.headerRight}>
-          <TouchableOpacity
+          <Pressable
             onPress={handleExportPdf}
             disabled={exporting}
-            style={styles.exportBtn}
+            style={({ pressed }) => [styles.exportBtn, pressed && { opacity: 0.7 }]}
             accessibilityLabel={t('shoppingList.exportPdf')}
             accessibilityRole="button"
           >
             <Text style={[styles.exportBtnText, exporting && styles.exportBtnTextDisabled]}>
               {exporting ? t('shoppingList.exporting') : t('shoppingList.exportPdf')}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
           <BellModal />
         </View>
       ),
@@ -418,12 +425,12 @@ const MealPlanScreen = () => {
         contentOffset={{ x: 0, y: initialScrollOffset }}
         onLayout={handleListLayout}
         style={styles.list}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 16 }]}
         showsVerticalScrollIndicator={false}
       />
       {isLoading && (
         <View style={styles.loadingOverlay} pointerEvents="none">
-          <ActivityIndicator size="small" color="#7c3aed" />
+          <ActivityIndicator size="small" color={colors.brand} />
         </View>
       )}
 
@@ -443,26 +450,26 @@ const MealPlanScreen = () => {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb' },
+  container: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingOverlay: { position: 'absolute', top: 12, alignSelf: 'center' },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   exportBtn: { paddingHorizontal: 8, paddingVertical: 4 },
-  exportBtnText: { fontSize: 13, color: '#7c3aed', fontWeight: '600' },
-  exportBtnTextDisabled: { color: '#c4b5fd' },
+  exportBtnText: { fontSize: 13, color: colors.brand, fontWeight: '600' },
+  exportBtnTextDisabled: { color: colors.brandLight },
   list: { flex: 1 },
-  listContent: { paddingBottom: 40 },
+  listContent: {},
   monthRow: {
     height: MONTH_HEADER_HEIGHT,
     justifyContent: 'flex-end',
     paddingHorizontal: 16,
     paddingBottom: 6,
-    backgroundColor: '#f9fafb',
+    backgroundColor: colors.background,
   },
   monthRowLabel: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#9ca3af',
+    color: colors.tertiaryLabel,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
   },
@@ -470,14 +477,14 @@ const styles = StyleSheet.create({
     height: DAY_ROW_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
+    backgroundColor: colors.background,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.separator,
     paddingHorizontal: 16,
   },
   dayRowToday: {
     borderLeftWidth: 3,
-    borderLeftColor: '#7c3aed',
+    borderLeftColor: colors.brand,
     paddingLeft: 13,
   },
   dayRowLeft: {
@@ -486,62 +493,62 @@ const styles = StyleSheet.create({
   },
   dayRowWeekday: {
     fontSize: 11,
-    color: '#9ca3af',
+    color: colors.tertiaryLabel,
     fontWeight: '500',
     textTransform: 'uppercase',
   },
   dayRowNum: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#111',
+    color: colors.label,
     lineHeight: 24,
   },
   dayRowMonth: {
     fontSize: 10,
-    color: '#9ca3af',
+    color: colors.tertiaryLabel,
   },
   dayRowTextToday: {
-    color: '#7c3aed',
+    color: colors.brand,
   },
   dayRowDivider: {
     width: 1,
     height: 36,
-    backgroundColor: '#e5e7eb',
+    backgroundColor: colors.opaqueSeparator,
     marginHorizontal: 14,
   },
   dayRowContent: { flex: 1 },
   dayRowRecipe: {
     fontSize: 14,
-    color: '#111',
+    color: colors.label,
     fontWeight: '500',
   },
   dayRowEmpty: {
     fontSize: 13,
-    color: '#d1d5db',
+    color: colors.opaqueSeparator,
   },
   // picker
-  pickerContainer: { flex: 1, backgroundColor: '#fff' },
+  pickerContainer: { flex: 1, backgroundColor: colors.background },
   pickerHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.separator,
     gap: 8,
   },
-  pickerTitle: { fontSize: 17, fontWeight: '700', color: '#111', flex: 1 },
-  pickerDate: { fontSize: 14, color: '#6b7280' },
+  pickerTitle: { fontSize: 17, fontWeight: '700', color: colors.label, flex: 1 },
+  pickerDate: { fontSize: 14, color: colors.secondaryLabel },
   pickerClose: { padding: 4 },
-  pickerCloseText: { fontSize: 15, color: '#2563eb', fontWeight: '500' },
+  pickerCloseText: { fontSize: 15, color: colors.blue, fontWeight: '500' },
   pickerSearch: {
     margin: 12,
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: colors.opaqueSeparator,
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 10,
     fontSize: 15,
-    backgroundColor: '#f9fafb',
+    backgroundColor: colors.background,
   },
   removeButton: {
     marginHorizontal: 12,
@@ -553,19 +560,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#fef2f2',
     alignItems: 'center',
   },
-  removeButtonText: { color: '#dc2626', fontWeight: '500', fontSize: 14 },
+  removeButtonText: { color: colors.red, fontWeight: '500', fontSize: 14 },
   pickerList: { flex: 1 },
   pickerItem: {
     paddingHorizontal: 16,
     paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.separator,
   },
-  pickerItemActive: { backgroundColor: '#ede9fe' },
-  pickerItemText: { fontSize: 15, color: '#111' },
-  pickerItemTextActive: { color: '#7c3aed', fontWeight: '600' },
+  pickerItemActive: { backgroundColor: colors.brandLight },
+  pickerItemText: { fontSize: 15, color: colors.label },
+  pickerItemTextActive: { color: colors.brand, fontWeight: '600' },
   pickerEmpty: { flex: 1, padding: 40, alignItems: 'center' },
-  pickerEmptyText: { fontSize: 14, color: '#6b7280', textAlign: 'center' },
+  pickerEmptyText: { fontSize: 14, color: colors.secondaryLabel, textAlign: 'center' },
 })
 
 export default MealPlanScreen
