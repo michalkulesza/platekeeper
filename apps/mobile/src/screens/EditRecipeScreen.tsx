@@ -5,11 +5,11 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native'
 import { useTranslation } from 'react-i18next'
@@ -27,6 +27,7 @@ import {
 import type { StructuredIngredient } from '@platekeeper/shared/utils/ingredientUtils'
 import { tTag } from '@platekeeper/shared/utils/tagUtils'
 import type { RecipesStackParamList } from '../navigation/RecipesStack'
+import { colors } from '../theme/colors'
 
 type Props = NativeStackScreenProps<RecipesStackParamList, 'EditRecipe'>
 
@@ -65,15 +66,15 @@ const UnitPickerModal = ({
   const { t } = useTranslation()
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={onClose} />
+      <Pressable style={({ pressed }) => [styles.modalOverlay, pressed && { opacity: 0.7 }]} onPress={onClose} />
       <View style={styles.unitSheet}>
         <View style={styles.sheetHandle} />
         <FlatList
           data={UNIT_OPTIONS}
           keyExtractor={(item) => item || '__none__'}
           renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[styles.unitOption, item === selected && styles.unitOptionSel]}
+            <Pressable
+              style={({ pressed }) => [styles.unitOption, item === selected && styles.unitOptionSel, pressed && { opacity: 0.7 }]}
               onPress={() => { onSelect(item); onClose() }}
               accessibilityLabel={item ? t(`units.${item}`) : '—'}
               accessibilityState={{ selected: item === selected }}
@@ -81,7 +82,7 @@ const UnitPickerModal = ({
               <Text style={[styles.unitOptionText, item === selected && styles.unitOptionTextSel]}>
                 {item ? `${item}  ·  ${t(`units.${item}`)}` : '—'}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           )}
           contentContainerStyle={{ paddingBottom: 32 }}
         />
@@ -115,29 +116,29 @@ const IngredientEditor = ({
           keyboardType="decimal-pad"
           accessibilityLabel={t('units.qtyLabel')}
         />
-        <TouchableOpacity
-          style={styles.ingUnitBtn}
+        <Pressable
+          style={({ pressed }) => [styles.ingUnitBtn, pressed && { opacity: 0.7 }]}
           onPress={onUnitPress}
           accessibilityLabel={value.unit ? t(`units.${value.unit}`) : t('units.unitLabel')}
         >
           <Text style={[styles.ingUnitText, !value.unit && styles.ingPlaceholder]}>
             {value.unit || '—'}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
         <TextInput
           style={styles.ingName}
           value={value.name}
           onChangeText={(v) => onChange({ ...value, name: v })}
           accessibilityLabel={t('recipes.sectionIngredients')}
         />
-        <TouchableOpacity
+        <Pressable
           onPress={onRemove}
-          style={styles.removeBtn}
+          style={({ pressed }) => [styles.removeBtn, pressed && { opacity: 0.7 }]}
           accessibilityLabel={t('common.delete')}
           accessibilityRole="button"
         >
           <Text style={styles.removeBtnText}>✕</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
       <TextInput
         style={styles.ingNote}
@@ -407,16 +408,16 @@ const EditRecipeScreen = ({ route, navigation }: Props) => {
           {tags.map((tag) => {
             const sel = selectedTags.some((t) => t.id === tag.id)
             return (
-              <TouchableOpacity
+              <Pressable
                 key={tag.id}
-                style={[styles.tagChip, sel && styles.tagChipSel]}
+                style={({ pressed }) => [styles.tagChip, sel && styles.tagChipSel, pressed && { opacity: 0.7 }]}
                 onPress={() => toggleTag(tag)}
                 accessibilityLabel={tag.name}
                 accessibilityRole="checkbox"
                 accessibilityState={{ checked: sel }}
               >
                 <Text style={[styles.tagChipText, sel && styles.tagChipTextSel]}>{tTag(tag.name, t)}</Text>
-              </TouchableOpacity>
+              </Pressable>
             )
           })}
         </View>
@@ -452,14 +453,14 @@ const EditRecipeScreen = ({ route, navigation }: Props) => {
                 onRemove={() => removeIngredient(ci, ii)}
               />
             ))}
-            <TouchableOpacity
-              style={styles.addRowBtn}
+            <Pressable
+              style={({ pressed }) => [styles.addRowBtn, pressed && { opacity: 0.7 }]}
               onPress={() => addIngredient(ci)}
               accessibilityLabel={t('common.add')}
               accessibilityRole="button"
             >
               <Text style={styles.addRowBtnText}>+ {t('addRecipe.addIngredient')}</Text>
-            </TouchableOpacity>
+            </Pressable>
 
             {/* Steps */}
             <Text style={styles.subLabel}>{t('recipes.steps')}</Text>
@@ -474,30 +475,30 @@ const EditRecipeScreen = ({ route, navigation }: Props) => {
                   placeholder={`${t('recipes.steps')} ${si + 1}`}
                   accessibilityLabel={`${t('recipes.steps')} ${si + 1}`}
                 />
-                <TouchableOpacity
+                <Pressable
                   onPress={() => removeStep(ci, si)}
-                  style={styles.removeBtn}
+                  style={({ pressed }) => [styles.removeBtn, pressed && { opacity: 0.7 }]}
                   accessibilityLabel={t('common.delete')}
                   accessibilityRole="button"
                 >
                   <Text style={styles.removeBtnText}>✕</Text>
-                </TouchableOpacity>
+                </Pressable>
               </View>
             ))}
-            <TouchableOpacity
-              style={styles.addRowBtn}
+            <Pressable
+              style={({ pressed }) => [styles.addRowBtn, pressed && { opacity: 0.7 }]}
               onPress={() => addStep(ci)}
               accessibilityLabel={t('common.add')}
               accessibilityRole="button"
             >
               <Text style={styles.addRowBtnText}>+ {t('addRecipe.addStep')}</Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         ))}
 
         {/* Save */}
-        <TouchableOpacity
-          style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
+        <Pressable
+          style={({ pressed }) => [styles.saveBtn, saving && styles.saveBtnDisabled, pressed && { opacity: 0.7 }]}
           onPress={handleSave}
           disabled={saving}
           accessibilityLabel={t('common.save')}
@@ -506,7 +507,7 @@ const EditRecipeScreen = ({ route, navigation }: Props) => {
           <Text style={styles.saveBtnText}>
             {saving ? t('common.saving') : t('common.save')}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       </ScrollView>
 
       <UnitPickerModal
@@ -524,14 +525,14 @@ const EditRecipeScreen = ({ route, navigation }: Props) => {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: '#fff' },
+  flex: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  errorText: { color: '#9ca3af', fontSize: 15 },
+  errorText: { color: colors.tertiaryLabel, fontSize: 15 },
   content: { padding: 16, paddingBottom: 48 },
   fieldLabel: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#6b7280',
+    color: colors.secondaryLabel,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
     marginTop: 16,
@@ -539,13 +540,13 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: colors.opaqueSeparator,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 15,
-    color: '#111',
-    backgroundColor: '#fafafa',
+    color: colors.label,
+    backgroundColor: colors.background,
   },
   multiline: { minHeight: 80, textAlignVertical: 'top' },
   row: { flexDirection: 'row', gap: 12 },
@@ -554,25 +555,25 @@ const styles = StyleSheet.create({
   tagChip: {
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: colors.opaqueSeparator,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    backgroundColor: '#f9fafb',
+    backgroundColor: colors.background,
   },
-  tagChipSel: { backgroundColor: '#7c3aed', borderColor: '#7c3aed' },
-  tagChipText: { fontSize: 13, color: '#374151' },
-  tagChipTextSel: { color: '#fff', fontWeight: '600' },
+  tagChipSel: { backgroundColor: colors.brand, borderColor: colors.brand },
+  tagChipText: { fontSize: 13, color: colors.secondaryLabel },
+  tagChipTextSel: { color: colors.background, fontWeight: '600' },
   componentBlock: {
     marginTop: 20,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: '#f3f4f6',
+    borderTopColor: colors.secondaryBackground,
   },
-  componentHeader: { fontSize: 16, fontWeight: '700', color: '#111', marginBottom: 4 },
+  componentHeader: { fontSize: 16, fontWeight: '700', color: colors.label, marginBottom: 4 },
   subLabel: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#9ca3af',
+    color: colors.tertiaryLabel,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
     marginTop: 14,
@@ -582,39 +583,39 @@ const styles = StyleSheet.create({
   listInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: colors.opaqueSeparator,
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 8,
     fontSize: 14,
-    color: '#111',
-    backgroundColor: '#fafafa',
+    color: colors.label,
+    backgroundColor: colors.background,
   },
   stepNum: {
     width: 24,
     fontSize: 14,
     fontWeight: '700',
-    color: '#2563eb',
+    color: colors.blue,
     textAlign: 'right',
     marginTop: 2,
   },
   removeBtn: { padding: 4 },
-  removeBtnText: { fontSize: 14, color: '#9ca3af' },
+  removeBtnText: { fontSize: 14, color: colors.tertiaryLabel },
   addRowBtn: { paddingVertical: 8 },
-  addRowBtnText: { fontSize: 14, color: '#2563eb', fontWeight: '500' },
+  addRowBtnText: { fontSize: 14, color: colors.blue, fontWeight: '500' },
   saveBtn: {
-    backgroundColor: '#2563eb',
+    backgroundColor: colors.blue,
     borderRadius: 10,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 24,
   },
   saveBtnDisabled: { opacity: 0.6 },
-  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  saveBtnText: { color: colors.background, fontSize: 16, fontWeight: '600' },
   // Unit picker modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' },
   unitSheet: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     paddingTop: 8,
@@ -623,7 +624,7 @@ const styles = StyleSheet.create({
   sheetHandle: {
     width: 36,
     height: 4,
-    backgroundColor: '#e5e7eb',
+    backgroundColor: colors.opaqueSeparator,
     borderRadius: 2,
     alignSelf: 'center',
     marginBottom: 8,
@@ -632,54 +633,54 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: '#f3f4f6',
+    borderColor: colors.secondaryBackground,
   },
-  unitOptionSel: { backgroundColor: '#f5f3ff' },
-  unitOptionText: { fontSize: 15, color: '#374151' },
-  unitOptionTextSel: { color: '#7c3aed', fontWeight: '600' },
+  unitOptionSel: { backgroundColor: colors.brandLight },
+  unitOptionText: { fontSize: 15, color: colors.secondaryLabel },
+  unitOptionTextSel: { color: colors.brand, fontWeight: '600' },
   // Ingredient editor
   ingEditor: {
     paddingVertical: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: '#f3f4f6',
+    borderColor: colors.secondaryBackground,
     gap: 4,
   },
   ingRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   ingQty: {
     width: 44,
     borderBottomWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: colors.separator,
     fontSize: 14,
-    color: '#111',
+    color: colors.label,
     textAlign: 'center',
-    paddingVertical: 2,
-    paddingHorizontal: 2,
+    paddingVertical: 4,
+    paddingHorizontal: 4,
   },
   ingUnitBtn: {
     borderBottomWidth: 1,
-    borderColor: '#e5e7eb',
-    paddingVertical: 2,
+    borderColor: colors.separator,
+    paddingVertical: 4,
     paddingHorizontal: 4,
     minWidth: 36,
   },
-  ingUnitText: { fontSize: 13, color: '#7c3aed', fontWeight: '500' },
-  ingPlaceholder: { color: '#9ca3af' },
+  ingUnitText: { fontSize: 13, color: colors.brand, fontWeight: '500' },
+  ingPlaceholder: { color: colors.tertiaryLabel },
   ingName: {
     flex: 1,
     borderBottomWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: colors.separator,
     fontSize: 14,
-    color: '#111',
-    paddingVertical: 2,
-    paddingHorizontal: 2,
+    color: colors.label,
+    paddingVertical: 4,
+    paddingHorizontal: 4,
   },
   ingNote: {
     fontSize: 12,
-    color: '#9ca3af',
+    color: colors.tertiaryLabel,
     borderBottomWidth: 1,
-    borderColor: '#f3f4f6',
-    paddingVertical: 2,
-    paddingHorizontal: 2,
+    borderColor: colors.secondaryBackground,
+    paddingVertical: 4,
+    paddingHorizontal: 4,
   },
 })
 
