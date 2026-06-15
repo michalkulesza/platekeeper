@@ -440,6 +440,66 @@ export const createApiClient = (config: ApiClientConfig) => {
     }
   }
 
+  const _streamPostFetch = (path: string, body: unknown, callbacks: StreamCallbacks): () => void => {
+    let aborted = false
+    const controller = new AbortController()
+    apiFetch(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    })
+      .then(async (res) => {
+        if (!res.ok || !res.body) {
+          callbacks.onError('Failed to start import')
+          return
+        }
+        const reader = res.body.getReader()
+        const decoder = new TextDecoder()
+        let buffer = ''
+        while (!aborted) {
+          const { done, value } = await reader.read()
+          if (done) break
+          buffer += decoder.decode(value, { stream: true })
+          const chunks = buffer.split('\n\n')
+          buffer = chunks.pop() ?? ''
+          for (const chunk of chunks) {
+            const data = chunk.replace(/^data: /, '').trim()
+            if (!data) continue
+            try {
+              const event = JSON.parse(data) as {
+                type: string
+                key?: string
+                label?: string
+                result?: ImportResult
+              }
+              if (event.type === 'stage') {
+                callbacks.onStage({ key: event.key ?? '', label: event.label ?? '' })
+              } else if (event.type === 'done') {
+                callbacks.onDone(event.result!)
+              }
+            } catch {
+              /* ignore */
+            }
+          }
+        }
+      })
+      .catch((err: unknown) => {
+        if (!aborted) callbacks.onError('Connection error — check the API server.')
+        void err
+      })
+    return () => {
+      aborted = true
+      controller.abort()
+    }
+  }
+
+  const streamTextImportFetch = (text: string, callbacks: StreamCallbacks): () => void =>
+    _streamPostFetch('/api/imports/stream-text', { text, model: 'gemini-2.5-flash-lite' }, callbacks)
+
+  const streamImageImportFetch = (imageBase64: string, mimeType: string, callbacks: StreamCallbacks): () => void =>
+    _streamPostFetch('/api/imports/stream-image', { image_base64: imageBase64, mime_type: mimeType, model: 'gemini-2.5-flash-lite' }, callbacks)
+
   return {
     saveRecipe,
     updateRecipe,
@@ -477,6 +537,8 @@ export const createApiClient = (config: ApiClientConfig) => {
     logout,
     getMe,
     streamImportFetch,
+    streamTextImportFetch,
+    streamImageImportFetch,
   }
 }
 

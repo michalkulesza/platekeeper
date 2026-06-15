@@ -299,6 +299,63 @@ async def run_import_stream(url: str, model: str = "gemini-2.5-flash-lite", avai
     ))
 
 
+async def run_text_import_stream(
+    text: str,
+    model: str = "gemini-2.5-flash-lite",
+    available_tags: list[str] | None = None,
+    allergens: list[str] | None = None,
+) -> AsyncGenerator[dict[str, Any], None]:
+    yield _stage_event("analyzing_text", "Analyzing recipe text with Gemini…")
+    meta = ImportMetadata()
+    try:
+        result = await gemini_svc.extract_recipe(
+            text[:6000], source_hint="pasted text", model=model,
+            available_tags=available_tags, allergens=allergens,
+        )
+        if _is_complete(result):
+            r = ImportResult(stage=ImportStage.TRANSCRIPT, recipe=result, metadata=meta)
+            yield _done_event(await _with_allergens(r, allergens))
+        else:
+            yield _done_event(ImportResult(
+                stage=ImportStage.FAILED, metadata=meta,
+                error="Could not extract a recipe from this text.",
+            ))
+    except Exception as exc:
+        yield _done_event(ImportResult(
+            stage=ImportStage.FAILED, metadata=meta,
+            error=f"Gemini extraction failed: {exc}",
+        ))
+
+
+async def run_image_import_stream(
+    image_data: bytes,
+    mime_type: str,
+    model: str = "gemini-2.5-flash-lite",
+    available_tags: list[str] | None = None,
+    allergens: list[str] | None = None,
+) -> AsyncGenerator[dict[str, Any], None]:
+    yield _stage_event("analyzing_image", "Analyzing image with Gemini Vision…")
+    meta = ImportMetadata()
+    try:
+        result = await gemini_svc.extract_recipe_from_image(
+            image_data, mime_type=mime_type, model=model,
+            available_tags=available_tags, allergens=allergens,
+        )
+        if _is_complete(result):
+            r = ImportResult(stage=ImportStage.TRANSCRIPT, recipe=result, metadata=meta)
+            yield _done_event(await _with_allergens(r, allergens))
+        else:
+            yield _done_event(ImportResult(
+                stage=ImportStage.FAILED, metadata=meta,
+                error="Could not extract a recipe from this image.",
+            ))
+    except Exception as exc:
+        yield _done_event(ImportResult(
+            stage=ImportStage.FAILED, metadata=meta,
+            error=f"Gemini image extraction failed: {exc}",
+        ))
+
+
 async def run_import(url: str, model: str = "gemini-2.5-flash-lite") -> ImportResult:
     result: ImportResult | None = None
     async for event in run_import_stream(url, model=model):
