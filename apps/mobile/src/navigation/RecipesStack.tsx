@@ -8,7 +8,7 @@ import EditRecipeScreen from '../screens/EditRecipeScreen'
 export type RecipesStackParamList = {
   RecipesList: undefined
   RecipeDetail: { recipeId: string; title?: string }
-  ImportRecipe: undefined
+  ImportRecipe: { type?: string; value?: string } | undefined
   EditRecipe: { recipeId: string }
 }
 
