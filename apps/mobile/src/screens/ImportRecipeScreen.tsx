@@ -987,7 +987,7 @@ const ShareView = ({
 
 // ── ImportRecipeScreen ─────────────────────────────────────────────────────────
 
-const ImportRecipeScreen = ({ navigation }: Props) => {
+const ImportRecipeScreen = ({ navigation, route }: Props) => {
   const { t } = useTranslation()
   const insets = useSafeAreaInsets()
   const api = useApiClient()
@@ -1015,7 +1015,21 @@ const ImportRecipeScreen = ({ navigation }: Props) => {
 
   useEffect(() => () => { cancelRef.current?.() }, [])
 
-  // Handle incoming shared URL (from other apps via Linking)
+  // Handle content shared from the native Share Extension via deep link params
+  useEffect(() => {
+    const sharedType = route.params?.type
+    const sharedValue = route.params?.value
+    if (!sharedType || !sharedValue || editable) return
+    if (sharedType === 'url') {
+      setMode('share')
+      setUrl(sharedValue)
+    } else if (sharedType === 'text') {
+      setMode('text')
+      setPastedText(sharedValue)
+    }
+  }, [route.params?.type, route.params?.value])
+
+  // Handle raw http(s) URLs opened via Linking (e.g. from browser tap on universal links)
   useEffect(() => {
     const handleUrl = ({ url: incomingUrl }: { url: string }) => {
       const trimmed = incomingUrl.trim()
@@ -1026,7 +1040,7 @@ const ImportRecipeScreen = ({ navigation }: Props) => {
     }
     const sub = Linking.addEventListener('url', handleUrl)
     Linking.getInitialURL().then((initialUrl) => {
-      if (initialUrl) handleUrl({ url: initialUrl })
+      if (initialUrl?.startsWith('http')) handleUrl({ url: initialUrl })
     })
     return () => sub.remove()
   }, [editable])
