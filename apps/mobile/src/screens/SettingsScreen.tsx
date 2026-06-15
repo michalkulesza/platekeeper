@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
+  ActionSheetIOS,
   ActivityIndicator,
   Alert,
   Pressable,
@@ -329,7 +330,7 @@ const TimersSection = () => {
       <View style={styles.card}>
         <View style={styles.switchRow}>
           <View style={styles.switchLabelBlock}>
-            <Text style={styles.cardLabel}>{t('timers.keepScreenOn')}</Text>
+            <Text style={[styles.cardLabel, { paddingHorizontal: 0 }]}>{t('timers.keepScreenOn')}</Text>
             <Text style={styles.cardDesc}>{t('timers.keepScreenOnDesc')}</Text>
           </View>
           <Switch
@@ -456,6 +457,26 @@ const SettingsScreen = ({ navigation }: Props) => {
     [update],
   )
 
+  const handleLanguagePicker = useCallback(() => {
+    const labels = LANGUAGES.map(({ labelKey }) => t(labelKey))
+    ActionSheetIOS.showActionSheetWithOptions(
+      { options: [...labels, t('common.cancel')], cancelButtonIndex: labels.length },
+      (index) => {
+        if (index < LANGUAGES.length) handleLanguageChange(LANGUAGES[index].code)
+      },
+    )
+  }, [t, handleLanguageChange])
+
+  const handleWeekStartPicker = useCallback(() => {
+    const labels = WEEK_START_OPTIONS.map(({ labelKey }) => t(labelKey))
+    ActionSheetIOS.showActionSheetWithOptions(
+      { options: [...labels, t('common.cancel')], cancelButtonIndex: labels.length },
+      (index) => {
+        if (index < WEEK_START_OPTIONS.length) handleWeekStartChange(WEEK_START_OPTIONS[index].value)
+      },
+    )
+  }, [t, handleWeekStartChange])
+
   const handleCreateHousehold = useCallback(() => {
     Alert.prompt(
       t('settings.newHouseholdTitle'),
@@ -539,34 +560,26 @@ const SettingsScreen = ({ navigation }: Props) => {
         <>
           {/* Language */}
           <View style={styles.card}>
-            <Text style={styles.cardLabel}>{t('settings.language')}</Text>
-            <View style={styles.chipRow}>
-              {LANGUAGES.map(({ code, labelKey }) => {
-                const isSelected = (preferences?.language ?? i18n.language) === code
-                return (
-                  <Pressable
-                    key={code}
-                    style={({ pressed }) => [styles.chip, isSelected && styles.chipSelected, pressed && { opacity: 0.7 }]}
-                    onPress={() => handleLanguageChange(code)}
-                    accessibilityLabel={t(labelKey)}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: isSelected }}
-                  >
-                    <Text
-                      style={[styles.chipText, isSelected && styles.chipTextSelected]}
-                    >
-                      {t(labelKey)}
-                    </Text>
-                  </Pressable>
-                )
-              })}
-            </View>
+            <Pressable
+              style={({ pressed }) => [styles.pickerRow, pressed && { opacity: 0.7 }]}
+              onPress={handleLanguagePicker}
+              accessibilityLabel={t('settings.language')}
+              accessibilityRole="button"
+            >
+              <Text style={styles.pickerLabel}>{t('settings.language')}</Text>
+              <View style={styles.pickerRight}>
+                <Text style={styles.pickerValue}>
+                  {t(LANGUAGES.find(l => l.code === (preferences?.language ?? i18n.language))?.labelKey ?? 'languages.en')}
+                </Text>
+                <Text style={styles.pickerChevron}>›</Text>
+              </View>
+            </Pressable>
           </View>
 
           {/* Unit system */}
           <View style={styles.card}>
             <View style={styles.switchRow}>
-              <Text style={styles.cardLabel}>{t('settings.unitSystem')}</Text>
+              <Text style={[styles.cardLabel, { paddingHorizontal: 0 }]}>{t('settings.unitSystem')}</Text>
               <View style={styles.unitToggleRow}>
                 <Text
                   style={[
@@ -595,34 +608,26 @@ const SettingsScreen = ({ navigation }: Props) => {
 
           {/* Week start day */}
           <View style={styles.card}>
-            <Text style={styles.cardLabel}>{t('settings.weekStartsOn')}</Text>
-            <View style={styles.chipRow}>
-              {WEEK_START_OPTIONS.map(({ value, labelKey }) => {
-                const isSelected = (preferences?.week_start_day ?? 1) === value
-                return (
-                  <Pressable
-                    key={value}
-                    style={({ pressed }) => [styles.chip, isSelected && styles.chipSelected, pressed && { opacity: 0.7 }]}
-                    onPress={() => handleWeekStartChange(value)}
-                    accessibilityLabel={t(labelKey)}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: isSelected }}
-                  >
-                    <Text
-                      style={[styles.chipText, isSelected && styles.chipTextSelected]}
-                    >
-                      {t(labelKey)}
-                    </Text>
-                  </Pressable>
-                )
-              })}
-            </View>
+            <Pressable
+              style={({ pressed }) => [styles.pickerRow, pressed && { opacity: 0.7 }]}
+              onPress={handleWeekStartPicker}
+              accessibilityLabel={t('settings.weekStartsOn')}
+              accessibilityRole="button"
+            >
+              <Text style={styles.pickerLabel}>{t('settings.weekStartsOn')}</Text>
+              <View style={styles.pickerRight}>
+                <Text style={styles.pickerValue}>
+                  {t(WEEK_START_OPTIONS.find(o => o.value === (preferences?.week_start_day ?? 1))?.labelKey ?? 'settings.monday')}
+                </Text>
+                <Text style={styles.pickerChevron}>›</Text>
+              </View>
+            </Pressable>
           </View>
           {/* Keep screen on default */}
-          <View style={[styles.card, styles.keepScreenCard]}>
+          <View style={styles.card}>
             <View style={styles.switchRow}>
               <View style={styles.switchLabelBlock}>
-                <Text style={styles.cardLabel}>{t('settings.keepScreenOnDefault')}</Text>
+                <Text style={[styles.cardLabel, { paddingHorizontal: 0 }]}>{t('settings.keepScreenOnDefault')}</Text>
                 <Text style={styles.cardDesc}>{t('settings.keepScreenOnDefaultDesc')}</Text>
               </View>
               <Switch
@@ -742,11 +747,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   sectionHeader: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '600',
     color: colors.secondaryLabel,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
     marginHorizontal: 16,
     marginTop: 24,
     marginBottom: 8,
@@ -794,24 +797,17 @@ const styles = StyleSheet.create({
     color: colors.tertiaryLabel,
     marginTop: 2,
   },
-  chipRow: {
+  pickerRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingBottom: 12,
-    gap: 8,
+    paddingVertical: 12,
   },
-  chip: {
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.opaqueSeparator,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    backgroundColor: colors.background,
-  },
-  chipSelected: { backgroundColor: colors.blue, borderColor: colors.blue },
-  chipText: { fontSize: 13, color: colors.secondaryLabel, fontWeight: '500' },
-  chipTextSelected: { color: colors.background },
+  pickerLabel: { fontSize: 15, color: colors.label },
+  pickerRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  pickerValue: { fontSize: 15, color: colors.secondaryLabel },
+  pickerChevron: { fontSize: 20, color: colors.tertiaryLabel, lineHeight: 22 },
   switchRow: {
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -860,14 +856,10 @@ const styles = StyleSheet.create({
   householdName: { fontSize: 14, fontWeight: '500', color: colors.label },
   householdActive: { fontSize: 12, color: colors.blue, marginTop: 1 },
   manageBtn: {
-    borderRadius: 8,
-    paddingHorizontal: 12,
+    paddingHorizontal: 4,
     paddingVertical: 6,
-    backgroundColor: colors.secondaryBackground,
-    borderWidth: 1,
-    borderColor: colors.opaqueSeparator,
   },
-  manageBtnText: { fontSize: 13, fontWeight: '500', color: colors.secondaryLabel },
+  manageBtnText: { fontSize: 15, fontWeight: '400', color: colors.blue },
   newHouseholdRow: {
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -974,7 +966,6 @@ const styles = StyleSheet.create({
     borderColor: colors.opaqueSeparator,
   },
   reanalyzeBtnText: { color: colors.secondaryLabel, fontSize: 14, fontWeight: '600' },
-  keepScreenCard: { marginTop: 8 },
 })
 
 export default SettingsScreen
