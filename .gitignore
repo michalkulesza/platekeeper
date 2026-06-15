@@ -11,3 +11,5 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 *.ipa
+apps/mobile/assets/react-logo*.png
+apps/mobile/assets/partial-react-logo.png
