@@ -6,12 +6,12 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Feather } from '@expo/vector-icons'
+import { colors } from '../theme/colors'
 import {
   useTimers,
   getRemainingSeconds,
@@ -63,13 +63,13 @@ const BellModal = () => {
 
   return (
     <>
-      <TouchableOpacity
+      <Pressable
         onPress={() => setOpen(true)}
-        style={styles.bellBtn}
+        style={({ pressed }) => [styles.bellBtn, pressed && { opacity: 0.7 }]}
         accessibilityLabel={t('bell.notifications')}
         accessibilityRole="button"
       >
-        <Feather name="bell" size={22} color="#374151" />
+        <Feather name="bell" size={22} color={colors.secondaryLabel} />
         {totalCount > 0 && (
           <View style={styles.badge}>
             <Text style={styles.badgeText}>
@@ -77,7 +77,7 @@ const BellModal = () => {
             </Text>
           </View>
         )}
-      </TouchableOpacity>
+      </Pressable>
 
       <Modal
         visible={open}
@@ -88,13 +88,14 @@ const BellModal = () => {
         <View style={[styles.modal, { paddingTop: insets.top }]}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{t('bell.notifications')}</Text>
-            <TouchableOpacity
+            <Pressable
               onPress={() => setOpen(false)}
+              style={({ pressed }) => [pressed && { opacity: 0.7 }]}
               accessibilityLabel={t('common.close')}
               accessibilityRole="button"
             >
-              <Feather name="x" size={22} color="#374151" />
-            </TouchableOpacity>
+              <Feather name="x" size={22} color={colors.secondaryLabel} />
+            </Pressable>
           </View>
 
           {totalCount === 0 ? (
@@ -113,7 +114,7 @@ const BellModal = () => {
                       <Text
                         style={[
                           styles.itemBadge,
-                          { color: isRunning ? '#d97706' : '#9ca3af' },
+                          { color: isRunning ? colors.orange : colors.tertiaryLabel },
                         ]}
                       >
                         {isRunning ? t('timers.timerRunning').toUpperCase() : t('timers.timerPaused').toUpperCase()}
@@ -121,7 +122,7 @@ const BellModal = () => {
                       <Text
                         style={[
                           styles.countdown,
-                          { color: isRunning ? '#d97706' : '#9ca3af' },
+                          { color: isRunning ? colors.orange : colors.tertiaryLabel },
                         ]}
                       >
                         {timer.status === 'done'
@@ -140,32 +141,32 @@ const BellModal = () => {
                     </Text>
                     <View style={styles.btnRow}>
                       {isRunning ? (
-                        <TouchableOpacity
-                          style={styles.btnSecondary}
+                        <Pressable
+                          style={({ pressed }) => [styles.btnSecondary, pressed && { opacity: 0.7 }]}
                           onPress={() => pauseTimer(timer.id)}
                           accessibilityLabel={t('common.pause')}
                           accessibilityRole="button"
                         >
                           <Text style={styles.btnSecondaryText}>{t('common.pause')}</Text>
-                        </TouchableOpacity>
+                        </Pressable>
                       ) : (
-                        <TouchableOpacity
-                          style={styles.btnSecondary}
+                        <Pressable
+                          style={({ pressed }) => [styles.btnSecondary, pressed && { opacity: 0.7 }]}
                           onPress={() => resumeTimer(timer.id)}
                           accessibilityLabel={t('common.resume')}
                           accessibilityRole="button"
                         >
                           <Text style={styles.btnSecondaryText}>{t('common.resume')}</Text>
-                        </TouchableOpacity>
+                        </Pressable>
                       )}
-                      <TouchableOpacity
-                        style={styles.btnDanger}
+                      <Pressable
+                        style={({ pressed }) => [styles.btnDanger, pressed && { opacity: 0.7 }]}
                         onPress={() => cancelTimer(timer.id)}
                         accessibilityLabel={t('common.cancel')}
                         accessibilityRole="button"
                       >
                         <Text style={styles.btnDangerText}>{t('common.cancel')}</Text>
-                      </TouchableOpacity>
+                      </Pressable>
                     </View>
                   </View>
                 )
@@ -184,24 +185,24 @@ const BellModal = () => {
                     })}
                   </Text>
                   <View style={styles.btnRow}>
-                    <TouchableOpacity
-                      style={styles.btnPrimary}
+                    <Pressable
+                      style={({ pressed }) => [styles.btnPrimary, pressed && { opacity: 0.7 }]}
                       onPress={() => handleAccept(inv.id)}
                       disabled={busy === inv.id}
                       accessibilityLabel={t('common.accept')}
                       accessibilityRole="button"
                     >
                       <Text style={styles.btnPrimaryText}>{t('common.accept')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.btnSecondary}
+                    </Pressable>
+                    <Pressable
+                      style={({ pressed }) => [styles.btnSecondary, pressed && { opacity: 0.7 }]}
                       onPress={() => handleDecline(inv.id)}
                       disabled={busy === inv.id}
                       accessibilityLabel={t('common.decline')}
                       accessibilityRole="button"
                     >
                       <Text style={styles.btnSecondaryText}>{t('common.decline')}</Text>
-                    </TouchableOpacity>
+                    </Pressable>
                   </View>
                 </View>
               ))}
@@ -211,13 +212,14 @@ const BellModal = () => {
                 <>
                   <View style={styles.historyHeader}>
                     <Text style={styles.historyLabel}>{t('bell.history').toUpperCase()}</Text>
-                    <TouchableOpacity
+                    <Pressable
                       onPress={clearNotifHistory}
+                      style={({ pressed }) => [pressed && { opacity: 0.7 }]}
                       accessibilityLabel={t('common.clearAll')}
                       accessibilityRole="button"
                     >
                       <Text style={styles.clearAllText}>{t('common.clearAll')}</Text>
-                    </TouchableOpacity>
+                    </Pressable>
                   </View>
                   {notifHistory.map((item) => (
                     <View key={item.id} style={styles.item}>
@@ -228,8 +230,8 @@ const BellModal = () => {
                             {
                               color:
                                 item.type === 'timer_done'
-                                  ? '#10b981'
-                                  : '#6b7280',
+                                  ? colors.green
+                                  : colors.secondaryLabel,
                             },
                           ]}
                         >
@@ -238,13 +240,14 @@ const BellModal = () => {
                             : t('bell.household')
                           ).toUpperCase()}
                         </Text>
-                        <TouchableOpacity
+                        <Pressable
                           onPress={() => dismissNotif(item.id)}
+                          style={({ pressed }) => [pressed && { opacity: 0.7 }]}
                           accessibilityLabel={t('common.dismiss')}
                           accessibilityRole="button"
                         >
-                          <Feather name="x" size={16} color="#9ca3af" />
-                        </TouchableOpacity>
+                          <Feather name="x" size={16} color={colors.tertiaryLabel} />
+                        </Pressable>
                       </View>
                       <Text style={styles.itemTitle} numberOfLines={1}>
                         {item.title}
@@ -279,13 +282,13 @@ const styles = StyleSheet.create({
     minWidth: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: '#dc2626',
+    backgroundColor: colors.red,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 3,
   },
-  badgeText: { color: '#fff', fontSize: 9, fontWeight: '700' },
-  modal: { flex: 1, backgroundColor: '#f9fafb' },
+  badgeText: { color: colors.background, fontSize: 9, fontWeight: '700' },
+  modal: { flex: 1, backgroundColor: colors.secondaryBackground },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -293,16 +296,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-    backgroundColor: '#fff',
+    borderBottomColor: colors.separator,
+    backgroundColor: colors.background,
   },
-  modalTitle: { fontSize: 17, fontWeight: '600', color: '#111' },
+  modalTitle: { fontSize: 17, fontWeight: '600', color: colors.label },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emptyText: { fontSize: 15, color: '#9ca3af' },
+  emptyText: { fontSize: 15, color: colors.tertiaryLabel },
   list: { flex: 1 },
   listContent: { paddingBottom: 32 },
   item: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
     marginHorizontal: 16,
     marginTop: 12,
     borderRadius: 10,
@@ -322,7 +325,7 @@ const styles = StyleSheet.create({
   itemBadge: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#9ca3af',
+    color: colors.tertiaryLabel,
     letterSpacing: 0.4,
   },
   countdown: {
@@ -330,32 +333,32 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
-  itemTitle: { fontSize: 15, fontWeight: '600', color: '#111', marginBottom: 2 },
-  itemBody: { fontSize: 13, color: '#6b7280', marginBottom: 10 },
+  itemTitle: { fontSize: 15, fontWeight: '600', color: colors.label, marginBottom: 2 },
+  itemBody: { fontSize: 13, color: colors.secondaryLabel, marginBottom: 10 },
   btnRow: { flexDirection: 'row', gap: 8 },
   btnPrimary: {
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 8,
-    backgroundColor: '#2563eb',
+    backgroundColor: colors.blue,
   },
-  btnPrimaryText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  btnPrimaryText: { color: colors.background, fontSize: 13, fontWeight: '600' },
   btnSecondary: {
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 8,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: colors.secondaryBackground,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: colors.opaqueSeparator,
   },
-  btnSecondaryText: { color: '#374151', fontSize: 13, fontWeight: '500' },
+  btnSecondaryText: { color: colors.secondaryLabel, fontSize: 13, fontWeight: '500' },
   btnDanger: {
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 8,
-    backgroundColor: '#fee2e2',
+    backgroundColor: colors.brandLight,
   },
-  btnDangerText: { color: '#dc2626', fontSize: 13, fontWeight: '600' },
+  btnDangerText: { color: colors.red, fontSize: 13, fontWeight: '600' },
   historyHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -367,10 +370,10 @@ const styles = StyleSheet.create({
   historyLabel: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#9ca3af',
+    color: colors.tertiaryLabel,
     letterSpacing: 0.4,
   },
-  clearAllText: { fontSize: 12, color: '#6b7280', fontWeight: '500' },
+  clearAllText: { fontSize: 12, color: colors.secondaryLabel, fontWeight: '500' },
 })
 
 export default BellModal
