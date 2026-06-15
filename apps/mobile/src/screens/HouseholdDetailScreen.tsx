@@ -11,14 +11,11 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
 import { useHouseholds } from '@platekeeper/shared/hooks/useHouseholds'
 import { useMembers } from '@platekeeper/shared/hooks/useMembers'
 import { useAuth } from '../context/AuthContext'
-import type { SettingsStackParamList } from '../navigation/SettingsStack'
 import { colors } from '../theme/colors'
-
-type Props = NativeStackScreenProps<SettingsStackParamList, 'HouseholdDetail'>
 
 const PRESET_COLORS = [
   '#6366f1',
@@ -31,8 +28,9 @@ const PRESET_COLORS = [
   '#06b6d4',
 ]
 
-const HouseholdDetailScreen = ({ route, navigation }: Props) => {
-  const { householdId } = route.params
+const HouseholdDetailScreen = () => {
+  const { id: householdId, householdName: initialTitle } = useLocalSearchParams<{ id: string; householdName?: string }>()
+  const router = useRouter()
   const { t } = useTranslation()
   const { user, refreshUser } = useAuth()
   const { households, update, leave, invite } = useHouseholds()
@@ -50,13 +48,12 @@ const HouseholdDetailScreen = ({ route, navigation }: Props) => {
     setSaving(true)
     try {
       await update.mutateAsync({ id: householdId, data: { name: name.trim() || undefined, color } })
-      navigation.setOptions({ title: name.trim() || householdId })
     } catch (e) {
       Alert.alert(t('common.ok'), e instanceof Error ? e.message : t('settings.failedToSave'))
     } finally {
       setSaving(false)
     }
-  }, [householdId, name, color, update, navigation, t])
+  }, [householdId, name, color, update, t])
 
   const handleInvite = useCallback(async () => {
     const email = inviteEmail.trim()
@@ -85,14 +82,14 @@ const HouseholdDetailScreen = ({ route, navigation }: Props) => {
             if (user?.active_household_id === householdId) {
               await refreshUser()
             }
-            navigation.goBack()
+            router.back()
           } catch (e) {
             Alert.alert(t('common.ok'), e instanceof Error ? e.message : 'Error')
           }
         },
       },
     ])
-  }, [householdId, leave, user, refreshUser, navigation, t])
+  }, [householdId, leave, user, refreshUser, router, t])
 
   if (!household) {
     return (
@@ -107,6 +104,7 @@ const HouseholdDetailScreen = ({ route, navigation }: Props) => {
       style={styles.container}
       contentContainerStyle={[styles.content, { paddingBottom: 48 + insets.bottom }]}
     >
+      <Stack.Screen options={{ title: name.trim() || initialTitle || householdId }} />
       {/* Name */}
       <Text style={styles.sectionHeader}>{t('settings.nameLabel')}</Text>
       <View style={styles.card}>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Stack } from 'expo-router'
 import {
   ActionSheetIOS,
   ActivityIndicator,
@@ -13,7 +14,7 @@ import {
 } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { usePreferences } from '@platekeeper/shared/hooks/usePreferences'
 import { useHouseholds } from '@platekeeper/shared/hooks/useHouseholds'
@@ -24,10 +25,7 @@ import { useAuth } from '../context/AuthContext'
 import { useHousehold } from '../context/HouseholdContext'
 import { useTimers } from '../context/TimerContext'
 import { persistLanguage } from '../i18n'
-import type { SettingsStackParamList } from '../navigation/SettingsStack'
 import { colors } from '../theme/colors'
-
-type Props = NativeStackScreenProps<SettingsStackParamList, 'SettingsMain'>
 
 const LANGUAGES: { code: string; labelKey: string }[] = [
   { code: 'en', labelKey: 'languages.en' },
@@ -323,7 +321,8 @@ const AllergenSection = ({
 const KEEP_AWAKE_STORAGE_KEY = 'recipe-keep-screen-default'
 const KEEP_AWAKE_SHOPPING_STORAGE_KEY = 'shopping-list-keep-screen-on'
 
-const SettingsScreen = ({ navigation }: Props) => {
+const SettingsScreen = () => {
+  const router = useRouter()
   const { t, i18n } = useTranslation()
   const { user, logout } = useAuth()
   const { preferences, isLoading, error, update } = usePreferences()
@@ -441,6 +440,7 @@ const SettingsScreen = ({ navigation }: Props) => {
       style={styles.container}
       contentContainerStyle={[styles.content, { paddingBottom: 48 + insets.bottom }]}
     >
+      <Stack.Screen options={{ title: t('settings.title') }} />
       {/* Stats */}
       <SectionHeader label={t('settings.stats')} />
       <StatsSection />
@@ -595,10 +595,7 @@ const SettingsScreen = ({ navigation }: Props) => {
               <Pressable
                 style={({ pressed }) => [styles.manageBtn, pressed && { opacity: 0.7 }]}
                 onPress={() =>
-                  navigation.navigate('HouseholdDetail', {
-                    householdId: h.id,
-                    householdName: h.name,
-                  })
+                  router.push({ pathname: '/household/[id]', params: { id: h.id, householdName: h.name } })
                 }
                 accessibilityLabel={t('settings.manage')}
                 accessibilityRole="button"

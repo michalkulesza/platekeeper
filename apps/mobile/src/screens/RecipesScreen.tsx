@@ -14,7 +14,7 @@ import {
 } from 'react-native'
 import { Swipeable } from 'react-native-gesture-handler'
 import { useTranslation } from 'react-i18next'
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { useNavigation, useRouter } from 'expo-router'
 import { useRecipes } from '@platekeeper/shared/hooks/useRecipes'
 import { useTags } from '@platekeeper/shared/hooks/useTags'
 import { useApiClient } from '@platekeeper/shared/api/context'
@@ -23,11 +23,9 @@ import type { RecipeOut, Tag } from '@platekeeper/shared/types'
 import { tTag } from '@platekeeper/shared/utils/tagUtils'
 import { Feather } from '@expo/vector-icons'
 import BellModal from '../components/BellModal'
-import type { RecipesStackParamList } from '../navigation/RecipesStack'
 import { colors } from '../theme/colors'
 import { proxyThumbnailUrl } from '../api/thumbnailUrl'
 
-type Props = NativeStackScreenProps<RecipesStackParamList, 'RecipesList'>
 type SortMode = 'newest' | 'oldest' | 'title_asc' | 'title_desc' | 'edited_newest' | 'edited_oldest'
 
 const SORT_OPTIONS: { key: SortMode; labelKey: string }[] = [
@@ -39,7 +37,9 @@ const SORT_OPTIONS: { key: SortMode; labelKey: string }[] = [
   { key: 'title_desc', labelKey: 'recipes.sortTitleZA' },
 ]
 
-const RecipesScreen = ({ navigation }: Props) => {
+const RecipesScreen = () => {
+  const navigation = useNavigation()
+  const router = useRouter()
   const { t } = useTranslation()
   const { recipes, isLoading, error } = useRecipes()
   const { tags } = useTags()
@@ -88,7 +88,7 @@ const RecipesScreen = ({ navigation }: Props) => {
           style={({ pressed }) => [styles.swipeEdit, pressed && { opacity: 0.7 }]}
           onPress={() => {
             swipeableRefs.current.get(item.id)?.close()
-            navigation.navigate('EditRecipe', { recipeId: item.id })
+            router.push({ pathname: '/recipe/[id]/edit', params: { id: item.id } })
           }}
           accessibilityLabel={t('common.edit')}
           accessibilityRole="button"
@@ -108,7 +108,7 @@ const RecipesScreen = ({ navigation }: Props) => {
         </Pressable>
       </View>
     ),
-    [handleDelete, navigation, t],
+    [handleDelete, router, t],
   )
 
   const showSortSheet = useCallback(() => {
@@ -127,6 +127,7 @@ const RecipesScreen = ({ navigation }: Props) => {
 
   useLayoutEffect(() => {
     navigation.setOptions({
+      title: t('nav.recipes'),
       headerRight: () => (
         <View style={styles.headerBtns}>
           <Pressable
@@ -137,19 +138,20 @@ const RecipesScreen = ({ navigation }: Props) => {
           >
             <Feather name="sliders" size={22} color={colors.secondaryLabel} />
           </Pressable>
-          <Pressable
-            onPress={() => navigation.navigate('ImportRecipe')}
-            style={({ pressed }) => [styles.headerBtn, pressed && { opacity: 0.7 }]}
-            accessibilityLabel={t('nav.addRecipe')}
-            accessibilityRole="button"
-          >
-            <Text style={styles.headerAddText}>+</Text>
-          </Pressable>
           <BellModal />
+          <Pressable
+            onPress={() => router.push('/settings')}
+            style={({ pressed }) => [styles.headerBtn, pressed && { opacity: 0.7 }]}
+            accessibilityLabel={t('nav.settings')}
+            accessibilityRole="button"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Feather name="settings" size={22} color={colors.secondaryLabel} />
+          </Pressable>
         </View>
       ),
     })
-  }, [navigation, showSortSheet, t])
+  }, [navigation, showSortSheet, t, router])
 
   const recipesWithOverrides = useMemo(
     () =>
@@ -211,9 +213,9 @@ const RecipesScreen = ({ navigation }: Props) => {
 
   const handleRecipePress = useCallback(
     (recipe: RecipeOut) => {
-      navigation.navigate('RecipeDetail', { recipeId: recipe.id, title: recipe.title })
+      router.push({ pathname: '/recipe/[id]', params: { id: recipe.id, title: recipe.title } })
     },
-    [navigation],
+    [router],
   )
 
   const renderTag = useCallback(

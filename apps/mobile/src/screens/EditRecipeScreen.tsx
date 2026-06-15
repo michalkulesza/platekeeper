@@ -14,7 +14,7 @@ import {
 } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { useNavigation, useLocalSearchParams, useRouter } from 'expo-router'
 import { useRecipes } from '@platekeeper/shared/hooks/useRecipes'
 import { useTags } from '@platekeeper/shared/hooks/useTags'
 import { useApiClient } from '@platekeeper/shared/api/context'
@@ -26,11 +26,8 @@ import {
 } from '@platekeeper/shared/utils/ingredientUtils'
 import type { StructuredIngredient } from '@platekeeper/shared/utils/ingredientUtils'
 import { tTag } from '@platekeeper/shared/utils/tagUtils'
-import type { RecipesStackParamList } from '../navigation/RecipesStack'
 import { colors } from '../theme/colors'
 import { isValidImageUrl } from '../api/thumbnailUrl'
-
-type Props = NativeStackScreenProps<RecipesStackParamList, 'EditRecipe'>
 
 interface EditComponent {
   name: string
@@ -154,8 +151,10 @@ const IngredientEditor = ({
 
 // ── Screen ─────────────────────────────────────────────────────────────────────
 
-const EditRecipeScreen = ({ route, navigation }: Props) => {
-  const { recipeId } = route.params
+const EditRecipeScreen = () => {
+  const { id: recipeId } = useLocalSearchParams<{ id: string }>()
+  const navigation = useNavigation()
+  const router = useRouter()
   const { t } = useTranslation()
   const api = useApiClient()
   const qc = useQueryClient()
@@ -316,7 +315,7 @@ const EditRecipeScreen = ({ route, navigation }: Props) => {
         tag_ids: selectedTags.map((tag) => tag.id),
       })
       await qc.invalidateQueries({ queryKey: ['recipes'] })
-      navigation.goBack()
+      router.back()
     } catch (err) {
       Alert.alert(
         t('common.ok'),
@@ -325,7 +324,7 @@ const EditRecipeScreen = ({ route, navigation }: Props) => {
     } finally {
       setSaving(false)
     }
-  }, [state, api, recipeId, recipe, selectedTags, qc, navigation, t])
+  }, [state, api, recipeId, recipe, selectedTags, qc, router, t])
 
   const pickedIngredient = unitPickerTarget
     ? state?.components[unitPickerTarget.ci]?.ingredients[unitPickerTarget.ii]

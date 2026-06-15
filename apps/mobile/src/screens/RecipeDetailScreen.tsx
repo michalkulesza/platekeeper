@@ -15,7 +15,7 @@ import { Feather } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as KeepAwake from 'expo-keep-awake'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { useNavigation, useLocalSearchParams, useRouter } from 'expo-router'
 import { useRecipes } from '@platekeeper/shared/hooks/useRecipes'
 import {
   parseDurationMatch,
@@ -26,7 +26,6 @@ import {
   type DurationMatch,
 } from '../context/TimerContext'
 import BellModal from '../components/BellModal'
-import type { RecipesStackParamList } from '../navigation/RecipesStack'
 import type { RecipeOut, SaveComponent, Ingredient, StepIngredientRef } from '@platekeeper/shared/types'
 import { displayIngredient, buildClientStepRefs } from '@platekeeper/shared/utils/ingredientUtils'
 import { tTag } from '@platekeeper/shared/utils/tagUtils'
@@ -34,8 +33,6 @@ import { colors } from '../theme/colors'
 import { proxyThumbnailUrl } from '../api/thumbnailUrl'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
-
-type Props = NativeStackScreenProps<RecipesStackParamList, 'RecipeDetail'>
 
 // ── Timer button for a step ────────────────────────────────────────────────────
 
@@ -355,8 +352,10 @@ const ComponentSection = ({
 const KEEP_AWAKE_RECIPE_TAG = 'recipe-detail'
 const KEEP_AWAKE_STORAGE_KEY = 'recipe-keep-screen-default'
 
-const RecipeDetailScreen = ({ route, navigation }: Props) => {
-  const { recipeId } = route.params
+const RecipeDetailScreen = () => {
+  const { id: recipeId } = useLocalSearchParams<{ id: string }>()
+  const navigation = useNavigation()
+  const router = useRouter()
   const { t } = useTranslation()
   const { recipes, isLoading, error } = useRecipes()
   const [keepScreenOn, setKeepScreenOn] = useState(false)
@@ -387,8 +386,8 @@ const RecipeDetailScreen = ({ route, navigation }: Props) => {
   )
 
   const handleEdit = useCallback(() => {
-    navigation.navigate('EditRecipe', { recipeId })
-  }, [navigation, recipeId])
+    router.push({ pathname: '/recipe/[id]/edit', params: { id: recipeId } })
+  }, [router, recipeId])
 
   useLayoutEffect(() => {
     navigation.setOptions({

@@ -21,7 +21,7 @@ import { useTranslation } from 'react-i18next'
 import * as Clipboard from 'expo-clipboard'
 import * as ImagePicker from 'expo-image-picker'
 import { useQueryClient } from '@tanstack/react-query'
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { useNavigation, useLocalSearchParams, useRouter } from 'expo-router'
 import { useApiClient } from '@platekeeper/shared/api/context'
 import { useTags } from '@platekeeper/shared/hooks/useTags'
 import { usePreferences } from '@platekeeper/shared/hooks/usePreferences'
@@ -40,11 +40,9 @@ import {
 } from '@platekeeper/shared/utils/ingredientUtils'
 import type { StructuredIngredient } from '@platekeeper/shared/utils/ingredientUtils'
 import { tTag } from '@platekeeper/shared/utils/tagUtils'
-import type { RecipesStackParamList } from '../navigation/RecipesStack'
 import { colors } from '../theme/colors'
 import { proxyThumbnailUrl, isValidImageUrl } from '../api/thumbnailUrl'
 
-type Props = NativeStackScreenProps<RecipesStackParamList, 'ImportRecipe'>
 type ImportMode = 'url' | 'camera' | 'gallery' | 'text' | 'share' | 'scratch'
 
 // ── Local types ────────────────────────────────────────────────────────────────
@@ -990,7 +988,10 @@ const ShareView = ({
 
 // ── ImportRecipeScreen ─────────────────────────────────────────────────────────
 
-const ImportRecipeScreen = ({ navigation, route }: Props) => {
+const ImportRecipeScreen = () => {
+  const { type: sharedTypeParam, value: sharedValueParam } = useLocalSearchParams<{ type?: string; value?: string }>()
+  const navigation = useNavigation()
+  const router = useRouter()
   const { t } = useTranslation()
   const insets = useSafeAreaInsets()
   const api = useApiClient()
@@ -1022,17 +1023,15 @@ const ImportRecipeScreen = ({ navigation, route }: Props) => {
 
   // Handle content shared from the native Share Extension via deep link params
   useEffect(() => {
-    const sharedType = route.params?.type
-    const sharedValue = route.params?.value
-    if (!sharedType || !sharedValue || editable) return
-    if (sharedType === 'url') {
+    if (!sharedTypeParam || !sharedValueParam || editable) return
+    if (sharedTypeParam === 'url') {
       setMode('share')
-      setUrl(sharedValue)
-    } else if (sharedType === 'text') {
+      setUrl(sharedValueParam)
+    } else if (sharedTypeParam === 'text') {
       setMode('text')
-      setPastedText(sharedValue)
+      setPastedText(sharedValueParam)
     }
-  }, [route.params?.type, route.params?.value])
+  }, [sharedTypeParam, sharedValueParam])
 
   // Handle raw http(s) URLs opened via Linking (e.g. from browser tap on universal links)
   useEffect(() => {
@@ -1280,7 +1279,7 @@ const ImportRecipeScreen = ({ navigation, route }: Props) => {
       })
       await qc.invalidateQueries({ queryKey: ['recipes'] })
       skipGuardRef.current = true
-      navigation.goBack()
+      router.back()
     } catch (err) {
       setError(err instanceof Error ? err.message : t('addRecipe.failedToSave'))
     } finally {
