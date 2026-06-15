@@ -1,14 +1,12 @@
 import { useCallback, useState } from 'react'
 import { StyleSheet, Text, TextInput, Pressable, View, KeyboardAvoidingView, Platform } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { useRouter } from 'expo-router'
 import { useAuth } from '../../context/AuthContext'
-import type { AuthStackParamList } from '../../navigation/AuthStack'
 import { colors } from '../../theme/colors'
 
-type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>
-
-const LoginScreen = ({ navigation }: Props) => {
+const LoginScreen = () => {
+  const router = useRouter()
   const { t } = useTranslation()
   const { login } = useAuth()
   const [email, setEmail] = useState('')
@@ -106,7 +104,7 @@ const LoginScreen = ({ navigation }: Props) => {
 
         <Pressable
           style={({ pressed }) => [styles.button, pressed && { opacity: 0.7 }]}
-          onPress={() => navigation.navigate('Register')}
+          onPress={() => router.push('/(auth)/register')}
           accessibilityLabel={t('auth.createAccount')}
           accessibilityRole="button"
         >
