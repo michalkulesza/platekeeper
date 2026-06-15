@@ -5,10 +5,10 @@ import {
   FlatList,
   Image,
   ListRenderItemInfo,
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native'
 import { Swipeable } from 'react-native-gesture-handler'
@@ -22,6 +22,7 @@ import type { RecipeOut, Tag } from '@platekeeper/shared/types'
 import { tTag } from '@platekeeper/shared/utils/tagUtils'
 import BellModal from '../components/BellModal'
 import type { RecipesStackParamList } from '../navigation/RecipesStack'
+import { colors } from '../theme/colors'
 
 type Props = NativeStackScreenProps<RecipesStackParamList, 'RecipesList'>
 type SortMode = 'newest' | 'oldest' | 'title_asc' | 'title_desc' | 'edited_newest' | 'edited_oldest'
@@ -77,8 +78,8 @@ const RecipesScreen = ({ navigation }: Props) => {
   const renderSwipeActions = useCallback(
     (item: RecipeOut) => (
       <View style={styles.swipeActions}>
-        <TouchableOpacity
-          style={styles.swipeEdit}
+        <Pressable
+          style={({ pressed }) => [styles.swipeEdit, pressed && { opacity: 0.7 }]}
           onPress={() => {
             swipeableRefs.current.get(item.id)?.close()
             navigation.navigate('EditRecipe', { recipeId: item.id })
@@ -87,9 +88,9 @@ const RecipesScreen = ({ navigation }: Props) => {
           accessibilityRole="button"
         >
           <Text style={styles.swipeActionText}>{t('common.edit')}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.swipeDelete}
+        </Pressable>
+        <Pressable
+          style={({ pressed }) => [styles.swipeDelete, pressed && { opacity: 0.7 }]}
           onPress={() => {
             swipeableRefs.current.get(item.id)?.close()
             handleDelete(item)
@@ -98,7 +99,7 @@ const RecipesScreen = ({ navigation }: Props) => {
           accessibilityRole="button"
         >
           <Text style={styles.swipeActionText}>{t('common.delete')}</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     ),
     [handleDelete, navigation, t],
@@ -108,14 +109,14 @@ const RecipesScreen = ({ navigation }: Props) => {
     navigation.setOptions({
       headerRight: () => (
         <View style={styles.headerBtns}>
-          <TouchableOpacity
+          <Pressable
             onPress={() => navigation.navigate('ImportRecipe')}
-            style={styles.headerBtn}
+            style={({ pressed }) => [styles.headerBtn, pressed && { opacity: 0.7 }]}
             accessibilityLabel={t('nav.addRecipe')}
             accessibilityRole="button"
           >
             <Text style={styles.headerAddText}>+</Text>
-          </TouchableOpacity>
+          </Pressable>
           <BellModal />
         </View>
       ),
@@ -191,9 +192,9 @@ const RecipesScreen = ({ navigation }: Props) => {
     ({ item }: ListRenderItemInfo<Tag>) => {
       const isSelected = item.id === selectedTagId
       return (
-        <TouchableOpacity
+        <Pressable
           onPress={() => handleTagPress(item.id)}
-          style={[styles.chip, isSelected && styles.chipSelected]}
+          style={({ pressed }) => [styles.chip, isSelected && styles.chipSelected, pressed && { opacity: 0.7 }]}
           accessibilityLabel={item.name}
           accessibilityRole="button"
           accessibilityState={{ selected: isSelected }}
@@ -201,7 +202,7 @@ const RecipesScreen = ({ navigation }: Props) => {
           <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
             {tTag(item.name, t)}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       )
     },
     [selectedTagId, handleTagPress, t],
@@ -232,8 +233,8 @@ const RecipesScreen = ({ navigation }: Props) => {
           rightThreshold={40}
           containerStyle={styles.swipeContainer}
         >
-          <TouchableOpacity
-            style={[styles.card, styles.cardInSwipeable]}
+          <Pressable
+            style={({ pressed }) => [styles.card, styles.cardInSwipeable, pressed && { opacity: 0.7 }]}
             onPress={() => handleRecipePress(item)}
             accessibilityLabel={item.title}
             accessibilityRole="button"
@@ -262,16 +263,16 @@ const RecipesScreen = ({ navigation }: Props) => {
                 </Text>
               )}
             </View>
-            <TouchableOpacity
-              style={styles.favBtn}
+            <Pressable
+              style={({ pressed }) => [styles.favBtn, pressed && { opacity: 0.7 }]}
               onPress={() => handleToggleFavourite(item)}
               accessibilityLabel={isFav ? t('recipes.removeFromFavourites') : t('recipes.addToFavourites')}
               accessibilityRole="button"
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Text style={[styles.favStar, isFav && styles.favStarActive]}>★</Text>
-            </TouchableOpacity>
-          </TouchableOpacity>
+            </Pressable>
+          </Pressable>
         </Swipeable>
       )
     },
@@ -280,9 +281,9 @@ const RecipesScreen = ({ navigation }: Props) => {
 
   const favChip = useMemo(
     () => (
-      <TouchableOpacity
+      <Pressable
         onPress={() => setFilterFavourites((v) => !v)}
-        style={[styles.chip, filterFavourites && styles.chipSelected, styles.favChip]}
+        style={({ pressed }) => [styles.chip, filterFavourites && styles.chipSelected, styles.favChip, pressed && { opacity: 0.7 }]}
         accessibilityLabel={t('recipes.filterFavourites')}
         accessibilityRole="button"
         accessibilityState={{ selected: filterFavourites }}
@@ -290,7 +291,7 @@ const RecipesScreen = ({ navigation }: Props) => {
         <Text style={[styles.chipText, filterFavourites && styles.chipTextSelected]}>
           {'★ '}{t('recipes.filterFavourites')}
         </Text>
-      </TouchableOpacity>
+      </Pressable>
     ),
     [filterFavourites, t],
   )
@@ -299,10 +300,10 @@ const RecipesScreen = ({ navigation }: Props) => {
     () => (
       <View style={styles.sortChips}>
         {SORT_OPTIONS.map((opt) => (
-          <TouchableOpacity
+          <Pressable
             key={opt.key}
             onPress={() => setSort(opt.key)}
-            style={[styles.chip, sort === opt.key && styles.chipSelected]}
+            style={({ pressed }) => [styles.chip, sort === opt.key && styles.chipSelected, pressed && { opacity: 0.7 }]}
             accessibilityLabel={t(opt.labelKey)}
             accessibilityRole="button"
             accessibilityState={{ selected: sort === opt.key }}
@@ -310,7 +311,7 @@ const RecipesScreen = ({ navigation }: Props) => {
             <Text style={[styles.chipText, sort === opt.key && styles.chipTextSelected]}>
               {t(opt.labelKey)}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         ))}
       </View>
     ),
@@ -378,13 +379,14 @@ const RecipesScreen = ({ navigation }: Props) => {
               : t('recipes.noRecipesYet')}
           </Text>
           {(selectedTagId || filterFavourites) && (
-            <TouchableOpacity
+            <Pressable
               onPress={() => { setSelectedTagId(null); setFilterFavourites(false) }}
+              style={({ pressed }) => [pressed && { opacity: 0.7 }]}
               accessibilityLabel={t('recipes.clearFilter')}
               accessibilityRole="button"
             >
               <Text style={styles.clearFilter}>{t('recipes.clearFilter')}</Text>
-            </TouchableOpacity>
+            </Pressable>
           )}
         </View>
       }
@@ -397,43 +399,43 @@ const RecipesScreen = ({ navigation }: Props) => {
 
 const styles = StyleSheet.create({
   headerBtns: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  headerBtn: { paddingHorizontal: 4, paddingVertical: 2 },
+  headerBtn: { paddingHorizontal: 4, paddingVertical: 4 },
   headerAddText: {
     fontSize: 26,
-    color: '#7c3aed',
+    color: colors.brand,
     lineHeight: 30,
     fontWeight: '400',
   },
-  list: { flex: 1, backgroundColor: '#f9fafb' },
+  list: { flex: 1, backgroundColor: colors.background },
   listContent: { paddingBottom: 24 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  errorText: { color: '#dc2626', fontSize: 15, textAlign: 'center' },
+  errorText: { color: colors.red, fontSize: 15, textAlign: 'center' },
   searchInput: {
     margin: 12,
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: colors.opaqueSeparator,
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 10,
     fontSize: 15,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
   },
   tagList: { marginBottom: 8 },
   tagListContent: { paddingHorizontal: 12, gap: 8 },
   chip: {
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: colors.opaqueSeparator,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
   },
-  chipSelected: { backgroundColor: '#7c3aed', borderColor: '#7c3aed' },
-  chipText: { fontSize: 13, color: '#374151' },
-  chipTextSelected: { color: '#fff', fontWeight: '600' },
+  chipSelected: { backgroundColor: colors.brand, borderColor: colors.brand },
+  chipText: { fontSize: 13, color: colors.secondaryLabel },
+  chipTextSelected: { color: colors.background, fontWeight: '600' },
   card: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
     borderRadius: 10,
     marginHorizontal: 12,
     marginTop: 8,
@@ -445,25 +447,25 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   cardImage: { width: 80, height: 80 },
-  cardImagePlaceholder: { width: 80, height: 80, backgroundColor: '#e5e7eb' },
+  cardImagePlaceholder: { width: 80, height: 80, backgroundColor: colors.opaqueSeparator },
   cardBody: { flex: 1, padding: 12, justifyContent: 'center' },
-  cardTitle: { fontSize: 15, fontWeight: '600', color: '#111', marginBottom: 4 },
-  cardTags: { fontSize: 12, color: '#7c3aed', marginBottom: 2 },
-  cardMeta: { fontSize: 12, color: '#9ca3af' },
+  cardTitle: { fontSize: 15, fontWeight: '600', color: colors.label, marginBottom: 4 },
+  cardTags: { fontSize: 12, color: colors.brand, marginBottom: 2 },
+  cardMeta: { fontSize: 12, color: colors.tertiaryLabel },
   empty: { padding: 40, alignItems: 'center' },
   emptyText: {
     fontSize: 15,
-    color: '#6b7280',
+    color: colors.secondaryLabel,
     textAlign: 'center',
     marginBottom: 12,
   },
-  clearFilter: { fontSize: 14, color: '#2563eb', fontWeight: '500' },
+  clearFilter: { fontSize: 14, color: colors.blue, fontWeight: '500' },
   favBtn: {
     width: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  favStar: { fontSize: 20, color: '#d1d5db' },
+  favStar: { fontSize: 20, color: colors.opaqueSeparator },
   favStarActive: { color: '#f59e0b' },
   favChip: { marginRight: 4 },
   sortChips: {
@@ -477,20 +479,20 @@ const styles = StyleSheet.create({
   cardInSwipeable: { marginHorizontal: 0, marginTop: 0 },
   swipeActions: { flexDirection: 'row' },
   swipeEdit: {
-    backgroundColor: '#7c3aed',
+    backgroundColor: colors.brand,
     width: 80,
     justifyContent: 'center',
     alignItems: 'center',
   },
   swipeDelete: {
-    backgroundColor: '#dc2626',
+    backgroundColor: colors.red,
     width: 80,
     justifyContent: 'center',
     alignItems: 'center',
     borderTopRightRadius: 10,
     borderBottomRightRadius: 10,
   },
-  swipeActionText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  swipeActionText: { color: colors.background, fontSize: 13, fontWeight: '600' },
 })
 
 export default RecipesScreen
