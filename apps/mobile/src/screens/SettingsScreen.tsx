@@ -518,7 +518,7 @@ const SettingsScreen = ({ navigation }: Props) => {
           <View style={styles.card}>
             <View style={styles.switchRow}>
               <View style={styles.switchLabelBlock}>
-                <Text style={[styles.cardLabel, { paddingHorizontal: 0 }]}>{t('settings.useMetricSystem')}</Text>
+                <Text style={styles.switchLabel}>{t('settings.useMetricSystem')}</Text>
                 <Text style={styles.cardDesc}>{t('settings.useMetricSystemDesc')}</Text>
               </View>
               <Switch
@@ -536,7 +536,7 @@ const SettingsScreen = ({ navigation }: Props) => {
       <View style={styles.card}>
         <View style={[styles.switchRow, styles.switchRowBorder]}>
           <View style={styles.switchLabelBlock}>
-            <Text style={[styles.cardLabel, { paddingHorizontal: 0 }]}>{t('settings.keepScreenOnDefault')}</Text>
+            <Text style={styles.switchLabel}>{t('settings.keepScreenOnDefault')}</Text>
             <Text style={styles.cardDesc}>{t('settings.keepScreenOnDefaultDesc')}</Text>
           </View>
           <Switch
@@ -547,7 +547,7 @@ const SettingsScreen = ({ navigation }: Props) => {
         </View>
         <View style={[styles.switchRow, styles.switchRowBorder]}>
           <View style={styles.switchLabelBlock}>
-            <Text style={[styles.cardLabel, { paddingHorizontal: 0 }]}>{t('timers.keepScreenOn')}</Text>
+            <Text style={styles.switchLabel}>{t('timers.keepScreenOn')}</Text>
             <Text style={styles.cardDesc}>{t('timers.keepScreenOnDesc')}</Text>
           </View>
           <Switch
@@ -558,7 +558,7 @@ const SettingsScreen = ({ navigation }: Props) => {
         </View>
         <View style={styles.switchRow}>
           <View style={styles.switchLabelBlock}>
-            <Text style={[styles.cardLabel, { paddingHorizontal: 0 }]}>{t('settings.keepScreenOnWhileShoppingList')}</Text>
+            <Text style={styles.switchLabel}>{t('settings.keepScreenOnWhileShoppingList')}</Text>
             <Text style={styles.cardDesc}>{t('settings.keepScreenOnWhileShoppingListDesc')}</Text>
           </View>
           <Switch
@@ -716,6 +716,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 8,
+  },
+  switchLabel: {
+    fontSize: 15,
+    color: colors.label,
+    fontWeight: '500',
   },
   cardDesc: {
     fontSize: 12,
