@@ -579,30 +579,15 @@ const SettingsScreen = ({ navigation }: Props) => {
           {/* Unit system */}
           <View style={styles.card}>
             <View style={styles.switchRow}>
-              <Text style={[styles.cardLabel, { paddingHorizontal: 0 }]}>{t('settings.unitSystem')}</Text>
-              <View style={styles.unitToggleRow}>
-                <Text
-                  style={[
-                    styles.unitLabel,
-                    preferences?.unit_system !== 'metric' && styles.unitLabelActive,
-                  ]}
-                >
-                  {t('settings.imperial')}
-                </Text>
-                <Switch
-                  value={preferences?.unit_system !== 'imperial'}
-                  onValueChange={handleUnitSystemToggle}
-                  accessibilityLabel={t('settings.unitSystem')}
-                />
-                <Text
-                  style={[
-                    styles.unitLabel,
-                    preferences?.unit_system !== 'imperial' && styles.unitLabelActive,
-                  ]}
-                >
-                  {t('settings.metric')}
-                </Text>
+              <View style={styles.switchLabelBlock}>
+                <Text style={[styles.cardLabel, { paddingHorizontal: 0 }]}>{t('settings.useMetricSystem')}</Text>
+                <Text style={styles.cardDesc}>{t('settings.useMetricSystemDesc')}</Text>
               </View>
+              <Switch
+                value={preferences?.unit_system !== 'imperial'}
+                onValueChange={handleUnitSystemToggle}
+                accessibilityLabel={t('settings.useMetricSystem')}
+              />
             </View>
           </View>
 
@@ -816,13 +801,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   switchLabelBlock: { flex: 1, marginRight: 12 },
-  unitToggleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  unitLabel: { fontSize: 14, color: colors.tertiaryLabel, fontWeight: '500' },
-  unitLabelActive: { color: colors.blue },
   // Timer section
   timerRow: {
     flexDirection: 'row',

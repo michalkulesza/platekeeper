@@ -208,7 +208,9 @@
     "manage": "Verwalten",
     "unitSystem": "Einheitensystem",
     "metric": "Metrisch",
-    "imperial": "Imperiell"
+    "imperial": "Imperiell",
+    "useMetricSystem": "Metrisches System verwenden",
+    "useMetricSystemDesc": "Gramm, Kilogramm, Milliliter und Celsius"
   },
   "allergens": {
     "gluten": "Glutenhaltige Getreide",
