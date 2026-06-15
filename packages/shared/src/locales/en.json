@@ -208,7 +208,9 @@
     "manage": "Manage",
     "unitSystem": "Unit system",
     "metric": "Metric",
-    "imperial": "Imperial"
+    "imperial": "Imperial",
+    "useMetricSystem": "Use metric system",
+    "useMetricSystemDesc": "Grams, kilograms, millilitres and Celsius"
   },
   "allergens": {
     "gluten": "Gluten-containing cereals",
