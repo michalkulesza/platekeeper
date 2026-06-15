@@ -31,7 +31,7 @@ const RecipesStack = () => {
       <Stack.Screen
         name="ImportRecipe"
         component={ImportRecipeScreen}
-        options={{ title: t('addRecipe.importRecipe') }}
+        options={{ title: t('addRecipe.addRecipe') }}
       />
       <Stack.Screen
         name="EditRecipe"

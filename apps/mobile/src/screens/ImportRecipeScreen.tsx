@@ -5,8 +5,10 @@ import {
   FlatList,
   Image,
   KeyboardAvoidingView,
+  Linking,
   Modal,
   Platform,
+  PlatformColor,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -17,6 +19,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import * as Clipboard from 'expo-clipboard'
+import * as ImagePicker from 'expo-image-picker'
 import { useQueryClient } from '@tanstack/react-query'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useApiClient } from '@platekeeper/shared/api/context'
@@ -41,6 +44,7 @@ import type { RecipesStackParamList } from '../navigation/RecipesStack'
 import { colors } from '../theme/colors'
 
 type Props = NativeStackScreenProps<RecipesStackParamList, 'ImportRecipe'>
+type ImportMode = 'url' | 'camera' | 'gallery' | 'text' | 'share' | 'scratch'
 
 // ── Local types ────────────────────────────────────────────────────────────────
 
@@ -119,6 +123,24 @@ const toEditable = (result: ImportResult, autoSubstitute: boolean): EditableReci
   }
 }
 
+const blankRecipe = (): EditableRecipe => ({
+  title: '',
+  servings: '',
+  kcal: '',
+  thumbnail_url: null,
+  creator_handle: null,
+  source_url: null,
+  suggestedTagNames: [],
+  components: [{
+    name: 'Main',
+    yield_note: '',
+    ingredients: [{ qty: '', unit: '', name: '', note: '' }],
+    steps: [''],
+    ingredient_flags: [null],
+    step_ingredient_refs: null,
+  }],
+})
+
 // ── UnitPickerModal ────────────────────────────────────────────────────────────
 
 const UNIT_OPTIONS: string[] = ['', ...UNITS]
@@ -146,10 +168,7 @@ const UnitPickerModal = ({
           renderItem={({ item }) => (
             <Pressable
               style={({ pressed }) => [styles.unitOption, item === selected && styles.unitOptionSel, pressed && { opacity: 0.7 }]}
-              onPress={() => {
-                onSelect(item)
-                onClose()
-              }}
+              onPress={() => { onSelect(item); onClose() }}
               accessibilityLabel={item ? t(`units.${item}`) : '—'}
               accessibilityState={{ selected: item === selected }}
             >
@@ -193,9 +212,7 @@ const TagPickerModal = ({
     return allTags.filter((tag) => !q || tag.name.toLowerCase().includes(q))
   }, [allTags, query])
 
-  const exactMatch = allTags.some(
-    (tag) => tag.name.toLowerCase() === query.trim().toLowerCase(),
-  )
+  const exactMatch = allTags.some((tag) => tag.name.toLowerCase() === query.trim().toLowerCase())
   const canCreate = query.trim().length > 0 && !exactMatch
 
   const handleCreate = async () => {
@@ -239,9 +256,7 @@ const TagPickerModal = ({
                 accessibilityLabel={t('tags.createTag', { name: query.trim() })}
               >
                 <Text style={styles.tagCreateText}>
-                  {creating
-                    ? t('tags.creating')
-                    : t('tags.createTag', { name: query.trim() })}
+                  {creating ? t('tags.creating') : t('tags.createTag', { name: query.trim() })}
                 </Text>
               </Pressable>
             )}
@@ -280,6 +295,7 @@ const IngredientEditor = ({
   onUnitPress,
   onReplace,
   onRestore,
+  onRemove,
 }: {
   value: StructuredIngredient
   flag: AllergenFlag | null
@@ -288,6 +304,7 @@ const IngredientEditor = ({
   onUnitPress: () => void
   onReplace: () => void
   onRestore: () => void
+  onRemove?: () => void
 }) => {
   const { t } = useTranslation()
 
@@ -303,23 +320,15 @@ const IngredientEditor = ({
     if (!flag?.allergen) return
     const title = `${t('recipes.contains')}: ${flag.allergen}`
     if (flag.substitute_applied && flag.original_display) {
-      Alert.alert(
-        title,
-        `${t('recipes.originally')} ${flag.original_display}, ${t('recipes.replacedWith')} ${flag.substitute} ${t('recipes.dueTo')} ${flag.allergen}.`,
-        [
-          { text: t('recipes.restoreOriginal'), onPress: onRestore },
-          { text: t('common.cancel'), style: 'cancel' },
-        ],
-      )
+      Alert.alert(title, `${t('recipes.originally')} ${flag.original_display}, ${t('recipes.replacedWith')} ${flag.substitute} ${t('recipes.dueTo')} ${flag.allergen}.`, [
+        { text: t('recipes.restoreOriginal'), onPress: onRestore },
+        { text: t('common.cancel'), style: 'cancel' },
+      ])
     } else if (flag.substitute) {
-      Alert.alert(
-        title,
-        `${t('recipes.suggestedSubstitute')} ${flag.substitute}`,
-        [
-          { text: t('recipes.replace'), onPress: onReplace },
-          { text: t('recipes.keepOriginal'), style: 'cancel' },
-        ],
-      )
+      Alert.alert(title, `${t('recipes.suggestedSubstitute')} ${flag.substitute}`, [
+        { text: t('recipes.replace'), onPress: onReplace },
+        { text: t('recipes.keepOriginal'), style: 'cancel' },
+      ])
     } else {
       Alert.alert(title, t('recipes.noSubstituteAvailable'))
     }
@@ -328,6 +337,16 @@ const IngredientEditor = ({
   return (
     <View style={styles.ingEditor}>
       <View style={styles.ingRow}>
+        {onRemove && (
+          <Pressable
+            style={({ pressed }) => [styles.ingRemoveBtn, pressed && { opacity: 0.6 }]}
+            onPress={onRemove}
+            hitSlop={8}
+            accessibilityLabel={t('addRecipe.removeIngredient')}
+          >
+            <Text style={styles.ingRemoveText}>−</Text>
+          </Pressable>
+        )}
         <TextInput
           style={styles.ingQty}
           value={value.qty}
@@ -362,7 +381,7 @@ const IngredientEditor = ({
         )}
       </View>
       <TextInput
-        style={styles.ingNote}
+        style={[styles.ingNote, onRemove && styles.ingNoteWithRemove]}
         value={value.note}
         onChangeText={(v) => onChange({ ...value, note: v })}
         placeholder={t('units.noteLabel')}
@@ -384,6 +403,7 @@ const EditableRecipeView = ({
   onTagRemove,
   onTagCreate,
   activeAllergens,
+  allowEditing = false,
 }: {
   recipe: EditableRecipe
   onChange: (r: EditableRecipe) => void
@@ -394,6 +414,7 @@ const EditableRecipeView = ({
   onTagRemove: (tagId: string) => void
   onTagCreate: (name: string) => Promise<Tag>
   activeAllergens: string[]
+  allowEditing?: boolean
 }) => {
   const { t } = useTranslation()
   const [unitPickerTarget, setUnitPickerTarget] = useState<{ ci: number; ii: number } | null>(null)
@@ -407,17 +428,11 @@ const EditableRecipeView = ({
     if (!flag?.substitute) return
     const originalDisplay = serializeIngredient(comp.ingredients[ii])
     const components = recipe.components.map((c, ci2) =>
-      ci2 !== ci
-        ? c
-        : {
-            ...c,
-            ingredients: c.ingredients.map((ing, idx) =>
-              idx === ii ? parseIngredient(flag.substitute!) : ing,
-            ),
-            ingredient_flags: c.ingredient_flags.map((f, idx) =>
-              idx === ii ? { ...f!, substitute_applied: true, original_display: originalDisplay } : f,
-            ),
-          },
+      ci2 !== ci ? c : {
+        ...c,
+        ingredients: c.ingredients.map((ing, idx) => idx === ii ? parseIngredient(flag.substitute!) : ing),
+        ingredient_flags: c.ingredient_flags.map((f, idx) => idx === ii ? { ...f!, substitute_applied: true, original_display: originalDisplay } : f),
+      },
     )
     onChange({ ...recipe, components })
   }
@@ -427,17 +442,11 @@ const EditableRecipeView = ({
     const flag = comp.ingredient_flags[ii]
     if (!flag?.original_display) return
     const components = recipe.components.map((c, ci2) =>
-      ci2 !== ci
-        ? c
-        : {
-            ...c,
-            ingredients: c.ingredients.map((ing, idx) =>
-              idx === ii ? parseIngredient(flag.original_display!) : ing,
-            ),
-            ingredient_flags: c.ingredient_flags.map((f, idx) =>
-              idx === ii ? { ...f!, substitute_applied: false, original_display: null } : f,
-            ),
-          },
+      ci2 !== ci ? c : {
+        ...c,
+        ingredients: c.ingredients.map((ing, idx) => idx === ii ? parseIngredient(flag.original_display!) : ing),
+        ingredient_flags: c.ingredient_flags.map((f, idx) => idx === ii ? { ...f!, substitute_applied: false, original_display: null } : f),
+      },
     )
     onChange({ ...recipe, components })
   }
@@ -446,9 +455,35 @@ const EditableRecipeView = ({
     onChange({
       ...recipe,
       components: recipe.components.map((c, ci2) =>
-        ci2 !== ci
-          ? c
-          : { ...c, ingredients: c.ingredients.map((ing, ii2) => (ii2 === ii ? val : ing)) },
+        ci2 !== ci ? c : { ...c, ingredients: c.ingredients.map((ing, ii2) => (ii2 === ii ? val : ing)) },
+      ),
+    })
+  }
+
+  const addIngredient = (ci: number) => {
+    onChange({
+      ...recipe,
+      components: recipe.components.map((c, ci2) =>
+        ci2 !== ci ? c : {
+          ...c,
+          ingredients: [...c.ingredients, { qty: '', unit: '', name: '', note: '' }],
+          ingredient_flags: [...c.ingredient_flags, null],
+        },
+      ),
+    })
+  }
+
+  const removeIngredient = (ci: number, ii: number) => {
+    const comp = recipe.components[ci]
+    if (comp.ingredients.length <= 1) return
+    onChange({
+      ...recipe,
+      components: recipe.components.map((c, ci2) =>
+        ci2 !== ci ? c : {
+          ...c,
+          ingredients: c.ingredients.filter((_, idx) => idx !== ii),
+          ingredient_flags: c.ingredient_flags.filter((_, idx) => idx !== ii),
+        },
       ),
     })
   }
@@ -462,10 +497,29 @@ const EditableRecipeView = ({
     })
   }
 
-  const currentUnit =
-    unitPickerTarget != null
-      ? (recipe.components[unitPickerTarget.ci]?.ingredients[unitPickerTarget.ii]?.unit ?? '')
-      : ''
+  const addStep = (ci: number) => {
+    onChange({
+      ...recipe,
+      components: recipe.components.map((c, ci2) =>
+        ci2 !== ci ? c : { ...c, steps: [...c.steps, ''] },
+      ),
+    })
+  }
+
+  const removeStep = (ci: number, si: number) => {
+    const comp = recipe.components[ci]
+    if (comp.steps.length <= 1) return
+    onChange({
+      ...recipe,
+      components: recipe.components.map((c, ci2) =>
+        ci2 !== ci ? c : { ...c, steps: c.steps.filter((_, idx) => idx !== si) },
+      ),
+    })
+  }
+
+  const currentUnit = unitPickerTarget != null
+    ? (recipe.components[unitPickerTarget.ci]?.ingredients[unitPickerTarget.ii]?.unit ?? '')
+    : ''
 
   return (
     <View style={styles.editView}>
@@ -473,18 +527,11 @@ const EditableRecipeView = ({
       <View style={styles.titleRow}>
         <Pressable
           style={({ pressed }) => [styles.thumbBtn, pressed && { opacity: 0.7 }]}
-          onPress={() => {
-            setImgDraft(recipe.thumbnail_url ?? '')
-            setShowImgEdit(true)
-          }}
+          onPress={() => { setImgDraft(recipe.thumbnail_url ?? ''); setShowImgEdit(true) }}
           accessibilityLabel={t('common.thumbnail')}
         >
           {recipe.thumbnail_url ? (
-            <Image
-              source={{ uri: recipe.thumbnail_url }}
-              style={styles.thumbImg}
-              resizeMode="cover"
-            />
+            <Image source={{ uri: recipe.thumbnail_url }} style={styles.thumbImg} resizeMode="cover" />
           ) : (
             <View style={styles.thumbPlaceholder}>
               <Text style={styles.thumbIcon}>🖼</Text>
@@ -494,23 +541,19 @@ const EditableRecipeView = ({
             <Text style={styles.thumbEditText}>{t('common.edit')}</Text>
           </View>
         </Pressable>
-
         <TextInput
           style={styles.titleInput}
           value={recipe.title}
           onChangeText={(v) => onChange({ ...recipe, title: v })}
           multiline
+          placeholder={t('addRecipe.newRecipe')}
+          placeholderTextColor={PlatformColor('placeholderText') as unknown as string}
           accessibilityLabel="recipe title"
         />
       </View>
 
       {/* Image URL edit modal */}
-      <Modal
-        visible={showImgEdit}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowImgEdit(false)}
-      >
+      <Modal visible={showImgEdit} transparent animationType="fade" onRequestClose={() => setShowImgEdit(false)}>
         <View style={styles.imgEditOverlay}>
           <View style={styles.imgEditBox}>
             <Text style={styles.imgEditTitle}>{t('common.imageUrl')}</Text>
@@ -535,10 +578,7 @@ const EditableRecipeView = ({
               </Pressable>
               <Pressable
                 style={({ pressed }) => [styles.imgSaveBtn, pressed && { opacity: 0.7 }]}
-                onPress={() => {
-                  onChange({ ...recipe, thumbnail_url: imgDraft.trim() || null })
-                  setShowImgEdit(false)
-                }}
+                onPress={() => { onChange({ ...recipe, thumbnail_url: imgDraft.trim() || null }); setShowImgEdit(false) }}
                 accessibilityLabel={t('common.save')}
               >
                 <Text style={styles.imgSaveText}>{t('common.save')}</Text>
@@ -550,44 +590,40 @@ const EditableRecipeView = ({
 
       {/* Servings + kcal pills */}
       <View style={styles.metaRow}>
-        {recipe.servings !== '' && (
-          <View style={styles.servingsPill}>
-            <Text style={styles.servingsLabel}>{t('recipes.serves')}</Text>
-            <TextInput
-              style={styles.servingsInput}
-              value={recipe.servings}
-              onChangeText={(v) => onChange({ ...recipe, servings: v })}
-              keyboardType="number-pad"
-              accessibilityLabel={t('recipes.serves')}
-            />
-          </View>
-        )}
-        {recipe.kcal !== '' && (
-          <View style={styles.kcalPill}>
-            <TextInput
-              style={styles.kcalInput}
-              value={recipe.kcal}
-              onChangeText={(v) => onChange({ ...recipe, kcal: v })}
-              keyboardType="number-pad"
-              accessibilityLabel={t('recipes.kcalPerServing')}
-            />
-            <Text style={styles.kcalLabel}>{t('recipes.kcalPerServing')}</Text>
-          </View>
-        )}
+        <View style={styles.servingsPill}>
+          <Text style={styles.servingsLabel}>{t('recipes.serves')}</Text>
+          <TextInput
+            style={styles.servingsInput}
+            value={recipe.servings}
+            onChangeText={(v) => onChange({ ...recipe, servings: v })}
+            keyboardType="number-pad"
+            placeholder="—"
+            placeholderTextColor={colors.brand}
+            accessibilityLabel={t('recipes.serves')}
+          />
+        </View>
+        <View style={styles.kcalPill}>
+          <TextInput
+            style={styles.kcalInput}
+            value={recipe.kcal}
+            onChangeText={(v) => onChange({ ...recipe, kcal: v })}
+            keyboardType="number-pad"
+            placeholder="—"
+            placeholderTextColor={PlatformColor('systemOrange') as unknown as string}
+            accessibilityLabel={t('recipes.kcalPerServing')}
+          />
+          <Text style={styles.kcalLabel}>{t('recipes.kcalPerServing')}</Text>
+        </View>
       </View>
 
       {/* Creator / source */}
       {(recipe.creator_handle || recipe.source_url) && (
         <View style={styles.sourceRow}>
           {recipe.creator_handle ? (
-            <Text style={styles.sourcePill}>
-              {t('addRecipe.by', { handle: recipe.creator_handle })}
-            </Text>
+            <Text style={styles.sourcePill}>{t('addRecipe.by', { handle: recipe.creator_handle })}</Text>
           ) : null}
           {recipe.source_url ? (
-            <Text style={styles.sourcePill} numberOfLines={1}>
-              {recipe.source_url}
-            </Text>
+            <Text style={styles.sourcePill} numberOfLines={1}>{recipe.source_url}</Text>
           ) : null}
         </View>
       )}
@@ -624,7 +660,6 @@ const EditableRecipeView = ({
         onCreate={onTagCreate}
         onClose={() => setShowTagPicker(false)}
       />
-
       <UnitPickerModal
         visible={unitPickerTarget != null}
         selected={currentUnit}
@@ -645,43 +680,307 @@ const EditableRecipeView = ({
             <Text style={styles.componentTitle}>{comp.name}</Text>
           )}
 
-          {comp.ingredients.length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionLabel}>{t('recipes.sectionIngredients')}</Text>
-              {comp.ingredients.map((ing, ii) => (
-                <IngredientEditor
-                  key={ii}
-                  value={ing}
-                  flag={comp.ingredient_flags[ii] ?? null}
-                  activeAllergens={activeAllergens}
-                  onChange={(v) => setIngredient(ci, ii, v)}
-                  onUnitPress={() => setUnitPickerTarget({ ci, ii })}
-                  onReplace={() => handleReplaceAllergen(ci, ii)}
-                  onRestore={() => handleRestoreAllergen(ci, ii)}
-                />
-              ))}
-            </View>
-          )}
+          {/* Ingredients */}
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>{t('recipes.sectionIngredients')}</Text>
+            {comp.ingredients.map((ing, ii) => (
+              <IngredientEditor
+                key={ii}
+                value={ing}
+                flag={comp.ingredient_flags[ii] ?? null}
+                activeAllergens={activeAllergens}
+                onChange={(v) => setIngredient(ci, ii, v)}
+                onUnitPress={() => setUnitPickerTarget({ ci, ii })}
+                onReplace={() => handleReplaceAllergen(ci, ii)}
+                onRestore={() => handleRestoreAllergen(ci, ii)}
+                onRemove={comp.ingredients.length > 1 ? () => removeIngredient(ci, ii) : undefined}
+              />
+            ))}
+            <Pressable
+              style={({ pressed }) => [styles.addRowBtn, pressed && { opacity: 0.7 }]}
+              onPress={() => addIngredient(ci)}
+              accessibilityLabel={t('addRecipe.addIngredient')}
+            >
+              <Text style={styles.addRowBtnText}>+ {t('addRecipe.addIngredient')}</Text>
+            </Pressable>
+          </View>
 
-          {comp.steps.length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionLabel}>{t('recipes.steps')}</Text>
-              {comp.steps.map((step, si) => (
-                <View key={si} style={styles.stepRow}>
-                  <Text style={styles.stepNum}>{si + 1}.</Text>
-                  <TextInput
-                    style={styles.stepInput}
-                    value={step}
-                    onChangeText={(v) => setStep(ci, si, v)}
-                    multiline
-                    accessibilityLabel={`${t('common.step')} ${si + 1}`}
-                  />
-                </View>
-              ))}
-            </View>
-          )}
+          {/* Steps */}
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>{t('recipes.steps')}</Text>
+            {comp.steps.map((step, si) => (
+              <View key={si} style={styles.stepRow}>
+                <Text style={styles.stepNum}>{si + 1}.</Text>
+                <TextInput
+                  style={styles.stepInput}
+                  value={step}
+                  onChangeText={(v) => setStep(ci, si, v)}
+                  multiline
+                  accessibilityLabel={`${t('common.step')} ${si + 1}`}
+                />
+                {comp.steps.length > 1 && (
+                  <Pressable
+                    style={({ pressed }) => [styles.stepRemoveBtn, pressed && { opacity: 0.6 }]}
+                    onPress={() => removeStep(ci, si)}
+                    hitSlop={8}
+                    accessibilityLabel={t('addRecipe.removeStep')}
+                  >
+                    <Text style={styles.stepRemoveText}>−</Text>
+                  </Pressable>
+                )}
+              </View>
+            ))}
+            <Pressable
+              style={({ pressed }) => [styles.addRowBtn, pressed && { opacity: 0.7 }]}
+              onPress={() => addStep(ci)}
+              accessibilityLabel={t('addRecipe.addStep')}
+            >
+              <Text style={styles.addRowBtnText}>+ {t('addRecipe.addStep')}</Text>
+            </Pressable>
+          </View>
         </View>
       ))}
+    </View>
+  )
+}
+
+// ── MethodPickerView ───────────────────────────────────────────────────────────
+
+const METHOD_GROUPS = [
+  [
+    { key: 'url' as ImportMode, icon: '🔗', titleKey: 'addRecipe.methodUrl', descKey: 'addRecipe.methodUrlDesc', iconBg: PlatformColor('systemBlue') },
+    { key: 'camera' as ImportMode, icon: '📷', titleKey: 'addRecipe.methodCamera', descKey: 'addRecipe.methodCameraDesc', iconBg: PlatformColor('systemOrange') },
+    { key: 'gallery' as ImportMode, icon: '🖼', titleKey: 'addRecipe.methodGallery', descKey: 'addRecipe.methodGalleryDesc', iconBg: PlatformColor('systemGreen') },
+  ],
+  [
+    { key: 'text' as ImportMode, icon: '📋', titleKey: 'addRecipe.methodText', descKey: 'addRecipe.methodTextDesc', iconBg: colors.brand },
+    { key: 'share' as ImportMode, icon: '↗', titleKey: 'addRecipe.methodShare', descKey: 'addRecipe.methodShareDesc', iconBg: PlatformColor('systemIndigo') },
+    { key: 'scratch' as ImportMode, icon: '✏️', titleKey: 'addRecipe.methodScratch', descKey: 'addRecipe.methodScratchDesc', iconBg: PlatformColor('systemPink') },
+  ],
+]
+
+const MethodPickerView = ({ onSelect }: { onSelect: (mode: ImportMode) => void }) => {
+  const { t } = useTranslation()
+  return (
+    <View style={styles.pickerWrap}>
+      <Text style={styles.pickerHeading}>{t('addRecipe.chooseMethod')}</Text>
+      {METHOD_GROUPS.map((group, gi) => (
+        <View key={gi} style={styles.pickerGroup}>
+          {group.map((method, mi) => (
+            <Pressable
+              key={method.key}
+              style={({ pressed }) => [
+                styles.methodRow,
+                mi < group.length - 1 && styles.methodRowBorder,
+                pressed && styles.methodRowPressed,
+              ]}
+              onPress={() => onSelect(method.key)}
+              accessibilityLabel={t(method.titleKey)}
+              accessibilityHint={t(method.descKey)}
+            >
+              <View style={[styles.methodIconWrap, { backgroundColor: method.iconBg as unknown as string }]}>
+                <Text style={styles.methodIcon}>{method.icon}</Text>
+              </View>
+              <View style={styles.methodTextWrap}>
+                <Text style={styles.methodTitle}>{t(method.titleKey)}</Text>
+                <Text style={styles.methodDesc}>{t(method.descKey)}</Text>
+              </View>
+              <Text style={styles.methodChevron}>›</Text>
+            </Pressable>
+          ))}
+        </View>
+      ))}
+    </View>
+  )
+}
+
+// ── UrlInputView ───────────────────────────────────────────────────────────────
+
+const UrlInputView = ({
+  url,
+  onUrlChange,
+  onPaste,
+  onImport,
+  loading,
+  progressSteps,
+}: {
+  url: string
+  onUrlChange: (v: string) => void
+  onPaste: () => void
+  onImport: () => void
+  loading: boolean
+  progressSteps: StepState[]
+}) => {
+  const { t } = useTranslation()
+  return (
+    <View style={styles.inputSection}>
+      <View style={styles.urlInputGroup}>
+        <TextInput
+          style={styles.urlInput}
+          value={url}
+          onChangeText={onUrlChange}
+          placeholder={t('addRecipe.urlPlaceholder')}
+          placeholderTextColor={PlatformColor('placeholderText') as unknown as string}
+          autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType="url"
+          editable={!loading}
+          returnKeyType="go"
+          onSubmitEditing={onImport}
+          accessibilityLabel={t('addRecipe.recipeUrl')}
+          textContentType="URL"
+        />
+        <Pressable
+          style={({ pressed }) => [styles.pasteBtn, pressed && { opacity: 0.7 }]}
+          onPress={onPaste}
+          disabled={loading}
+          accessibilityLabel={t('addRecipe.paste')}
+          hitSlop={4}
+        >
+          <Text style={styles.pasteBtnText}>{t('addRecipe.paste')}</Text>
+        </Pressable>
+      </View>
+      {progressSteps.length > 0 && (
+        <View style={styles.progressList}>
+          {progressSteps.map((s) => (
+            <View key={s.key} style={styles.progressRow}>
+              <Text style={styles.progressIcon}>{s.status === 'done' ? '✓' : '⋯'}</Text>
+              <Text style={[styles.progressLabel, s.status === 'active' && styles.progressActive]}>
+                {s.label}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
+      {loading && <ActivityIndicator style={styles.spinner} size="small" color={colors.brand} />}
+    </View>
+  )
+}
+
+// ── TextPasteView ──────────────────────────────────────────────────────────────
+
+const TextPasteView = ({
+  text,
+  onTextChange,
+  onPaste,
+  onExtract,
+  loading,
+  progressSteps,
+}: {
+  text: string
+  onTextChange: (v: string) => void
+  onPaste: () => void
+  onExtract: () => void
+  loading: boolean
+  progressSteps: StepState[]
+}) => {
+  const { t } = useTranslation()
+  return (
+    <View style={styles.inputSection}>
+      <View style={styles.textInputGroup}>
+        <TextInput
+          style={styles.textPasteInput}
+          value={text}
+          onChangeText={onTextChange}
+          placeholder={t('addRecipe.pasteTextPlaceholder')}
+          placeholderTextColor={PlatformColor('placeholderText') as unknown as string}
+          multiline
+          editable={!loading}
+          autoCapitalize="sentences"
+          autoCorrect
+          accessibilityLabel={t('addRecipe.methodText')}
+        />
+        <Pressable
+          style={({ pressed }) => [styles.textPasteInlineBtn, pressed && { opacity: 0.7 }]}
+          onPress={onPaste}
+          disabled={loading}
+          accessibilityLabel={t('addRecipe.paste')}
+        >
+          <Text style={styles.pasteBtnText}>{t('addRecipe.paste')}</Text>
+        </Pressable>
+      </View>
+      {progressSteps.length > 0 && (
+        <View style={styles.progressList}>
+          {progressSteps.map((s) => (
+            <View key={s.key} style={styles.progressRow}>
+              <Text style={styles.progressIcon}>{s.status === 'done' ? '✓' : '⋯'}</Text>
+              <Text style={[styles.progressLabel, s.status === 'active' && styles.progressActive]}>
+                {s.label}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
+      {loading && <ActivityIndicator style={styles.spinner} size="small" color={colors.brand} />}
+    </View>
+  )
+}
+
+// ── ShareView ──────────────────────────────────────────────────────────────────
+
+const ShareView = ({
+  url,
+  onUrlChange,
+  onPaste,
+  onImport,
+  loading,
+  progressSteps,
+}: {
+  url: string
+  onUrlChange: (v: string) => void
+  onPaste: () => void
+  onImport: () => void
+  loading: boolean
+  progressSteps: StepState[]
+}) => {
+  const { t } = useTranslation()
+  return (
+    <View style={styles.inputSection}>
+      <View style={styles.shareCard}>
+        <Text style={styles.shareCardIcon}>↗</Text>
+        <Text style={styles.shareCardTitle}>{t('addRecipe.shareTitle')}</Text>
+        <Text style={styles.shareCardDesc}>{t('addRecipe.shareInstructions')}</Text>
+      </View>
+      <Text style={styles.shareUrlLabel}>{t('addRecipe.shareUrlLabel')}</Text>
+      <View style={styles.urlInputGroup}>
+        <TextInput
+          style={styles.urlInput}
+          value={url}
+          onChangeText={onUrlChange}
+          placeholder={t('addRecipe.urlPlaceholder')}
+          placeholderTextColor={PlatformColor('placeholderText') as unknown as string}
+          autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType="url"
+          editable={!loading}
+          returnKeyType="go"
+          onSubmitEditing={onImport}
+          accessibilityLabel={t('addRecipe.shareUrlLabel')}
+          textContentType="URL"
+        />
+        <Pressable
+          style={({ pressed }) => [styles.pasteBtn, pressed && { opacity: 0.7 }]}
+          onPress={onPaste}
+          disabled={loading}
+          accessibilityLabel={t('addRecipe.paste')}
+          hitSlop={4}
+        >
+          <Text style={styles.pasteBtnText}>{t('addRecipe.paste')}</Text>
+        </Pressable>
+      </View>
+      {progressSteps.length > 0 && (
+        <View style={styles.progressList}>
+          {progressSteps.map((s) => (
+            <View key={s.key} style={styles.progressRow}>
+              <Text style={styles.progressIcon}>{s.status === 'done' ? '✓' : '⋯'}</Text>
+              <Text style={[styles.progressLabel, s.status === 'active' && styles.progressActive]}>
+                {s.label}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
+      {loading && <ActivityIndicator style={styles.spinner} size="small" color={colors.brand} />}
     </View>
   )
 }
@@ -696,7 +995,9 @@ const ImportRecipeScreen = ({ navigation }: Props) => {
   const { tags, create: createTagMutation } = useTags()
   const { preferences } = usePreferences()
 
+  const [mode, setMode] = useState<ImportMode | null>(null)
   const [url, setUrl] = useState('')
+  const [pastedText, setPastedText] = useState('')
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [progressSteps, setProgressSteps] = useState<StepState[]>([])
@@ -714,35 +1015,78 @@ const ImportRecipeScreen = ({ navigation }: Props) => {
 
   useEffect(() => () => { cancelRef.current?.() }, [])
 
+  // Handle incoming shared URL (from other apps via Linking)
+  useEffect(() => {
+    const handleUrl = ({ url: incomingUrl }: { url: string }) => {
+      const trimmed = incomingUrl.trim()
+      if (trimmed.startsWith('http') && !editable) {
+        setMode('url')
+        setUrl(trimmed)
+      }
+    }
+    const sub = Linking.addEventListener('url', handleUrl)
+    Linking.getInitialURL().then((initialUrl) => {
+      if (initialUrl) handleUrl({ url: initialUrl })
+    })
+    return () => sub.remove()
+  }, [editable])
+
   useEffect(() => {
     if (!editable) return
     const unsub = navigation.addListener('beforeRemove', (e) => {
       e.preventDefault()
-      Alert.alert(
-        t('addRecipe.discard'),
-        undefined,
-        [
-          { text: t('common.cancel'), style: 'cancel' },
-          {
-            text: t('addRecipe.discard'),
-            style: 'destructive',
-            onPress: () => navigation.dispatch(e.data.action),
-          },
-        ],
-      )
+      Alert.alert(t('addRecipe.discard'), undefined, [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('addRecipe.discard'), style: 'destructive', onPress: () => navigation.dispatch(e.data.action) },
+      ])
     })
     return unsub
   }, [navigation, editable, t])
 
   useLayoutEffect(() => {
-    navigation.setOptions({
-      title: editable ? t('addRecipe.editRecipe') : t('addRecipe.importRecipe'),
-    })
-  }, [navigation, editable, t])
+    if (editable) {
+      navigation.setOptions({
+        title: t('addRecipe.editRecipe'),
+        headerLeft: undefined,
+      })
+    } else if (mode) {
+      const modeTitle: Record<ImportMode, string> = {
+        url: t('addRecipe.fromUrl'),
+        camera: t('addRecipe.methodCamera'),
+        gallery: t('addRecipe.methodGallery'),
+        text: t('addRecipe.fromText'),
+        share: t('addRecipe.methodShare'),
+        scratch: t('addRecipe.methodScratch'),
+      }
+      navigation.setOptions({
+        title: modeTitle[mode],
+        headerLeft: () => (
+          <Pressable
+            onPress={() => { reset(); setMode(null) }}
+            hitSlop={8}
+            style={({ pressed }) => [{ paddingHorizontal: 4 }, pressed && { opacity: 0.5 }]}
+            accessibilityLabel={t('common.cancel')}
+          >
+            <Text style={styles.headerBackBtn}>{t('addRecipe.addRecipe')}</Text>
+          </Pressable>
+        ),
+      })
+    } else {
+      navigation.setOptions({
+        title: t('addRecipe.addRecipe'),
+        headerLeft: undefined,
+      })
+    }
+  }, [navigation, mode, editable, t])
 
-  const handlePaste = async () => {
+  const handlePasteUrl = async () => {
     const text = await Clipboard.getStringAsync()
     if (text) setUrl(text.trim())
+  }
+
+  const handlePasteText = async () => {
+    const text = await Clipboard.getStringAsync()
+    if (text) setPastedText((prev) => (prev ? prev + '\n' + text : text))
   }
 
   const reset = () => {
@@ -752,9 +1096,45 @@ const ImportRecipeScreen = ({ navigation }: Props) => {
     setEditable(null)
     setSelectedTags([])
     setError(null)
+    setUrl('')
+    setPastedText('')
   }
 
-  const handleImport = () => {
+  const applyImportResult = (res: ImportResult) => {
+    if (res.recipe) {
+      const editableRecipe = toEditable(res, autoSubstitute)
+      setEditable(editableRecipe)
+      setSelectedTags(
+        tags.filter((tag) =>
+          editableRecipe.suggestedTagNames.some((name) => name.toLowerCase() === tag.name.toLowerCase()),
+        ),
+      )
+    } else {
+      setError(res.error ?? t('addRecipe.importFailed'))
+    }
+    setLoading(false)
+  }
+
+  const startStreamCallbacks = () => ({
+    onStage(stage: StageEvent) {
+      setProgressSteps((prev) => [
+        ...prev.map((s) => (s.status === 'active' ? { ...s, status: 'done' as const } : s)),
+        { ...stage, status: 'active' },
+      ])
+    },
+    onDone(res: ImportResult) {
+      setProgressSteps((prev) =>
+        prev.map((s) => (s.status === 'active' ? { ...s, status: 'done' as const } : s)),
+      )
+      applyImportResult(res)
+    },
+    onError(msg: string) {
+      setError(msg)
+      setLoading(false)
+    },
+  })
+
+  const handleImportUrl = () => {
     if (!url.trim()) return
     cancelRef.current?.()
     setLoading(true)
@@ -762,38 +1142,90 @@ const ImportRecipeScreen = ({ navigation }: Props) => {
     setEditable(null)
     setSelectedTags([])
     setProgressSteps([])
+    cancelRef.current = api.streamImportFetch(url.trim(), startStreamCallbacks())
+  }
 
-    cancelRef.current = api.streamImportFetch(url.trim(), {
-      onStage(stage) {
-        setProgressSteps((prev) => [
-          ...prev.map((s) => (s.status === 'active' ? { ...s, status: 'done' as const } : s)),
-          { ...stage, status: 'active' },
-        ])
-      },
-      onDone(res) {
-        setProgressSteps((prev) =>
-          prev.map((s) => (s.status === 'active' ? { ...s, status: 'done' as const } : s)),
-        )
-        if (res.recipe) {
-          const editableRecipe = toEditable(res, autoSubstitute)
-          setEditable(editableRecipe)
-          setSelectedTags(
-            tags.filter((tag) =>
-              editableRecipe.suggestedTagNames.some(
-                (name) => name.toLowerCase() === tag.name.toLowerCase(),
-              ),
-            ),
-          )
-        } else {
-          setError(res.error ?? t('addRecipe.importFailed'))
-        }
-        setLoading(false)
-      },
-      onError(msg) {
-        setError(msg)
-        setLoading(false)
-      },
+  const handleImportText = () => {
+    if (!pastedText.trim()) return
+    cancelRef.current?.()
+    setLoading(true)
+    setError(null)
+    setEditable(null)
+    setSelectedTags([])
+    setProgressSteps([])
+    cancelRef.current = api.streamTextImportFetch(pastedText.trim(), startStreamCallbacks())
+  }
+
+  const handleCamera = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync()
+    if (status !== 'granted') {
+      Alert.alert(
+        t('addRecipe.cameraPermissionDenied'),
+        t('addRecipe.cameraPermissionDeniedMsg'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('addRecipe.openSettings'), onPress: () => Linking.openSettings() },
+        ],
+      )
+      return
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      quality: 0.7,
+      base64: true,
     })
+    if (!result.canceled && result.assets[0]?.base64) {
+      startImageImport(result.assets[0].base64, result.assets[0].mimeType ?? 'image/jpeg')
+    }
+  }
+
+  const handleGallery = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
+    if (status !== 'granted') {
+      Alert.alert(
+        t('addRecipe.galleryPermissionDenied'),
+        t('addRecipe.galleryPermissionDeniedMsg'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('addRecipe.openSettings'), onPress: () => Linking.openSettings() },
+        ],
+      )
+      return
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.7,
+      base64: true,
+    })
+    if (!result.canceled && result.assets[0]?.base64) {
+      startImageImport(result.assets[0].base64, result.assets[0].mimeType ?? 'image/jpeg')
+    }
+  }
+
+  const startImageImport = (imageBase64: string, mimeType: string) => {
+    cancelRef.current?.()
+    setLoading(true)
+    setError(null)
+    setEditable(null)
+    setSelectedTags([])
+    setProgressSteps([])
+    cancelRef.current = api.streamImageImportFetch(imageBase64, mimeType, startStreamCallbacks())
+  }
+
+  const handleModeSelect = (selectedMode: ImportMode) => {
+    reset()
+    if (selectedMode === 'camera') {
+      setMode('camera')
+      handleCamera()
+    } else if (selectedMode === 'gallery') {
+      setMode('gallery')
+      handleGallery()
+    } else if (selectedMode === 'scratch') {
+      setMode('scratch')
+      setEditable(blankRecipe())
+    } else {
+      setMode(selectedMode)
+    }
   }
 
   const handleSave = async () => {
@@ -814,13 +1246,7 @@ const ImportRecipeScreen = ({ navigation }: Props) => {
           ingredients: c.ingredients.map(serializeIngredient),
           steps: c.steps,
           ingredient_flags: c.ingredient_flags.map(
-            (f) =>
-              f ?? {
-                allergen: null,
-                substitute: null,
-                substitute_applied: false,
-                original_display: null,
-              },
+            (f) => f ?? { allergen: null, substitute: null, substitute_applied: false, original_display: null },
           ),
           step_ingredient_refs: c.step_ingredient_refs,
         })),
@@ -839,21 +1265,13 @@ const ImportRecipeScreen = ({ navigation }: Props) => {
     async (name: string): Promise<Tag> => createTagMutation.mutateAsync(name),
     [createTagMutation],
   )
+  const handleTagAdd = useCallback((tag: Tag) => setSelectedTags((prev) => [...prev, tag]), [])
+  const handleTagRemove = useCallback((id: string) => setSelectedTags((prev) => prev.filter((tag) => tag.id !== id)), [])
+  const selectedTagIds = useMemo(() => new Set(selectedTags.map((tag) => tag.id)), [selectedTags])
 
-  const handleTagAdd = useCallback(
-    (tag: Tag) => setSelectedTags((prev) => [...prev, tag]),
-    [],
-  )
-
-  const handleTagRemove = useCallback(
-    (id: string) => setSelectedTags((prev) => prev.filter((tag) => tag.id !== id)),
-    [],
-  )
-
-  const selectedTagIds = useMemo(
-    () => new Set(selectedTags.map((tag) => tag.id)),
-    [selectedTags],
-  )
+  const showImportBtn = mode === 'url' && !loading && !editable
+  const showImportShareBtn = mode === 'share' && !loading && !editable
+  const showExtractBtn = mode === 'text' && !loading && !editable
 
   return (
     <KeyboardAvoidingView
@@ -866,61 +1284,67 @@ const ImportRecipeScreen = ({ navigation }: Props) => {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        {/* URL input phase */}
-        {!editable && (
-          <View style={styles.urlSection}>
-            <Text style={styles.urlLabel}>{t('addRecipe.recipeUrl')}</Text>
-            <View style={styles.urlRow}>
-              <TextInput
-                style={styles.urlInput}
-                value={url}
-                onChangeText={setUrl}
-                placeholder={t('addRecipe.urlPlaceholder')}
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="url"
-                editable={!loading}
-                returnKeyType="go"
-                onSubmitEditing={handleImport}
-                accessibilityLabel={t('addRecipe.recipeUrl')}
-              />
-              <Pressable
-                style={({ pressed }) => [styles.pasteBtn, pressed && { opacity: 0.7 }]}
-                onPress={handlePaste}
-                disabled={loading}
-                accessibilityLabel={t('addRecipe.paste')}
-              >
-                <Text style={styles.pasteBtnText}>{t('addRecipe.paste')}</Text>
-              </Pressable>
-            </View>
+        {/* Picker — shown when no mode selected and no editable */}
+        {!mode && !editable && (
+          <MethodPickerView onSelect={handleModeSelect} />
+        )}
 
+        {/* URL import */}
+        {mode === 'url' && !editable && (
+          <UrlInputView
+            url={url}
+            onUrlChange={setUrl}
+            onPaste={handlePasteUrl}
+            onImport={handleImportUrl}
+            loading={loading}
+            progressSteps={progressSteps}
+          />
+        )}
+
+        {/* Text paste */}
+        {mode === 'text' && !editable && (
+          <TextPasteView
+            text={pastedText}
+            onTextChange={setPastedText}
+            onPaste={handlePasteText}
+            onExtract={handleImportText}
+            loading={loading}
+            progressSteps={progressSteps}
+          />
+        )}
+
+        {/* Share */}
+        {mode === 'share' && !editable && (
+          <ShareView
+            url={url}
+            onUrlChange={setUrl}
+            onPaste={handlePasteUrl}
+            onImport={handleImportUrl}
+            loading={loading}
+            progressSteps={progressSteps}
+          />
+        )}
+
+        {/* Camera/Gallery loading state (no dedicated view, just progress) */}
+        {(mode === 'camera' || mode === 'gallery') && !editable && (
+          <View style={styles.inputSection}>
             {progressSteps.length > 0 && (
               <View style={styles.progressList}>
                 {progressSteps.map((s) => (
                   <View key={s.key} style={styles.progressRow}>
                     <Text style={styles.progressIcon}>{s.status === 'done' ? '✓' : '⋯'}</Text>
-                    <Text
-                      style={[styles.progressLabel, s.status === 'active' && styles.progressActive]}
-                    >
+                    <Text style={[styles.progressLabel, s.status === 'active' && styles.progressActive]}>
                       {s.label}
                     </Text>
                   </View>
                 ))}
               </View>
             )}
-
-            {loading && (
-              <ActivityIndicator
-                style={styles.spinner}
-                size="small"
-                color={colors.brand}
-                accessibilityLabel={t('common.loading')}
-              />
-            )}
+            {loading && <ActivityIndicator style={styles.spinner} size="large" color={colors.brand} />}
           </View>
         )}
 
-        {/* Editable recipe phase */}
+        {/* Editable recipe view */}
         {editable && (
           <EditableRecipeView
             recipe={editable}
@@ -932,6 +1356,7 @@ const ImportRecipeScreen = ({ navigation }: Props) => {
             onTagRemove={handleTagRemove}
             onTagCreate={handleTagCreate}
             activeAllergens={activeAllergens}
+            allowEditing={mode === 'scratch'}
           />
         )}
 
@@ -944,45 +1369,73 @@ const ImportRecipeScreen = ({ navigation }: Props) => {
       </ScrollView>
 
       {/* Action bar */}
-      <View style={[styles.actionBar, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-        {editable ? (
-          <>
+      {(mode || editable) && (
+        <View style={[styles.actionBar, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+          {editable ? (
+            <>
+              <Pressable
+                style={({ pressed }) => [styles.secondaryBtn, styles.flex, pressed && { opacity: 0.7 }]}
+                onPress={() => { reset(); setMode(null) }}
+                disabled={saving}
+                accessibilityLabel={t('addRecipe.discard')}
+              >
+                <Text style={styles.secondaryBtnText}>{t('addRecipe.discard')}</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.primaryBtn, styles.flex, saving && styles.btnDisabled, pressed && { opacity: 0.7 }]}
+                onPress={handleSave}
+                disabled={saving}
+                accessibilityLabel={t('common.save')}
+              >
+                {saving ? (
+                  <ActivityIndicator color={colors.background} size="small" />
+                ) : (
+                  <Text style={styles.primaryBtnText}>{t('common.save')}</Text>
+                )}
+              </Pressable>
+            </>
+          ) : showImportBtn ? (
             <Pressable
-              style={({ pressed }) => [styles.secondaryBtn, styles.flex, pressed && { opacity: 0.7 }]}
-              onPress={reset}
-              disabled={saving}
-              accessibilityLabel={t('addRecipe.discard')}
+              style={({ pressed }) => [styles.primaryBtn, styles.flex, (!url.trim() || loading) && styles.btnDisabled, pressed && { opacity: 0.7 }]}
+              onPress={handleImportUrl}
+              disabled={!url.trim() || loading}
+              accessibilityLabel={t('addRecipe.import')}
             >
-              <Text style={styles.secondaryBtnText}>{t('addRecipe.discard')}</Text>
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [styles.primaryBtn, styles.flex, saving && styles.btnDisabled, pressed && { opacity: 0.7 }]}
-              onPress={handleSave}
-              disabled={saving}
-              accessibilityLabel={t('common.save')}
-            >
-              {saving ? (
+              {loading ? (
                 <ActivityIndicator color={colors.background} size="small" />
               ) : (
-                <Text style={styles.primaryBtnText}>{t('common.save')}</Text>
+                <Text style={styles.primaryBtnText}>{t('addRecipe.import')}</Text>
               )}
             </Pressable>
-          </>
-        ) : (
-          <Pressable
-            style={({ pressed }) => [styles.primaryBtn, styles.flex, (!url.trim() || loading) && styles.btnDisabled, pressed && { opacity: 0.7 }]}
-            onPress={handleImport}
-            disabled={!url.trim() || loading}
-            accessibilityLabel={t('addRecipe.import')}
-          >
-            {loading ? (
-              <ActivityIndicator color={colors.background} size="small" />
-            ) : (
-              <Text style={styles.primaryBtnText}>{t('addRecipe.import')}</Text>
-            )}
-          </Pressable>
-        )}
-      </View>
+          ) : showImportShareBtn ? (
+            <Pressable
+              style={({ pressed }) => [styles.primaryBtn, styles.flex, (!url.trim() || loading) && styles.btnDisabled, pressed && { opacity: 0.7 }]}
+              onPress={handleImportUrl}
+              disabled={!url.trim() || loading}
+              accessibilityLabel={t('addRecipe.import')}
+            >
+              {loading ? (
+                <ActivityIndicator color={colors.background} size="small" />
+              ) : (
+                <Text style={styles.primaryBtnText}>{t('addRecipe.import')}</Text>
+              )}
+            </Pressable>
+          ) : showExtractBtn ? (
+            <Pressable
+              style={({ pressed }) => [styles.primaryBtn, styles.flex, (!pastedText.trim() || loading) && styles.btnDisabled, pressed && { opacity: 0.7 }]}
+              onPress={handleImportText}
+              disabled={!pastedText.trim() || loading}
+              accessibilityLabel={t('addRecipe.extractRecipe')}
+            >
+              {loading ? (
+                <ActivityIndicator color={colors.background} size="small" />
+              ) : (
+                <Text style={styles.primaryBtnText}>{t('addRecipe.extractRecipe')}</Text>
+              )}
+            </Pressable>
+          ) : null}
+        </View>
+      )}
     </KeyboardAvoidingView>
   )
 }
@@ -995,48 +1448,175 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   scrollContent: { paddingBottom: 120 },
 
-  // URL section
-  urlSection: { padding: 16, gap: 12 },
-  urlLabel: { fontSize: 14, fontWeight: '600', color: colors.secondaryLabel },
-  urlRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  // Header back button
+  headerBackBtn: {
+    fontSize: 17,
+    color: PlatformColor('systemBlue') as unknown as string,
+  },
+
+  // Method picker
+  pickerWrap: { paddingTop: 8, paddingHorizontal: 16, gap: 12 },
+  pickerHeading: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: PlatformColor('secondaryLabel') as unknown as string,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+    marginBottom: 4,
+    marginLeft: 4,
+  },
+  pickerGroup: {
+    backgroundColor: PlatformColor('secondarySystemBackground') as unknown as string,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  methodRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 14,
+    backgroundColor: PlatformColor('secondarySystemBackground') as unknown as string,
+    minHeight: 64,
+  },
+  methodRowBorder: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: PlatformColor('separator') as unknown as string,
+  },
+  methodRowPressed: {
+    backgroundColor: PlatformColor('systemFill') as unknown as string,
+  },
+  methodIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  methodIcon: { fontSize: 20 },
+  methodTextWrap: { flex: 1 },
+  methodTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: PlatformColor('label') as unknown as string,
+    marginBottom: 1,
+  },
+  methodDesc: {
+    fontSize: 13,
+    color: PlatformColor('secondaryLabel') as unknown as string,
+    lineHeight: 17,
+  },
+  methodChevron: {
+    fontSize: 20,
+    color: PlatformColor('systemGray3') as unknown as string,
+    fontWeight: '300',
+  },
+
+  // Input section (common wrapper for all input modes)
+  inputSection: { padding: 16, gap: 12 },
+
+  // URL input
+  urlInputGroup: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   urlInput: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: colors.opaqueSeparator,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: PlatformColor('opaqueSeparator') as unknown as string,
     borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    backgroundColor: colors.background,
-    color: colors.label,
+    paddingVertical: 11,
+    fontSize: 15,
+    backgroundColor: PlatformColor('secondarySystemBackground') as unknown as string,
+    color: PlatformColor('label') as unknown as string,
   },
   pasteBtn: {
-    backgroundColor: colors.secondaryBackground,
-    borderWidth: 1,
-    borderColor: colors.opaqueSeparator,
+    backgroundColor: PlatformColor('secondarySystemBackground') as unknown as string,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: PlatformColor('opaqueSeparator') as unknown as string,
     borderRadius: 8,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 11,
   },
-  pasteBtnText: { fontSize: 14, color: colors.secondaryLabel, fontWeight: '500' },
+  pasteBtnText: {
+    fontSize: 15,
+    color: PlatformColor('secondaryLabel') as unknown as string,
+    fontWeight: '500',
+  },
+
+  // Text paste input
+  textInputGroup: { gap: 8 },
+  textPasteInput: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: PlatformColor('opaqueSeparator') as unknown as string,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingTop: 11,
+    paddingBottom: 11,
+    fontSize: 15,
+    backgroundColor: PlatformColor('secondarySystemBackground') as unknown as string,
+    color: PlatformColor('label') as unknown as string,
+    minHeight: 200,
+    textAlignVertical: 'top',
+  },
+  textPasteInlineBtn: {
+    alignSelf: 'flex-start',
+    backgroundColor: PlatformColor('secondarySystemBackground') as unknown as string,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: PlatformColor('opaqueSeparator') as unknown as string,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+
+  // Share card
+  shareCard: {
+    backgroundColor: PlatformColor('secondarySystemBackground') as unknown as string,
+    borderRadius: 12,
+    padding: 20,
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  shareCardIcon: { fontSize: 36 },
+  shareCardTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: PlatformColor('label') as unknown as string,
+    textAlign: 'center',
+  },
+  shareCardDesc: {
+    fontSize: 14,
+    color: PlatformColor('secondaryLabel') as unknown as string,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  shareUrlLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: PlatformColor('secondaryLabel') as unknown as string,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+    marginLeft: 4,
+  },
 
   // Progress
   progressList: { gap: 6 },
   progressRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  progressIcon: { fontSize: 13, color: colors.secondaryLabel, width: 14 },
-  progressLabel: { fontSize: 13, color: colors.secondaryLabel, flex: 1 },
+  progressIcon: { fontSize: 13, color: PlatformColor('secondaryLabel') as unknown as string, width: 14 },
+  progressLabel: { fontSize: 13, color: PlatformColor('secondaryLabel') as unknown as string, flex: 1 },
   progressActive: { color: colors.brand, fontWeight: '600' },
-  spinner: { marginTop: 4 },
+  spinner: { marginTop: 8 },
 
   // Error box
   errorBox: {
     margin: 16,
-    backgroundColor: '#fee2e2',
+    backgroundColor: colors.brandLight,
     borderRadius: 10,
     padding: 12,
+    borderWidth: 1,
+    borderColor: colors.brand,
   },
-  errorTitle: { fontSize: 13, fontWeight: '700', color: colors.red, marginBottom: 4 },
-  errorMsg: { fontSize: 13, color: '#b91c1c', lineHeight: 18 },
+  errorTitle: { fontSize: 13, fontWeight: '700', color: colors.brand, marginBottom: 4 },
+  errorMsg: { fontSize: 13, color: colors.brand, lineHeight: 18, opacity: 0.8 },
 
   // Action bar
   actionBar: {
@@ -1044,18 +1624,18 @@ const styles = StyleSheet.create({
     gap: 8,
     padding: 12,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.separator,
-    backgroundColor: colors.background,
+    borderColor: PlatformColor('separator') as unknown as string,
+    backgroundColor: PlatformColor('systemBackground') as unknown as string,
   },
   secondaryBtn: {
     borderWidth: 1,
-    borderColor: colors.opaqueSeparator,
+    borderColor: PlatformColor('opaqueSeparator') as unknown as string,
     borderRadius: 10,
     paddingVertical: 13,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  secondaryBtnText: { fontSize: 15, color: colors.secondaryLabel, fontWeight: '500' },
+  secondaryBtnText: { fontSize: 15, color: PlatformColor('secondaryLabel') as unknown as string, fontWeight: '500' },
   primaryBtn: {
     backgroundColor: colors.brand,
     borderRadius: 10,
@@ -1064,7 +1644,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: 46,
   },
-  primaryBtnText: { fontSize: 15, color: colors.background, fontWeight: '600' },
+  primaryBtnText: { fontSize: 15, color: '#fff', fontWeight: '600' },
   btnDisabled: { opacity: 0.4 },
 
   // Editable view
@@ -1073,15 +1653,15 @@ const styles = StyleSheet.create({
   // Title row
   titleRow: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', marginBottom: 12 },
   thumbBtn: {
-    width: 64,
-    height: 64,
-    borderRadius: 10,
+    width: 68,
+    height: 68,
+    borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: colors.secondaryBackground,
+    backgroundColor: PlatformColor('secondarySystemBackground') as unknown as string,
   },
-  thumbImg: { width: 64, height: 64 },
-  thumbPlaceholder: { width: 64, height: 64, alignItems: 'center', justifyContent: 'center' },
-  thumbIcon: { fontSize: 24 },
+  thumbImg: { width: 68, height: 68 },
+  thumbPlaceholder: { width: 68, height: 68, alignItems: 'center', justifyContent: 'center' },
+  thumbIcon: { fontSize: 28 },
   thumbEditBadge: {
     position: 'absolute',
     bottom: 0,
@@ -1091,35 +1671,39 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     alignItems: 'center',
   },
-  thumbEditText: { fontSize: 8, color: colors.background, fontWeight: '700', letterSpacing: 0.5 },
+  thumbEditText: { fontSize: 8, color: '#fff', fontWeight: '700', letterSpacing: 0.5 },
   titleInput: {
     flex: 1,
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
-    color: colors.label,
+    color: PlatformColor('label') as unknown as string,
     borderBottomWidth: 1,
-    borderColor: colors.opaqueSeparator,
+    borderColor: PlatformColor('opaqueSeparator') as unknown as string,
     paddingBottom: 4,
-    lineHeight: 24,
+    lineHeight: 26,
   },
 
   // Image edit modal
-  imgEditOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'center',
-    padding: 24,
+  imgEditOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: 24 },
+  imgEditBox: {
+    backgroundColor: PlatformColor('systemBackground') as unknown as string,
+    borderRadius: 14,
+    padding: 20,
   },
-  imgEditBox: { backgroundColor: colors.background, borderRadius: 14, padding: 20 },
-  imgEditTitle: { fontSize: 14, fontWeight: '600', color: colors.secondaryLabel, marginBottom: 12 },
+  imgEditTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: PlatformColor('secondaryLabel') as unknown as string,
+    marginBottom: 12,
+  },
   imgEditInput: {
     borderWidth: 1,
-    borderColor: colors.opaqueSeparator,
+    borderColor: PlatformColor('opaqueSeparator') as unknown as string,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
     fontSize: 14,
-    color: colors.label,
+    color: PlatformColor('label') as unknown as string,
     marginBottom: 12,
   },
   imgEditActions: { flexDirection: 'row', gap: 8, justifyContent: 'flex-end' },
@@ -1128,11 +1712,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: colors.opaqueSeparator,
+    borderColor: PlatformColor('opaqueSeparator') as unknown as string,
   },
-  imgCancelText: { fontSize: 14, color: colors.secondaryLabel },
+  imgCancelText: { fontSize: 14, color: PlatformColor('secondaryLabel') as unknown as string },
   imgSaveBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.brand },
-  imgSaveText: { fontSize: 14, color: colors.background, fontWeight: '600' },
+  imgSaveText: { fontSize: 14, color: '#fff', fontWeight: '600' },
 
   // Meta pills
   metaRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
@@ -1150,7 +1734,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: colors.brand,
-    minWidth: 20,
+    minWidth: 24,
     textAlign: 'center',
     padding: 0,
   },
@@ -1158,7 +1742,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#fef3c7',
+    backgroundColor: PlatformColor('systemFill') as unknown as string,
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -1166,19 +1750,19 @@ const styles = StyleSheet.create({
   kcalInput: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#92400e',
+    color: PlatformColor('systemOrange') as unknown as string,
     minWidth: 32,
     textAlign: 'center',
     padding: 0,
   },
-  kcalLabel: { fontSize: 12, color: '#92400e', fontWeight: '500' },
+  kcalLabel: { fontSize: 12, color: PlatformColor('systemOrange') as unknown as string, fontWeight: '500' },
 
   // Source badges
   sourceRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
   sourcePill: {
     fontSize: 11,
-    color: colors.secondaryLabel,
-    backgroundColor: colors.secondaryBackground,
+    color: PlatformColor('secondaryLabel') as unknown as string,
+    backgroundColor: PlatformColor('secondarySystemBackground') as unknown as string,
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -1188,56 +1772,41 @@ const styles = StyleSheet.create({
   // Tags section
   tagsSection: { marginBottom: 16 },
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  tagChip: {
-    backgroundColor: colors.brandLight,
-    borderRadius: 14,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
+  tagChip: { backgroundColor: colors.brandLight, borderRadius: 14, paddingHorizontal: 10, paddingVertical: 5 },
   tagChipText: { fontSize: 12, color: colors.brand, fontWeight: '500' },
   addTagBtn: {
     borderWidth: 1,
-    borderColor: colors.opaqueSeparator,
+    borderColor: PlatformColor('opaqueSeparator') as unknown as string,
     borderStyle: 'dashed',
     borderRadius: 14,
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
-  addTagBtnText: { fontSize: 12, color: colors.secondaryLabel },
+  addTagBtnText: { fontSize: 12, color: PlatformColor('secondaryLabel') as unknown as string },
 
   // Tag picker modal
-  tagModalWrap: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'flex-end',
-  },
+  tagModalWrap: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   tagModal: {
-    backgroundColor: colors.background,
+    backgroundColor: PlatformColor('systemBackground') as unknown as string,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     paddingTop: 8,
     maxHeight: '72%',
     paddingBottom: 24,
   },
-  tagModalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-  },
-  tagModalTitle: { fontSize: 16, fontWeight: '700', color: colors.label },
-  tagModalClose: { fontSize: 18, color: colors.secondaryLabel, padding: 4 },
+  tagModalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8 },
+  tagModalTitle: { fontSize: 16, fontWeight: '700', color: PlatformColor('label') as unknown as string },
+  tagModalClose: { fontSize: 18, color: PlatformColor('secondaryLabel') as unknown as string, padding: 4 },
   tagSearch: {
     marginHorizontal: 16,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: colors.opaqueSeparator,
+    borderColor: PlatformColor('opaqueSeparator') as unknown as string,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
     fontSize: 14,
-    color: colors.label,
+    color: PlatformColor('label') as unknown as string,
   },
   tagScrollList: { maxHeight: 320 },
   tagCreateRow: {
@@ -1245,7 +1814,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     backgroundColor: colors.brandLight,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.separator,
+    borderColor: PlatformColor('separator') as unknown as string,
   },
   tagCreateText: { fontSize: 14, color: colors.brand, fontWeight: '600' },
   tagListRow: {
@@ -1255,16 +1824,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.separator,
+    borderColor: PlatformColor('separator') as unknown as string,
   },
-  tagListText: { fontSize: 14, color: colors.secondaryLabel },
+  tagListText: { fontSize: 14, color: PlatformColor('secondaryLabel') as unknown as string },
   tagCheck: { fontSize: 16, color: colors.brand },
-  tagEmpty: { padding: 16, fontSize: 13, color: colors.tertiaryLabel, textAlign: 'center' },
+  tagEmpty: { padding: 16, fontSize: 13, color: PlatformColor('tertiaryLabel') as unknown as string, textAlign: 'center' },
 
   // Unit picker sheet
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' },
   unitSheet: {
-    backgroundColor: colors.background,
+    backgroundColor: PlatformColor('systemBackground') as unknown as string,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     paddingTop: 8,
@@ -1273,7 +1842,7 @@ const styles = StyleSheet.create({
   sheetHandle: {
     width: 36,
     height: 4,
-    backgroundColor: colors.opaqueSeparator,
+    backgroundColor: PlatformColor('opaqueSeparator') as unknown as string,
     borderRadius: 2,
     alignSelf: 'center',
     marginBottom: 8,
@@ -1282,45 +1851,54 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.separator,
+    borderColor: PlatformColor('separator') as unknown as string,
   },
   unitOptionSel: { backgroundColor: colors.brandLight },
-  unitOptionText: { fontSize: 15, color: colors.secondaryLabel },
+  unitOptionText: { fontSize: 15, color: PlatformColor('secondaryLabel') as unknown as string },
   unitOptionTextSel: { color: colors.brand, fontWeight: '600' },
 
   // Ingredient editor
   ingEditor: {
     paddingVertical: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.separator,
+    borderColor: PlatformColor('separator') as unknown as string,
     gap: 4,
   },
   ingRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  ingRemoveBtn: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: PlatformColor('systemRed') as unknown as string,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ingRemoveText: { fontSize: 16, color: '#fff', fontWeight: '600', lineHeight: 20 },
   ingQty: {
     width: 44,
     borderBottomWidth: 1,
-    borderColor: colors.opaqueSeparator,
+    borderColor: PlatformColor('opaqueSeparator') as unknown as string,
     fontSize: 14,
-    color: colors.label,
+    color: PlatformColor('label') as unknown as string,
     textAlign: 'center',
     paddingVertical: 4,
     paddingHorizontal: 4,
   },
   ingUnitBtn: {
     borderBottomWidth: 1,
-    borderColor: colors.opaqueSeparator,
+    borderColor: PlatformColor('opaqueSeparator') as unknown as string,
     paddingVertical: 4,
     paddingHorizontal: 4,
     minWidth: 36,
   },
   ingUnitText: { fontSize: 13, color: colors.brand, fontWeight: '500' },
-  ingPlaceholder: { color: colors.tertiaryLabel },
+  ingPlaceholder: { color: PlatformColor('tertiaryLabel') as unknown as string },
   ingName: {
     flex: 1,
     borderBottomWidth: 1,
-    borderColor: colors.opaqueSeparator,
+    borderColor: PlatformColor('opaqueSeparator') as unknown as string,
     fontSize: 14,
-    color: colors.label,
+    color: PlatformColor('label') as unknown as string,
     paddingVertical: 4,
     paddingHorizontal: 4,
   },
@@ -1335,37 +1913,71 @@ const styles = StyleSheet.create({
   allergenText: { fontSize: 10, color: '#92400e', fontWeight: '600' },
   ingNote: {
     fontSize: 12,
-    color: colors.tertiaryLabel,
+    color: PlatformColor('tertiaryLabel') as unknown as string,
     borderBottomWidth: 1,
-    borderColor: colors.separator,
+    borderColor: PlatformColor('separator') as unknown as string,
     paddingVertical: 4,
     paddingHorizontal: 4,
     fontStyle: 'italic',
     marginLeft: 52,
   },
+  ingNoteWithRemove: { marginLeft: 80 },
+
+  // Add row buttons
+  addRowBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    alignSelf: 'flex-start',
+  },
+  addRowBtnText: {
+    fontSize: 14,
+    color: colors.brand,
+    fontWeight: '500',
+  },
 
   // Component sections
   componentBlock: { marginTop: 16 },
-  componentTitle: { fontSize: 16, fontWeight: '700', color: colors.secondaryLabel, marginBottom: 10 },
+  componentTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: PlatformColor('secondaryLabel') as unknown as string,
+    marginBottom: 10,
+  },
   section: { marginBottom: 14 },
   sectionLabel: {
     fontSize: 11,
     fontWeight: '700',
-    color: colors.tertiaryLabel,
+    color: PlatformColor('tertiaryLabel') as unknown as string,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 6,
   },
   stepRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginBottom: 8 },
-  stepNum: { fontSize: 14, fontWeight: '700', color: colors.blue, width: 24, marginTop: 3 },
+  stepNum: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: PlatformColor('systemBlue') as unknown as string,
+    width: 24,
+    marginTop: 3,
+  },
   stepInput: {
     flex: 1,
     fontSize: 14,
-    color: colors.label,
+    color: PlatformColor('label') as unknown as string,
     lineHeight: 20,
     borderBottomWidth: 1,
-    borderColor: colors.opaqueSeparator,
+    borderColor: PlatformColor('opaqueSeparator') as unknown as string,
     paddingVertical: 4,
     paddingHorizontal: 4,
   },
+  stepRemoveBtn: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: PlatformColor('systemRed') as unknown as string,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 3,
+  },
+  stepRemoveText: { fontSize: 16, color: '#fff', fontWeight: '600', lineHeight: 20 },
 })

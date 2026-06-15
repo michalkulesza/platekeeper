@@ -1,30 +1,24 @@
+import base64
 import json
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.database import get_async_session
 from api.models import Household, ImportRequest, ImportResult, Tag, UserPreferences
-from api.services.pipeline import run_import, run_import_stream
+from api.services.pipeline import run_image_import_stream, run_import, run_import_stream, run_text_import_stream
 from api.users import User, current_active_user
 
 router = APIRouter(prefix="/imports", tags=["imports"])
 
 
-@router.post("", response_model=ImportResult)
-async def create_import(body: ImportRequest) -> ImportResult:
-    return await run_import(body.url)
-
-
-@router.get("/stream")
-async def stream_import(
-    url: str,
-    model: str = "gemini-2.5-flash-lite",
-    user: User = Depends(current_active_user),
-    session: AsyncSession = Depends(get_async_session),
-) -> StreamingResponse:
+async def _get_tags_and_allergens(
+    user: User,
+    session: AsyncSession,
+) -> tuple[list[str], list[str]]:
     result = await session.execute(
         select(Tag).where(or_(Tag.is_default.is_(True), Tag.user_id == user.id))
     )
@@ -45,8 +39,75 @@ async def stream_import(
             a = prefs.personal_allergens
             allergens = list(a.get("predefined") or []) + list(a.get("custom") or [])
 
+    return available_tags, allergens
+
+
+@router.post("", response_model=ImportResult)
+async def create_import(body: ImportRequest) -> ImportResult:
+    return await run_import(body.url)
+
+
+@router.get("/stream")
+async def stream_import(
+    url: str,
+    model: str = "gemini-2.5-flash-lite",
+    user: User = Depends(current_active_user),
+    session: AsyncSession = Depends(get_async_session),
+) -> StreamingResponse:
+    available_tags, allergens = await _get_tags_and_allergens(user, session)
+
     async def generate():
         async for event in run_import_stream(url, model=model, available_tags=available_tags, allergens=allergens or None):
+            yield f"data: {json.dumps(event)}\n\n"
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+class TextImportBody(BaseModel):
+    text: str
+    model: str = "gemini-2.5-flash-lite"
+
+
+@router.post("/stream-text")
+async def stream_text_import(
+    body: TextImportBody,
+    user: User = Depends(current_active_user),
+    session: AsyncSession = Depends(get_async_session),
+) -> StreamingResponse:
+    available_tags, allergens = await _get_tags_and_allergens(user, session)
+
+    async def generate():
+        async for event in run_text_import_stream(body.text, model=body.model, available_tags=available_tags, allergens=allergens or None):
+            yield f"data: {json.dumps(event)}\n\n"
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+class ImageImportBody(BaseModel):
+    image_base64: str
+    mime_type: str = "image/jpeg"
+    model: str = "gemini-2.5-flash-lite"
+
+
+@router.post("/stream-image")
+async def stream_image_import(
+    body: ImageImportBody,
+    user: User = Depends(current_active_user),
+    session: AsyncSession = Depends(get_async_session),
+) -> StreamingResponse:
+    image_data = base64.b64decode(body.image_base64)
+    available_tags, allergens = await _get_tags_and_allergens(user, session)
+
+    async def generate():
+        async for event in run_image_import_stream(image_data, body.mime_type, model=body.model, available_tags=available_tags, allergens=allergens or None):
             yield f"data: {json.dumps(event)}\n\n"
 
     return StreamingResponse(

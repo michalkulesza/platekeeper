@@ -152,6 +152,44 @@ async def extract_recipe(
     return RecipeExtraction.model_validate(data)
 
 
+async def extract_recipe_from_image(
+    image_data: bytes,
+    mime_type: str = "image/jpeg",
+    model: str = _DEFAULT_MODEL,
+    available_tags: list[str] | None = None,
+    allergens: list[str] | None = None,
+) -> RecipeExtraction:
+    parts_text = []
+    if available_tags:
+        parts_text.append(f"Available tags: {', '.join(available_tags)}")
+    if allergens:
+        parts_text.append(f"Allergens to check: {', '.join(allergens)}")
+    parts_text.append(
+        "Extract the recipe from this image. "
+        "This may be a photo of a cookbook page, recipe card, handwritten recipe, or screenshot."
+    )
+    text_prompt = "\n\n".join(parts_text)
+
+    client = _build_client()
+    response = await _with_retry(lambda: client.models.generate_content(
+        model=model,
+        contents=[
+            types.Part(inline_data=types.Blob(mime_type=mime_type, data=image_data)),
+            text_prompt,
+        ],
+        config=types.GenerateContentConfig(
+            system_instruction=_SYSTEM,
+            response_mime_type="application/json",
+            response_schema=RecipeExtraction,
+        ),
+    ))
+
+    raw = response.text
+    log.debug("Gemini image extraction raw: %s", raw[:500])
+    data = json.loads(raw)
+    return RecipeExtraction.model_validate(data)
+
+
 class _IngredientFlag(BaseModel):
     allergen: str | None = None
     substitute: str | None = None
