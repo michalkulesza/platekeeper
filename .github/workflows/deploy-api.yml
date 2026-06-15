@@ -5,6 +5,7 @@ on:
     branches: [master]
     paths:
       - "services/api/**"
+      - "compose.prod.yml"
       - ".github/workflows/deploy-api.yml"
   workflow_dispatch:
 
@@ -64,6 +65,7 @@ jobs:
           script: |
             set -e
             cd /opt/platekeeper
+            git pull
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ secrets.GHCR_USER }} --password-stdin
             docker compose -f compose.prod.yml pull api
             docker compose -f compose.prod.yml up -d db api
