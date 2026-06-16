@@ -100,7 +100,8 @@
     "shopping": "Einkaufen",
     "settings": "Einstellungen",
     "personalLibrary": "Persönliche Bibliothek",
-    "addRecipe": "Hinzufügen"
+    "addRecipe": "Hinzufügen",
+    "search": "Suchen"
   },
   "auth": {
     "signIn": "Anmelden",

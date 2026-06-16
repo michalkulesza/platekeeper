@@ -100,7 +100,8 @@
     "shopping": "Courses",
     "settings": "Paramètres",
     "personalLibrary": "Bibliothèque personnelle",
-    "addRecipe": "Ajouter"
+    "addRecipe": "Ajouter",
+    "search": "Rechercher"
   },
   "auth": {
     "signIn": "Se connecter",
