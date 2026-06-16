@@ -549,7 +549,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: HERO_HEIGHT,
+    height: HERO_HEIGHT + 160,
   },
   scroll: { flex: 1, backgroundColor: 'transparent' },
   heroSpacer: { height: HERO_HEIGHT - CARD_OVERLAP },
