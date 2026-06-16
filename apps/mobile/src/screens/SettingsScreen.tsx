@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Stack } from 'expo-router'
+import BellMenu from '../components/BellMenu'
 import {
   ActionSheetIOS,
   ActivityIndicator,
@@ -444,7 +445,7 @@ const SettingsScreen = () => {
       contentContainerStyle={[styles.content, { paddingBottom: 48 + insets.bottom }]}
       contentInsetAdjustmentBehavior="automatic"
     >
-      <Stack.Screen options={{ title: t('nav.settings') }} />
+      <Stack.Screen options={{ title: t('nav.settings'), headerRight: () => <BellMenu /> }} />
       {/* Stats */}
       <SectionHeader label={t('settings.stats')} />
       <StatsSection />
