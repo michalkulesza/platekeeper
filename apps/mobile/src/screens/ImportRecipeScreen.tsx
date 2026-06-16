@@ -1297,6 +1297,7 @@ const ImportRecipeScreen = () => {
       <ScrollView
         style={styles.flex}
         contentContainerStyle={styles.scrollContent}
+        contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
       >
         {/* Picker — shown when no mode selected and no editable */}

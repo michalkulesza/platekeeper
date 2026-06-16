@@ -439,6 +439,7 @@ const SettingsScreen = () => {
     <ScrollView
       style={styles.container}
       contentContainerStyle={[styles.content, { paddingBottom: 48 + insets.bottom }]}
+      contentInsetAdjustmentBehavior="automatic"
     >
       <Stack.Screen options={{ title: '' }} />
       {/* Stats */}

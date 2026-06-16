@@ -442,7 +442,7 @@ const RecipeDetailScreen = () => {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingBottom: 40 + insets.bottom }]}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingBottom: 40 + insets.bottom }]} contentInsetAdjustmentBehavior="automatic">
       {recipe.thumbnail_url ? (
         <Image
           source={{ uri: proxyThumbnailUrl(recipe.thumbnail_url)! }}
