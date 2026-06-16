@@ -36,7 +36,7 @@ import { proxyThumbnailUrl } from '../api/thumbnailUrl'
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window')
 
-const HERO_HEIGHT = 280
+const HERO_HEIGHT = 220
 const CARD_OVERLAP = 24
 
 const extractDisplayUrl = (url: string) => {
