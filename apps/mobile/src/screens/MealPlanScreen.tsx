@@ -437,6 +437,7 @@ const MealPlanScreen = () => {
         onLayout={handleListLayout}
         style={styles.list}
         contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 16 }]}
+        contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
         windowSize={5}
         maxToRenderPerBatch={20}

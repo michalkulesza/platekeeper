@@ -389,6 +389,7 @@ const RecipesScreen = () => {
       }
       style={styles.list}
       contentContainerStyle={styles.listContent}
+      contentInsetAdjustmentBehavior="automatic"
     />
     </>
   )
