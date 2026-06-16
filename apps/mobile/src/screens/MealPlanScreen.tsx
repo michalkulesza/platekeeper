@@ -266,9 +266,7 @@ const MealPlanScreen = () => {
             accessibilityLabel={t('shoppingList.exportPdf')}
             accessibilityRole="button"
           >
-            {exporting
-              ? <ActivityIndicator size="small" color={colors.secondaryLabel} />
-              : <Feather name="printer" size={22} color={colors.secondaryLabel} />}
+            <Feather name="printer" size={22} color={colors.secondaryLabel} />
           </Pressable>
           <BellMenu />
         </View>
@@ -467,6 +465,12 @@ const MealPlanScreen = () => {
         </View>
       )}
 
+      <Modal visible={exporting} transparent animationType="fade" statusBarTranslucent>
+        <View style={styles.exportOverlay}>
+          <ActivityIndicator size="large" color={colors.brand} />
+        </View>
+      </Modal>
+
       {pickerDate && (
         <RecipePicker
           visible
@@ -488,6 +492,7 @@ const styles = StyleSheet.create({
   loadingOverlay: { position: 'absolute', top: 12, alignSelf: 'center' },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   exportBtn: { padding: 4 },
+  exportOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center', alignItems: 'center' },
   list: { flex: 1 },
   listContent: {},
   monthRow: {
