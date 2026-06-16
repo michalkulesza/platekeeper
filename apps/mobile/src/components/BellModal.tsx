@@ -273,7 +273,6 @@ const BellModal = () => {
 const styles = StyleSheet.create({
   bellBtn: {
     padding: 4,
-    marginRight: 8,
     position: 'relative',
   },
   badge: {
