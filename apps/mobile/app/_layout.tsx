@@ -40,7 +40,7 @@ function RootLayoutNav() {
     <>
       <Stack screenOptions={{ headerBackTitle: '', headerTransparent: true, headerShadowVisible: false }}>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false, headerBackTitle: '' }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false, headerBackTitle: i18n.t('nav.back') }} />
         <Stack.Screen name="import-recipe" options={{ title: '' }} />
         <Stack.Screen name="recipe/[id]" options={{ title: '' }} />
         <Stack.Screen name="recipe/[id]/edit" options={{ title: '' }} />
