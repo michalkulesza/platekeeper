@@ -25,7 +25,7 @@ import {
   formatCountdown,
   type DurationMatch,
 } from '../context/TimerContext'
-import BellModal from '../components/BellModal'
+import BellMenu from '../components/BellMenu'
 import type { RecipeOut, SaveComponent, Ingredient, StepIngredientRef } from '@platekeeper/shared/types'
 import { displayIngredient, buildClientStepRefs } from '@platekeeper/shared/utils/ingredientUtils'
 import { tTag } from '@platekeeper/shared/utils/tagUtils'
@@ -411,7 +411,7 @@ const RecipeDetailScreen = () => {
           >
             <Feather name="edit-2" size={18} color={colors.brand} />
           </Pressable>
-          <BellModal />
+          <BellMenu />
         </View>
       ),
     })

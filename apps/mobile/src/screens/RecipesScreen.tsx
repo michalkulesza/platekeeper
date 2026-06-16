@@ -1,6 +1,5 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
-  ActionSheetIOS,
   ActivityIndicator,
   Alert,
   FlatList,
@@ -12,6 +11,7 @@ import {
   TextInput,
   View,
 } from 'react-native'
+import { MenuView } from '@react-native-menu/menu'
 import { Swipeable } from 'react-native-gesture-handler'
 import { useTranslation } from 'react-i18next'
 import { useNavigation, useRouter } from 'expo-router'
@@ -22,7 +22,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import type { RecipeOut, Tag } from '@platekeeper/shared/types'
 import { tTag } from '@platekeeper/shared/utils/tagUtils'
 import { Feather } from '@expo/vector-icons'
-import BellModal from '../components/BellModal'
+import BellMenu from '../components/BellMenu'
 import { colors } from '../theme/colors'
 import { proxyThumbnailUrl } from '../api/thumbnailUrl'
 
@@ -111,19 +111,44 @@ const RecipesScreen = () => {
     [handleDelete, router, t],
   )
 
-  const showSortSheet = useCallback(() => {
-    const options = [t('common.cancel'), ...SORT_OPTIONS.map((o) => {
-      const label = t(o.labelKey)
-      return sort === o.key ? `✓ ${label}` : label
-    })]
-    ActionSheetIOS.showActionSheetWithOptions(
-      { options, cancelButtonIndex: 0, title: t('recipes.sortBy') },
-      (index) => {
-        if (index === 0) return
-        setSort(SORT_OPTIONS[index - 1].key)
-      },
-    )
-  }, [sort, t])
+  const filterMenuActions = useMemo(() => [
+    {
+      id: 'sort-section',
+      title: t('recipes.sortBy'),
+      displayInline: true,
+      subactions: SORT_OPTIONS.map((o) => ({
+        id: o.key,
+        title: t(o.labelKey),
+        state: (sort === o.key ? 'on' : 'off') as 'on' | 'off',
+      })),
+    },
+    {
+      id: 'filter-section',
+      title: '',
+      displayInline: true,
+      subactions: [
+        {
+          id: 'filter-favourites',
+          title: t('recipes.filterFavourites'),
+          image: 'star.fill',
+          state: (filterFavourites ? 'on' : 'off') as 'on' | 'off',
+        },
+      ],
+    },
+  ], [sort, filterFavourites, t])
+
+  const handleFilterAction = useCallback(
+    ({ nativeEvent }: { nativeEvent: { event: string } }) => {
+      const id = nativeEvent.event
+      const sortOption = SORT_OPTIONS.find((o) => o.key === id)
+      if (sortOption) {
+        setSort(sortOption.key)
+      } else if (id === 'filter-favourites') {
+        setFilterFavourites((v) => !v)
+      }
+    },
+    [],
+  )
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -138,19 +163,20 @@ const RecipesScreen = () => {
           >
             <Feather name="plus" size={26} color={colors.secondaryLabel} />
           </Pressable>
-          <Pressable
-            onPress={showSortSheet}
-            style={({ pressed }) => [styles.headerBtn, pressed && { opacity: 0.7 }]}
-            accessibilityLabel={t('recipes.sortBy')}
-            accessibilityRole="button"
+          <MenuView
+            title={t('recipes.sortBy')}
+            actions={filterMenuActions}
+            onPressAction={handleFilterAction}
           >
-            <Feather name="sliders" size={22} color={colors.secondaryLabel} />
-          </Pressable>
-          <BellModal />
+            <View style={styles.headerBtn}>
+              <Feather name="sliders" size={22} color={colors.secondaryLabel} />
+            </View>
+          </MenuView>
+          <BellMenu />
         </View>
       ),
     })
-  }, [navigation, showSortSheet, t, router])
+  }, [navigation, filterMenuActions, handleFilterAction, t, router])
 
   const recipesWithOverrides = useMemo(
     () =>

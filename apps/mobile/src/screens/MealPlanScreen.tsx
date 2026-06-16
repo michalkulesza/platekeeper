@@ -25,7 +25,7 @@ import { useApiClient } from '@platekeeper/shared/api/context'
 import type { MealPlanEntry, RecipeOut } from '@platekeeper/shared/types'
 import { toYYYYMM, toISODate, formatWeekdayShort, formatMonthYear } from '@platekeeper/shared/utils/dateUtils'
 import { getToken } from '../api/client'
-import BellModal from '../components/BellModal'
+import BellMenu from '../components/BellMenu'
 import { colors } from '../theme/colors'
 
 const DAYS_BEFORE = 60
@@ -270,7 +270,7 @@ const MealPlanScreen = () => {
               ? <ActivityIndicator size="small" color={colors.secondaryLabel} />
               : <Feather name="printer" size={22} color={colors.secondaryLabel} />}
           </Pressable>
-          <BellModal />
+          <BellMenu />
         </View>
       ),
     })
