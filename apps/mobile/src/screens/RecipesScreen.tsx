@@ -8,7 +8,6 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native'
 import { MenuView } from '@react-native-menu/menu'
@@ -127,9 +126,22 @@ const RecipesScreen = () => {
     [],
   )
 
+  const handleSearchChangeText = useCallback(
+    (e: { nativeEvent: { text: string } }) => setQuery(e.nativeEvent.text),
+    [],
+  )
+  const handleSearchCancel = useCallback(() => setQuery(''), [])
+
   useLayoutEffect(() => {
     navigation.setOptions({
       title: t('nav.recipes'),
+      headerTransparent: false,
+      headerSearchBarOptions: {
+        placeholder: t('recipes.searchPlaceholder'),
+        onChangeText: handleSearchChangeText,
+        onCancelButtonPress: handleSearchCancel,
+        autoCapitalize: 'none',
+      },
       headerRight: () => (
         <View style={styles.headerBtns}>
           <Pressable
@@ -153,7 +165,7 @@ const RecipesScreen = () => {
         </View>
       ),
     })
-  }, [navigation, filterMenuActions, handleFilterAction, t, router])
+  }, [navigation, filterMenuActions, handleFilterAction, handleSearchChangeText, handleSearchCancel, t, router])
 
   const recipesWithOverrides = useMemo(
     () =>
@@ -290,7 +302,7 @@ const RecipesScreen = () => {
               >
                 {item.tags.length > 0
                   ? item.tags.map((tg) => tTag(tg.name, t)).join(', ')
-                  : t('recipes.noTags')}
+                  : t('tags.noTags')}
               </Text>
               {(item.servings != null || item.kcal_per_serving != null) && (
                 <Text style={styles.cardMeta}>
@@ -333,33 +345,6 @@ const RecipesScreen = () => {
     [filterFavourites, t],
   )
 
-  const listHeader = useMemo(
-    () => (
-      <View>
-        <TextInput
-          style={styles.searchInput}
-          placeholder={t('recipes.searchPlaceholder')}
-          value={query}
-          onChangeText={setQuery}
-          autoCapitalize="none"
-          clearButtonMode="while-editing"
-          accessibilityLabel={t('recipes.searchPlaceholder')}
-        />
-        <FlatList
-          data={tags}
-          keyExtractor={(item) => item.id}
-          renderItem={renderTag}
-          ListHeaderComponent={favChip}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.tagList}
-          contentContainerStyle={styles.tagListContent}
-        />
-      </View>
-    ),
-    [t, query, tags, renderTag, favChip],
-  )
-
   if (isLoading) {
     return (
       <View style={styles.center}>
@@ -377,38 +362,50 @@ const RecipesScreen = () => {
   }
 
   return (
-    <>
+    <View style={styles.screen}>
+      <View style={styles.tagBar}>
+        {favChip}
+        <View style={styles.tagBarDivider} />
+        <FlatList
+          data={tags}
+          keyExtractor={(item) => item.id}
+          renderItem={renderTag}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.tagScrollArea}
+          contentContainerStyle={styles.tagListContent}
+        />
+      </View>
       <FlatList
-      data={filtered}
-      keyExtractor={(item) => item.id}
-      renderItem={renderRecipe}
-      ListHeaderComponent={listHeader}
-      ListEmptyComponent={
-        <View style={styles.empty}>
-          <Text style={styles.emptyText}>
-            {filterFavourites
-              ? t('recipes.noFavourites')
-              : selectedTagId
-              ? t('recipes.noRecipesWithTag')
-              : t('recipes.noRecipesYet')}
-          </Text>
-          {(selectedTagId || filterFavourites) && (
-            <Pressable
-              onPress={() => { setSelectedTagId(null); setFilterFavourites(false) }}
-              style={({ pressed }) => [pressed && { opacity: 0.7 }]}
-              accessibilityLabel={t('recipes.clearFilter')}
-              accessibilityRole="button"
-            >
-              <Text style={styles.clearFilter}>{t('recipes.clearFilter')}</Text>
-            </Pressable>
-          )}
-        </View>
-      }
-      style={styles.list}
-      contentContainerStyle={styles.listContent}
-      contentInsetAdjustmentBehavior="automatic"
-    />
-    </>
+        data={filtered}
+        keyExtractor={(item) => item.id}
+        renderItem={renderRecipe}
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            <Text style={styles.emptyText}>
+              {filterFavourites
+                ? t('recipes.noFavourites')
+                : selectedTagId
+                ? t('recipes.noRecipesWithTag')
+                : t('recipes.noRecipesYet')}
+            </Text>
+            {(selectedTagId || filterFavourites) && (
+              <Pressable
+                onPress={() => { setSelectedTagId(null); setFilterFavourites(false) }}
+                style={({ pressed }) => [pressed && { opacity: 0.7 }]}
+                accessibilityLabel={t('recipes.clearFilter')}
+                accessibilityRole="button"
+              >
+                <Text style={styles.clearFilter}>{t('recipes.clearFilter')}</Text>
+              </Pressable>
+            )}
+          </View>
+        }
+        style={styles.list}
+        contentContainerStyle={styles.listContent}
+        contentInsetAdjustmentBehavior="automatic"
+      />
+    </View>
   )
 }
 
@@ -421,22 +418,25 @@ const styles = StyleSheet.create({
     lineHeight: 30,
     fontWeight: '400',
   },
-  list: { flex: 1, backgroundColor: colors.secondaryBackground },
+  screen: { flex: 1, backgroundColor: colors.secondaryBackground },
+  list: { flex: 1 },
   listContent: { paddingBottom: 24 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   errorText: { color: colors.red, fontSize: 16, textAlign: 'center' },
-  searchInput: {
-    margin: 12,
-    borderWidth: 1,
-    borderColor: colors.opaqueSeparator,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 16,
-    backgroundColor: colors.background,
+  tagBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: 0,
+    paddingBottom: 16,
   },
-  tagList: { marginBottom: 8 },
-  tagListContent: { paddingHorizontal: 12, gap: 8 },
+  tagBarDivider: {
+    width: StyleSheet.hairlineWidth,
+    height: 20,
+    backgroundColor: colors.opaqueSeparator,
+    marginHorizontal: 8,
+  },
+  tagScrollArea: { flex: 1 },
+  tagListContent: { gap: 8, paddingRight: 16 },
   chip: {
     borderRadius: 16,
     paddingHorizontal: 12,
@@ -450,7 +450,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: colors.background,
     borderRadius: 10,
-    marginHorizontal: 12,
+    marginHorizontal: 16,
     marginTop: 8,
   },
   cardImage: {
@@ -486,8 +486,8 @@ const styles = StyleSheet.create({
   },
   favStar: { fontSize: 20, color: colors.opaqueSeparator },
   favStarActive: { color: '#f59e0b' },
-  favChip: { marginRight: 4 },
-  swipeContainer: { marginHorizontal: 12, marginTop: 8 },
+  favChip: { marginLeft: 16 },
+  swipeContainer: { marginHorizontal: 16, marginTop: 8 },
   cardInSwipeable: { marginHorizontal: 0, marginTop: 0 },
   swipeActions: { flexDirection: 'row' },
   swipeEdit: {
