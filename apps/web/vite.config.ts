@@ -1,9 +1,13 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { sentryVitePlugin } from "@sentry/vite-plugin";
 
 export default defineConfig({
-  plugins: [tailwindcss(), react()],
+  build: {
+    sourcemap: true,
+  },
+  plugins: [tailwindcss(), react(), sentryVitePlugin({ telemetry: false })],
   server: {
     port: 5173,
     host: true,
