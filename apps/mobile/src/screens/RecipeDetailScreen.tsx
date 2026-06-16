@@ -3,10 +3,12 @@ import {
   ActivityIndicator,
   Dimensions,
   Image,
+  Linking,
   Modal,
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   View,
 } from 'react-native'
@@ -33,6 +35,18 @@ import { colors } from '../theme/colors'
 import { proxyThumbnailUrl } from '../api/thumbnailUrl'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
+
+const HERO_HEIGHT = 280
+
+const extractDisplayUrl = (url: string) => {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return url.length > 40 ? url.slice(0, 40) + '…' : url
+  }
+}
+
+const capitalizeFirst = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 // ── Timer button for a step ────────────────────────────────────────────────────
 
@@ -315,7 +329,7 @@ const ComponentSection = ({
   return (
     <View style={styles.componentBlock}>
       {component.name ? (
-        <Text style={styles.componentName}>{component.name}</Text>
+        <Text style={styles.componentName}>{capitalizeFirst(component.name)}</Text>
       ) : null}
 
       {ingredients.length > 0 && (
@@ -370,14 +384,11 @@ const RecipeDetailScreen = () => {
     return () => { KeepAwake.deactivateKeepAwake(KEEP_AWAKE_RECIPE_TAG) }
   }, [])
 
-  const handleToggleKeepScreenOn = useCallback(() => {
-    setKeepScreenOn((prev) => {
-      const next = !prev
-      void AsyncStorage.setItem(KEEP_AWAKE_STORAGE_KEY, next ? '1' : '0')
-      if (next) void KeepAwake.activateKeepAwakeAsync(KEEP_AWAKE_RECIPE_TAG)
-      else KeepAwake.deactivateKeepAwake(KEEP_AWAKE_RECIPE_TAG)
-      return next
-    })
+  const handleToggleKeepScreenOn = useCallback((val: boolean) => {
+    setKeepScreenOn(val)
+    void AsyncStorage.setItem(KEEP_AWAKE_STORAGE_KEY, val ? '1' : '0')
+    if (val) void KeepAwake.activateKeepAwakeAsync(KEEP_AWAKE_RECIPE_TAG)
+    else KeepAwake.deactivateKeepAwake(KEEP_AWAKE_RECIPE_TAG)
   }, [])
 
   const recipe: RecipeOut | undefined = useMemo(
@@ -391,31 +402,29 @@ const RecipeDetailScreen = () => {
 
   useLayoutEffect(() => {
     navigation.setOptions({
+      headerTransparent: true,
+      headerTitle: '',
+      headerShadowVisible: false,
+      headerTintColor: recipe?.thumbnail_url ? '#fff' : undefined,
       headerRight: () => (
         <View style={styles.headerBtns}>
-          <Pressable
-            onPress={handleToggleKeepScreenOn}
-            style={({ pressed }) => [styles.headerBtn, pressed && { opacity: 0.7 }]}
-            accessibilityLabel={keepScreenOn ? t('recipes.screenAlwaysOnDisable') : t('recipes.keepScreenOnWhileReading')}
-            accessibilityRole="button"
-          >
-            <Text style={[styles.keepScreenBtn, keepScreenOn && styles.keepScreenBtnActive]}>
-              ☀
-            </Text>
-          </Pressable>
           <Pressable
             onPress={handleEdit}
             style={({ pressed }) => [styles.headerBtn, pressed && { opacity: 0.7 }]}
             accessibilityLabel={t('common.edit')}
             accessibilityRole="button"
           >
-            <Feather name="edit-2" size={18} color={colors.brand} />
+            <Feather
+              name="edit-2"
+              size={18}
+              color={recipe?.thumbnail_url ? '#fff' : colors.brand}
+            />
           </Pressable>
           <BellMenu />
         </View>
       ),
     })
-  }, [navigation, handleEdit, handleToggleKeepScreenOn, keepScreenOn, t])
+  }, [navigation, handleEdit, recipe, t])
 
   if (isLoading) {
     return (
@@ -442,69 +451,93 @@ const RecipeDetailScreen = () => {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingBottom: 40 + insets.bottom }]} contentInsetAdjustmentBehavior="automatic">
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}
+      contentInsetAdjustmentBehavior="never"
+    >
       {recipe.thumbnail_url ? (
         <Image
           source={{ uri: proxyThumbnailUrl(recipe.thumbnail_url)! }}
-          style={styles.thumbnail}
+          style={styles.heroImage}
           accessibilityLabel={recipe.title}
           resizeMode="cover"
         />
-      ) : null}
-
-      <Text style={styles.title}>{recipe.title}</Text>
-
-      {recipe.tags.length > 0 && (
-        <View style={styles.tagRow}>
-          {recipe.tags.map((tag) => (
-            <View key={tag.id} style={styles.tag}>
-              <Text style={styles.tagText}>{tTag(tag.name, t)}</Text>
-            </View>
-          ))}
-        </View>
+      ) : (
+        <View style={[styles.heroPlaceholder, { height: insets.top + 56 }]} />
       )}
 
-      <View style={styles.metaRow}>
-        {recipe.servings != null && (
-          <Text style={styles.metaItem}>
-            {t('recipes.serves')}: {recipe.servings}
-          </Text>
-        )}
-        {recipe.kcal_per_serving != null && (
-          <Text style={styles.metaItem}>
-            {recipe.kcal_per_serving} {t('recipes.kcalPerServing')}
-          </Text>
-        )}
-      </View>
+      <View style={styles.body}>
+        <Text style={styles.title}>{recipe.title}</Text>
 
-      {recipe.source_url ? (
-        <Text style={styles.source} numberOfLines={1}>
-          {t('recipes.source')}: {recipe.source_url}
-        </Text>
-      ) : null}
+        {recipe.tags.length > 0 && (
+          <View style={styles.tagRow}>
+            {recipe.tags.map((tag) => (
+              <View key={tag.id} style={styles.tag}>
+                <Text style={styles.tagText}>{tTag(tag.name, t)}</Text>
+              </View>
+            ))}
+          </View>
+        )}
 
-      {recipe.notes ? (
-        <View style={styles.notesBlock}>
-          <Text style={styles.sectionLabel}>{t('recipes.notes')}</Text>
-          <Text style={styles.notesText}>{recipe.notes}</Text>
+        <View style={styles.metaRow}>
+          {recipe.servings != null && (
+            <Text style={styles.metaItem}>
+              {t('recipes.serves')}: {recipe.servings}
+            </Text>
+          )}
+          {recipe.kcal_per_serving != null && (
+            <Text style={styles.metaItem}>
+              {recipe.kcal_per_serving} {t('recipes.kcalPerServing')}
+            </Text>
+          )}
         </View>
-      ) : null}
 
-      {recipe.components.map((component, i) => (
-        <ComponentSection
-          key={i}
-          component={component}
-          index={i}
-          recipe={recipe}
-        />
-      ))}
+        {recipe.source_url ? (
+          <Pressable
+            onPress={() => void Linking.openURL(recipe.source_url!)}
+            style={({ pressed }) => [styles.sourceRow, pressed && { opacity: 0.7 }]}
+            accessibilityLabel={t('recipes.source')}
+            accessibilityRole="link"
+          >
+            <Feather name="link" size={13} color={colors.blue} style={styles.sourceIcon} />
+            <Text style={styles.sourceText} numberOfLines={1}>
+              {extractDisplayUrl(recipe.source_url)}
+            </Text>
+          </Pressable>
+        ) : null}
+
+        <View style={styles.keepScreenRow}>
+          <Text style={styles.keepScreenLabel}>{t('settings.keepScreenOnDefault')}</Text>
+          <Switch
+            value={keepScreenOn}
+            onValueChange={handleToggleKeepScreenOn}
+            accessibilityLabel={t('settings.keepScreenOnDefault')}
+          />
+        </View>
+
+        {recipe.notes ? (
+          <View style={styles.notesBlock}>
+            <Text style={styles.sectionLabel}>{t('recipes.notes')}</Text>
+            <Text style={styles.notesText}>{recipe.notes}</Text>
+          </View>
+        ) : null}
+
+        {recipe.components.map((component, i) => (
+          <ComponentSection
+            key={i}
+            component={component}
+            index={i}
+            recipe={recipe}
+          />
+        ))}
+      </View>
     </ScrollView>
   )
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  content: { paddingBottom: 40 },
   center: {
     flex: 1,
     justifyContent: 'center',
@@ -514,22 +547,20 @@ const styles = StyleSheet.create({
   errorText: { color: colors.red, fontSize: 16, textAlign: 'center' },
   headerBtns: { flexDirection: 'row', alignItems: 'center' },
   headerBtn: { paddingHorizontal: 4, paddingVertical: 4, marginRight: 4 },
-  keepScreenBtn: { fontSize: 18, color: colors.opaqueSeparator },
-  keepScreenBtnActive: { color: '#f59e0b' },
-  thumbnail: { width: '100%', height: 220 },
+  heroImage: { width: '100%', height: HERO_HEIGHT },
+  heroPlaceholder: { width: '100%', backgroundColor: colors.background },
+  body: { paddingHorizontal: 16, paddingTop: 16 },
   title: {
-    fontSize: 22,
+    fontSize: 28,
     fontWeight: '700',
     color: colors.label,
-    marginHorizontal: 16,
-    marginTop: 16,
-    marginBottom: 8,
+    marginBottom: 10,
+    lineHeight: 34,
   },
   tagRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginHorizontal: 16,
-    marginBottom: 10,
+    marginBottom: 12,
     gap: 6,
   },
   tag: {
@@ -539,35 +570,53 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   tagText: { color: colors.brand, fontSize: 12, fontWeight: '500' },
-  metaRow: { flexDirection: 'row', marginHorizontal: 16, marginBottom: 8, gap: 16 },
+  metaRow: { flexDirection: 'row', marginBottom: 10, gap: 16 },
   metaItem: { fontSize: 13, color: colors.secondaryLabel },
-  source: { fontSize: 12, color: colors.tertiaryLabel, marginHorizontal: 16, marginBottom: 12 },
-  notesBlock: { marginHorizontal: 16, marginBottom: 12 },
+  sourceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sourceIcon: { marginRight: 5 },
+  sourceText: { fontSize: 13, color: colors.blue },
+  keepScreenRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.separator,
+    marginBottom: 16,
+  },
+  keepScreenLabel: { fontSize: 16, color: colors.label },
+  notesBlock: { marginBottom: 16 },
   notesText: { fontSize: 17, color: colors.secondaryLabel, lineHeight: 22 },
-  componentBlock: { marginHorizontal: 16, marginTop: 12 },
+  componentBlock: { marginTop: 8 },
   componentName: {
-    fontSize: 17,
+    fontSize: 20,
     fontWeight: '600',
     color: colors.label,
-    marginBottom: 8,
+    marginBottom: 12,
+    lineHeight: 25,
   },
-  section: { marginBottom: 12 },
+  section: { marginBottom: 16 },
   sectionLabel: {
     fontSize: 13,
     fontWeight: '700',
     color: colors.secondaryLabel,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginBottom: 6,
+    marginBottom: 8,
   },
   ingredientRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   bullet: { color: colors.tertiaryLabel, marginRight: 8, marginTop: 1 },
   ingredientText: { flex: 1, fontSize: 17, color: colors.label, lineHeight: 22 },
-  stepRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12 },
+  stepRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 14 },
   stepNum: {
     fontSize: 16,
     fontWeight: '700',

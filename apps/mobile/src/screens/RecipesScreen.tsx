@@ -284,14 +284,19 @@ const RecipesScreen = () => {
               <Text style={styles.cardTitle} numberOfLines={2}>
                 {item.title}
               </Text>
-              {item.tags.length > 0 && (
-                <Text style={styles.cardTags} numberOfLines={1}>
-                  {item.tags.map((tg) => tTag(tg.name, t)).join(', ')}
-                </Text>
-              )}
-              {item.servings != null && (
+              <Text
+                style={[styles.cardTags, item.tags.length === 0 && styles.cardTagsEmpty]}
+                numberOfLines={1}
+              >
+                {item.tags.length > 0
+                  ? item.tags.map((tg) => tTag(tg.name, t)).join(', ')
+                  : t('recipes.noTags')}
+              </Text>
+              {(item.servings != null || item.kcal_per_serving != null) && (
                 <Text style={styles.cardMeta}>
-                  {t('recipes.serves')}: {item.servings}
+                  {item.servings != null ? `${t('recipes.serves')}: ${item.servings}` : ''}
+                  {item.servings != null && item.kcal_per_serving != null ? '  ·  ' : ''}
+                  {item.kcal_per_serving != null ? `${item.kcal_per_serving} kcal` : ''}
                 </Text>
               )}
             </View>
@@ -449,21 +454,22 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   cardImage: {
-    width: 80,
-    height: 80,
+    width: 88,
+    height: 88,
     borderTopLeftRadius: 10,
     borderBottomLeftRadius: 10,
   },
   cardImagePlaceholder: {
-    width: 80,
-    height: 80,
+    width: 88,
+    height: 88,
     backgroundColor: colors.opaqueSeparator,
     borderTopLeftRadius: 10,
     borderBottomLeftRadius: 10,
   },
   cardBody: { flex: 1, padding: 12, justifyContent: 'center' },
   cardTitle: { fontSize: 16, fontWeight: '600', color: colors.label, marginBottom: 4 },
-  cardTags: { fontSize: 12, color: colors.brand, marginBottom: 2 },
+  cardTags: { fontSize: 12, color: colors.brand, marginBottom: 2, marginTop: 1 },
+  cardTagsEmpty: { color: colors.tertiaryLabel },
   cardMeta: { fontSize: 12, color: colors.tertiaryLabel },
   empty: { padding: 40, alignItems: 'center' },
   emptyText: {
