@@ -406,7 +406,6 @@ const RecipeDetailScreen = () => {
       headerTransparent: true,
       headerTitle: '',
       headerShadowVisible: false,
-      headerTintColor: recipe?.thumbnail_url ? '#fff' : undefined,
       headerRight: () => (
         <View style={styles.headerBtns}>
           <Pressable
@@ -415,11 +414,7 @@ const RecipeDetailScreen = () => {
             accessibilityLabel={t('common.edit')}
             accessibilityRole="button"
           >
-            <Feather
-              name="edit-2"
-              size={18}
-              color={recipe?.thumbnail_url ? '#fff' : colors.brand}
-            />
+            <Feather name="edit-2" size={22} color={colors.secondaryLabel} />
           </Pressable>
           <BellMenu />
         </View>
@@ -549,7 +544,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: HERO_HEIGHT + 160,
+    bottom: 0,
   },
   scroll: { flex: 1, backgroundColor: 'transparent' },
   heroSpacer: { height: HERO_HEIGHT - CARD_OVERLAP },
