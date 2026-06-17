@@ -18,6 +18,7 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
+import { Feather } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
 import * as ImagePicker from 'expo-image-picker'
 import { useQueryClient } from '@tanstack/react-query'
@@ -751,10 +752,61 @@ const EditableRecipeView = ({
   )
 }
 
+// ── QuickUrlInputRow ───────────────────────────────────────────────────────────
+
+const QuickUrlInputRow = ({
+  url,
+  onUrlChange,
+  onPaste,
+  onImport,
+}: {
+  url: string
+  onUrlChange: (v: string) => void
+  onPaste: () => void
+  onImport: () => void
+}) => {
+  const { t } = useTranslation()
+  return (
+    <View style={styles.quickUrlSection}>
+      <View style={styles.urlInputGroup}>
+        <TextInput
+          style={styles.urlInput}
+          value={url}
+          onChangeText={onUrlChange}
+          placeholder={t('addRecipe.urlPlaceholder')}
+          placeholderTextColor={PlatformColor('placeholderText') as unknown as string}
+          autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType="url"
+          returnKeyType="go"
+          onSubmitEditing={onImport}
+          accessibilityLabel={t('addRecipe.recipeUrl')}
+          textContentType="URL"
+        />
+        <Pressable
+          style={({ pressed }) => [styles.pasteIconBtn, pressed && { opacity: 0.7 }]}
+          onPress={onPaste}
+          accessibilityLabel={t('addRecipe.paste')}
+          hitSlop={8}
+        >
+          <Feather name="clipboard" size={20} color={colors.secondaryLabel} />
+        </Pressable>
+      </View>
+      <Pressable
+        style={({ pressed }) => [styles.primaryBtn, !url.trim() && styles.btnDisabled, pressed && { opacity: 0.7 }]}
+        onPress={onImport}
+        disabled={!url.trim()}
+        accessibilityLabel={t('addRecipe.import')}
+      >
+        <Text style={styles.primaryBtnText}>{t('addRecipe.import')}</Text>
+      </Pressable>
+    </View>
+  )
+}
+
 // ── MethodPickerView ───────────────────────────────────────────────────────────
 
 const METHODS = [
-  { key: 'url' as ImportMode, icon: '🔗', titleKey: 'addRecipe.methodUrl', descKey: 'addRecipe.methodUrlDesc', iconBg: PlatformColor('systemBlue') },
   { key: 'camera' as ImportMode, icon: '📷', titleKey: 'addRecipe.methodCamera', descKey: 'addRecipe.methodCameraDesc', iconBg: PlatformColor('systemOrange') },
   { key: 'gallery' as ImportMode, icon: '🖼', titleKey: 'addRecipe.methodGallery', descKey: 'addRecipe.methodGalleryDesc', iconBg: PlatformColor('systemGreen') },
   { key: 'text' as ImportMode, icon: '📋', titleKey: 'addRecipe.methodText', descKey: 'addRecipe.methodTextDesc', iconBg: colors.brand },
@@ -833,13 +885,13 @@ const UrlInputView = ({
           textContentType="URL"
         />
         <Pressable
-          style={({ pressed }) => [styles.pasteBtn, pressed && { opacity: 0.7 }]}
+          style={({ pressed }) => [styles.pasteIconBtn, pressed && { opacity: 0.7 }]}
           onPress={onPaste}
           disabled={loading}
           accessibilityLabel={t('addRecipe.paste')}
           hitSlop={4}
         >
-          <Text style={styles.pasteBtnText}>{t('addRecipe.paste')}</Text>
+          <Feather name="clipboard" size={20} color={colors.secondaryLabel} />
         </Pressable>
       </View>
       {progressSteps.length > 0 && (
@@ -1161,6 +1213,12 @@ const ImportRecipeScreen = () => {
     cancelRef.current = api.streamImportFetch(url.trim(), startStreamCallbacks())
   }
 
+  const handleQuickUrlImport = () => {
+    if (!url.trim()) return
+    setMode('url')
+    handleImportUrl()
+  }
+
   const handleImportText = () => {
     if (!pastedText.trim()) return
     cancelRef.current?.()
@@ -1305,7 +1363,15 @@ const ImportRecipeScreen = () => {
       >
         {/* Picker — shown when no mode selected and no editable */}
         {!mode && !editable && (
-          <MethodPickerView onSelect={handleModeSelect} />
+          <>
+            <QuickUrlInputRow
+              url={url}
+              onUrlChange={setUrl}
+              onPaste={handlePasteUrl}
+              onImport={handleQuickUrlImport}
+            />
+            <MethodPickerView onSelect={handleModeSelect} />
+          </>
         )}
 
         {/* URL import */}
@@ -1473,8 +1539,11 @@ const styles = StyleSheet.create({
     color: PlatformColor('systemBlue') as unknown as string,
   },
 
+  // Quick URL input
+  quickUrlSection: { paddingTop: 8, paddingHorizontal: 16, gap: 10 },
+
   // Method picker
-  pickerWrap: { paddingTop: 8, paddingHorizontal: 16, gap: 12 },
+  pickerWrap: { paddingTop: 16, paddingHorizontal: 16, gap: 12 },
   pickerGroup: {
     backgroundColor: PlatformColor('secondarySystemBackground') as unknown as string,
     borderRadius: 12,
@@ -1550,6 +1619,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: PlatformColor('secondaryLabel') as unknown as string,
     fontWeight: '500',
+  },
+  pasteIconBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: PlatformColor('opaqueSeparator') as unknown as string,
+    backgroundColor: PlatformColor('secondarySystemBackground') as unknown as string,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // Text paste input
