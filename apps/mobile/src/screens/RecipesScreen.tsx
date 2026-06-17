@@ -14,6 +14,7 @@ import { MenuView } from '@react-native-menu/menu'
 import { Swipeable } from 'react-native-gesture-handler'
 import { useTranslation } from 'react-i18next'
 import { useNavigation, useRouter } from 'expo-router'
+import { useHeaderHeight } from 'expo-router/react-navigation'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRecipes } from '@platekeeper/shared/hooks/useRecipes'
 import { useTags } from '@platekeeper/shared/hooks/useTags'
@@ -27,7 +28,6 @@ import { colors } from '../theme/colors'
 import { proxyThumbnailUrl } from '../api/thumbnailUrl'
 
 type SortMode = 'newest' | 'oldest' | 'title_asc' | 'title_desc' | 'edited_newest' | 'edited_oldest'
-type ListRow = { _type: 'tagBar' } | (RecipeOut & { _type: 'recipe' })
 
 const SORT_OPTIONS: { key: SortMode; labelKey: string }[] = [
   { key: 'newest', labelKey: 'recipes.sortNewest' },
@@ -43,6 +43,7 @@ const RecipesScreen = () => {
   const router = useRouter()
   const { t } = useTranslation()
   const insets = useSafeAreaInsets()
+  const headerHeight = useHeaderHeight()
   const { recipes, isLoading, error } = useRecipes()
   const { tags } = useTags()
   const api = useApiClient()
@@ -52,6 +53,7 @@ const RecipesScreen = () => {
   const [filterFavourites, setFilterFavourites] = useState(false)
   const [favouriteOverrides, setFavouriteOverrides] = useState<Map<string, boolean>>(new Map())
   const [sort, setSort] = useState<SortMode>('newest')
+  const [tagBarHeight, setTagBarHeight] = useState(0)
   const swipeableRefs = useRef<Map<string, Swipeable>>(new Map())
   const openSwipeableId = useRef<string | null>(null)
 
@@ -198,11 +200,6 @@ const RecipesScreen = () => {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     })
   }, [recipesWithOverrides, query, selectedTagId, filterFavourites, sort])
-
-  const listData: ListRow[] = useMemo(
-    () => [{ _type: 'tagBar' as const }, ...filtered.map((r) => ({ ...r, _type: 'recipe' as const }))],
-    [filtered],
-  )
 
   const handleTagPress = useCallback(
     (tagId: string) => {
@@ -352,30 +349,6 @@ const RecipesScreen = () => {
     [filterFavourites, t],
   )
 
-  const renderRow = useCallback(
-    ({ item, index, separators }: ListRenderItemInfo<ListRow>) => {
-      if (item._type === 'tagBar') {
-        return (
-          <View style={styles.tagBar}>
-            {favChip}
-            <View style={styles.tagBarDivider} />
-            <FlatList
-              data={tags}
-              keyExtractor={(t) => t.id}
-              renderItem={renderTag}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.tagScrollArea}
-              contentContainerStyle={styles.tagListContent}
-            />
-          </View>
-        )
-      }
-      return renderRecipe({ item: item as RecipeOut, index, separators })
-    },
-    [favChip, tags, renderTag, renderRecipe],
-  )
-
   if (isLoading) {
     return (
       <View style={styles.center}>
@@ -393,38 +366,54 @@ const RecipesScreen = () => {
   }
 
   return (
-    <FlatList
-      data={listData}
-      keyExtractor={(item) => (item._type === 'tagBar' ? '__tagBar' : item.id)}
-      renderItem={renderRow}
-      stickyHeaderIndices={[0]}
-      contentInsetAdjustmentBehavior="automatic"
-      style={styles.screen}
-      contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
-      ListFooterComponent={
-        filtered.length === 0 ? (
-          <View style={styles.empty}>
-            <Text style={styles.emptyText}>
-              {filterFavourites
-                ? t('recipes.noFavourites')
-                : selectedTagId
-                ? t('recipes.noRecipesWithTag')
-                : t('recipes.noRecipesYet')}
-            </Text>
-            {(selectedTagId || filterFavourites) && (
-              <Pressable
-                onPress={() => { setSelectedTagId(null); setFilterFavourites(false) }}
-                style={({ pressed }) => [pressed && { opacity: 0.7 }]}
-                accessibilityLabel={t('recipes.clearFilter')}
-                accessibilityRole="button"
-              >
-                <Text style={styles.clearFilter}>{t('recipes.clearFilter')}</Text>
-              </Pressable>
-            )}
-          </View>
-        ) : null
-      }
-    />
+    <View style={styles.screen}>
+      <FlatList
+        data={filtered}
+        keyExtractor={(item) => item.id}
+        renderItem={renderRecipe}
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={{ paddingTop: tagBarHeight, paddingBottom: insets.bottom + 24 }}
+        ListFooterComponent={
+          filtered.length === 0 ? (
+            <View style={styles.empty}>
+              <Text style={styles.emptyText}>
+                {filterFavourites
+                  ? t('recipes.noFavourites')
+                  : selectedTagId
+                  ? t('recipes.noRecipesWithTag')
+                  : t('recipes.noRecipesYet')}
+              </Text>
+              {(selectedTagId || filterFavourites) && (
+                <Pressable
+                  onPress={() => { setSelectedTagId(null); setFilterFavourites(false) }}
+                  style={({ pressed }) => [pressed && { opacity: 0.7 }]}
+                  accessibilityLabel={t('recipes.clearFilter')}
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.clearFilter}>{t('recipes.clearFilter')}</Text>
+                </Pressable>
+              )}
+            </View>
+          ) : null
+        }
+      />
+      <View
+        style={[styles.tagBar, { top: headerHeight }]}
+        onLayout={(e) => setTagBarHeight(e.nativeEvent.layout.height)}
+      >
+        {favChip}
+        <View style={styles.tagBarDivider} />
+        <FlatList
+          data={tags}
+          keyExtractor={(t) => t.id}
+          renderItem={renderTag}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.tagScrollArea}
+          contentContainerStyle={styles.tagListContent}
+        />
+      </View>
+    </View>
   )
 }
 
@@ -441,11 +430,13 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   errorText: { color: colors.red, fontSize: 16, textAlign: 'center' },
   tagBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 0,
+    paddingTop: 8,
     paddingBottom: 16,
-    backgroundColor: colors.secondaryBackground,
   },
   tagBarDivider: {
     width: StyleSheet.hairlineWidth,
