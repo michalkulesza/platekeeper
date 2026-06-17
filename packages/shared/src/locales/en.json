@@ -319,8 +319,6 @@
     "addStep": "Add step",
     "removeIngredient": "Remove ingredient",
     "removeStep": "Remove step",
-    "methodUrl": "Paste URL",
-    "methodUrlDesc": "Instagram, TikTok, or any recipe page",
     "methodCamera": "Take Photo",
     "methodCameraDesc": "Photograph a recipe or cookbook page",
     "methodGallery": "Upload Image",
