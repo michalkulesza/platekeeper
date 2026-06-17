@@ -24,6 +24,7 @@ import type { RecipeOut, Tag } from '@platekeeper/shared/types'
 import { tTag } from '@platekeeper/shared/utils/tagUtils'
 import { Feather } from '@expo/vector-icons'
 import BellMenu from '../components/BellMenu'
+import GlassViewSafe from '../components/GlassViewSafe'
 import { colors } from '../theme/colors'
 import { proxyThumbnailUrl } from '../api/thumbnailUrl'
 
@@ -242,11 +243,16 @@ const RecipesScreen = () => {
       return (
         <Pressable
           onPress={() => handleTagPress(item.id)}
-          style={({ pressed }) => [styles.chip, isSelected && styles.chipSelected, pressed && { opacity: 0.7 }]}
+          style={({ pressed }) => [styles.chip, pressed && { opacity: 0.7 }]}
           accessibilityLabel={item.name}
           accessibilityRole="button"
           accessibilityState={{ selected: isSelected }}
         >
+          <GlassViewSafe
+            style={StyleSheet.absoluteFill}
+            glassEffectStyle={isSelected ? 'clear' : 'regular'}
+            tintColor={isSelected ? colors.blue : colors.gray5}
+          />
           <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
             {tTag(item.name, t)}
           </Text>
@@ -336,11 +342,16 @@ const RecipesScreen = () => {
     () => (
       <Pressable
         onPress={() => setFilterFavourites((v) => !v)}
-        style={({ pressed }) => [styles.chip, filterFavourites && styles.chipSelected, styles.favChip, pressed && { opacity: 0.7 }]}
+        style={({ pressed }) => [styles.chip, styles.favChip, pressed && { opacity: 0.7 }]}
         accessibilityLabel={t('recipes.filterFavourites')}
         accessibilityRole="button"
         accessibilityState={{ selected: filterFavourites }}
       >
+        <GlassViewSafe
+          style={StyleSheet.absoluteFill}
+          glassEffectStyle={filterFavourites ? 'clear' : 'regular'}
+          tintColor={filterFavourites ? colors.blue : colors.gray5}
+        />
         <Text style={[styles.chipText, filterFavourites && styles.chipTextSelected]}>
           {'★ '}{t('recipes.filterFavourites')}
         </Text>
@@ -435,7 +446,7 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 8,
+    paddingTop: 0,
     paddingBottom: 16,
   },
   tagBarDivider: {
@@ -450,9 +461,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    backgroundColor: colors.secondarySystemFill,
+    overflow: 'hidden',
   },
-  chipSelected: { backgroundColor: colors.blue },
   chipText: { fontSize: 13, color: colors.secondaryLabel },
   chipTextSelected: { color: '#ffffff', fontWeight: '600' },
   card: {
