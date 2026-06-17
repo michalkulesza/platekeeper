@@ -6,10 +6,12 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import * as Sentry from '@sentry/react-native'
 
-Sentry.init({
-  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
-  tracesSampleRate: 1.0,
-})
+if (!__DEV__) {
+  Sentry.init({
+    dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+    tracesSampleRate: 1.0,
+  })
+}
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { I18nextProvider } from 'react-i18next'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
