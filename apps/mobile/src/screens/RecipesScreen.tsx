@@ -281,9 +281,9 @@ const RecipesScreen = () => {
       if (isNew) seenIdsRef.current.add(item.id)
       return (
         <Reanimated.View
-          entering={isNew ? FadeInDown.springify().damping(20).mass(0.8) : undefined}
+          entering={isNew ? FadeInDown.duration(250) : undefined}
           exiting={FadeOut.duration(250)}
-          layout={LinearTransition.springify().damping(20)}
+          layout={LinearTransition.duration(250)}
         >
         <Swipeable
           ref={(ref) => {
