@@ -455,8 +455,12 @@ final class ShareViewController: UIViewController {
     }
 
     @objc private func doneTapped() {
-        // No recipe / user cancelled — clean up the pending manifest.
-        cleanupAppGroupFiles()
+        // Clean up App Group files only for image "no recipe" outcomes where the manifest
+        // is useless. For text/URL shares the manifest must survive so the main app can
+        // consume it — pendingOpenShare being set means we're in that flow.
+        if pendingOpenShare == nil {
+            cleanupAppGroupFiles()
+        }
         complete()
     }
 
