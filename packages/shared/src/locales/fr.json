@@ -125,6 +125,7 @@
   },
   "timers": {
     "startTimer": "Démarrer le minuteur",
+    "goToRecipe": "Voir la recette",
     "timerDone_one": "Minuteur terminé",
     "timerDone_other": "{{count}} minuteurs terminés",
     "running": "Des minuteurs sont en cours",

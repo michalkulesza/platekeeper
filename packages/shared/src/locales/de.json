@@ -125,6 +125,7 @@
   },
   "timers": {
     "startTimer": "Timer starten",
+    "goToRecipe": "Zum Rezept",
     "timerDone_one": "Timer fertig",
     "timerDone_other": "{{count}} Timer fertig",
     "running": "Timer laufen",

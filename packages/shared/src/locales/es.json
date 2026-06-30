@@ -125,6 +125,7 @@
   },
   "timers": {
     "startTimer": "Iniciar temporizador",
+    "goToRecipe": "Ir a la receta",
     "timerDone_one": "Temporizador listo",
     "timerDone_other": "{{count}} temporizadores listos",
     "running": "Temporizadores en marcha",

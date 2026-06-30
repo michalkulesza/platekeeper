@@ -134,7 +134,8 @@
     "keepScreenOnDesc": "Prevent screen from sleeping during cooking",
     "timerRunning": "Timer running",
     "timerPaused": "Timer paused",
-    "startTimer": "Start timer"
+    "startTimer": "Start timer",
+    "goToRecipe": "Go to recipe"
   },
   "bell": {
     "notifications": "Notifications",
