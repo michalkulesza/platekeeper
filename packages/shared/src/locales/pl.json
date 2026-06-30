@@ -312,6 +312,7 @@
     "highDemandTitle": "Wysokie obciążenie",
     "highDemandMessage": "Gemini jest teraz zajęty. Dokończ import w tle i powiadomimy Cię, gdy zostanie zakończony — nawet jeśli zamkniesz aplikację.",
     "highDemandAccept": "Przetwórz w tle",
+    "highDemandWait": "Czekaj dalej",
     "failedToEnqueueJob": "Nie udało się zaplanować importu w tle",
     "urlPlaceholder": "URL z Instagrama, TikToka lub dowolnej strony z przepisami",
     "editRecipe": "Edytuj przepis",

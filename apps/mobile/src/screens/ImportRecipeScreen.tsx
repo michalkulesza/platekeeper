@@ -1208,7 +1208,7 @@ const ImportRecipeScreen = () => {
       t('addRecipe.highDemandTitle'),
       t('addRecipe.highDemandMessage'),
       [
-        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('addRecipe.highDemandWait'), style: 'cancel' },
         {
           text: t('addRecipe.highDemandAccept'),
           onPress: async () => {

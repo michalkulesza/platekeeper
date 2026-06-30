@@ -304,6 +304,7 @@
     "highDemandTitle": "High demand",
     "highDemandMessage": "Gemini is busy right now. Finish the import in the background and we'll notify you when it's done — even if you close the app.",
     "highDemandAccept": "Process in background",
+    "highDemandWait": "Keep waiting",
     "failedToEnqueueJob": "Failed to schedule background import",
     "urlPlaceholder": "Instagram, TikTok, or any recipe page URL",
     "editRecipe": "Edit Recipe",
