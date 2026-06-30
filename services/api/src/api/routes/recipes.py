@@ -8,6 +8,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import and_, delete, insert, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.config import settings
 from api.database import get_async_session
 from api.models import Recipe, RecipeOrderRequest, RecipeOut, RecipeSaveRequest, Tag, user_recipe_favourites_table
 from api.routes.context import get_active_household_id
@@ -260,6 +261,8 @@ async def update_recipe(
     if recipe is None:
         raise HTTPException(status_code=404, detail="Recipe not found")
 
+    old_thumbnail_url = recipe.thumbnail_url
+
     recipe.title = body.title
     recipe.servings = body.servings
     recipe.kcal_per_serving = body.kcal_per_serving
@@ -274,6 +277,12 @@ async def update_recipe(
 
     await session.commit()
     await session.refresh(recipe)
+
+    if old_thumbnail_url and old_thumbnail_url != body.thumbnail_url and settings.r2_configured:
+        import asyncio
+        from api.services import r2
+        asyncio.create_task(asyncio.to_thread(r2.delete_image, old_thumbnail_url))
+
     return _build_recipe_out(recipe)
 
 

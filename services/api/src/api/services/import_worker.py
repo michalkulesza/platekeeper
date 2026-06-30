@@ -6,6 +6,7 @@ import logging
 import uuid
 from datetime import datetime
 
+import httpx
 from sqlalchemy import or_, select, update
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 
@@ -161,6 +162,26 @@ async def _process_job(job: ImportJob) -> None:
         async with async_session_maker() as session:
             recipe = await _save_recipe(session, job.user_id, result)
             recipe_id = recipe.id
+
+        # Upload thumbnail to R2 (fire-and-forget, failure keeps original URL)
+        from api.config import settings
+        thumb_url = result.metadata.thumbnail_url
+        if thumb_url and settings.r2_configured and not thumb_url.startswith(settings.r2_public_url):
+            try:
+                async with httpx.AsyncClient(follow_redirects=True, timeout=15) as client:
+                    resp = await client.get(thumb_url)
+                    resp.raise_for_status()
+                    from api.services import r2
+                    r2_url = await asyncio.to_thread(r2.upload_image, resp.content, str(recipe_id))
+                async with async_session_maker() as session:
+                    await session.execute(
+                        update(Recipe)
+                        .where(Recipe.id == recipe_id)
+                        .values(thumbnail_url=r2_url)
+                    )
+                    await session.commit()
+            except Exception as exc:
+                log.warning("Thumbnail R2 upload failed for recipe %s: %s", recipe_id, exc)
 
         # Update job succeeded
         async with async_session_maker() as session:

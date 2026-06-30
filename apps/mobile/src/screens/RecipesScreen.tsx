@@ -28,8 +28,24 @@ import { Feather } from '@expo/vector-icons'
 import BellMenu from '../components/BellMenu'
 import GlassViewSafe from '../components/GlassViewSafe'
 import { colors } from '../theme/colors'
-import { proxyThumbnailUrl } from '../api/thumbnailUrl'
+import { proxyThumbnailUrl, PLACEHOLDER_URL } from '../api/thumbnailUrl'
 import { useNotificationHistory, type NotificationItem } from '../context/NotificationHistoryContext'
+
+const ThumbnailImage = ({ url, style }: { url: string; style: object }) => {
+  const [errored, setErrored] = useState(false)
+  const fallbackUri = PLACEHOLDER_URL || undefined
+  if (errored && fallbackUri) {
+    return <Image source={{ uri: fallbackUri }} style={style} resizeMode="cover" />
+  }
+  return (
+    <Image
+      source={{ uri: proxyThumbnailUrl(url)! }}
+      style={style}
+      resizeMode="cover"
+      onError={() => setErrored(true)}
+    />
+  )
+}
 
 type SortMode = 'newest' | 'oldest' | 'title_asc' | 'title_desc' | 'edited_newest' | 'edited_oldest'
 
@@ -340,11 +356,7 @@ const RecipesScreen = () => {
             accessibilityRole="button"
           >
             {item.thumbnail_url ? (
-              <Image
-                source={{ uri: proxyThumbnailUrl(item.thumbnail_url)! }}
-                style={styles.cardImage}
-                resizeMode="cover"
-              />
+              <ThumbnailImage url={item.thumbnail_url} style={styles.cardImage} />
             ) : (
               <View style={styles.cardImagePlaceholder} />
             )}

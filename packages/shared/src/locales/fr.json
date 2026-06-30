@@ -26,6 +26,9 @@
     "imageUrl": "URL de l'image",
     "addPrivateNotes": "Ajouter des notes privées…",
     "thumbnail": "Miniature",
+    "addPhoto": "Ajouter une photo",
+    "changePhoto": "Changer la photo",
+    "uploading": "Téléchargement…",
     "invalidImageUrl": "URL invalide. Veuillez entrer une adresse https:// valide."
   },
   "recipes": {

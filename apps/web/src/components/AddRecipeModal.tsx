@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useRef, useState } from 'react'
+import { FormEvent, useEffect, useRef, useState, useCallback } from 'react'
 import { ExternalLink, Search } from 'react-feather'
 import { useTranslation } from 'react-i18next'
 import {
@@ -29,6 +29,7 @@ import {
   createTag,
   listPersonalRecipes,
   linkRecipeToHousehold,
+  uploadThumbnail,
   UNITS,
 } from '../api/client'
 import TagRow from './TagRow'
@@ -407,6 +408,7 @@ const currentUsername = () => localStorage.getItem('pk_username') || 'you'
 
 const EditableRecipeView = ({
   recipe,
+  recipeId,
   selectedTags,
   allTags,
   activeAllergens,
@@ -416,6 +418,7 @@ const EditableRecipeView = ({
   onTagCreate,
 }: {
   recipe: EditableRecipe
+  recipeId: string
   selectedTags: Tag[]
   allTags: Tag[]
   activeAllergens: string[]
@@ -426,8 +429,8 @@ const EditableRecipeView = ({
 }) => {
   const { t } = useTranslation()
   const [isAdapted, setIsAdapted] = useState(false)
-  const [showImgInput, setShowImgInput] = useState(false)
-  const [imgDraft, setImgDraft] = useState('')
+  const [imgUploading, setImgUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const setTitle = (title: string) => {
     onChange({ ...recipe, title })
@@ -508,16 +511,20 @@ const EditableRecipeView = ({
     onChange({ ...recipe, components })
   }
 
-  const openImgEditor = () => {
-    setImgDraft(recipe.thumbnail_url ?? '')
-    setShowImgInput(true)
-  }
-
-  const commitImg = () => {
-    const trimmed = imgDraft.trim()
-    onChange({ ...recipe, thumbnail_url: trimmed || null })
-    setShowImgInput(false)
-  }
+  const handleThumbnailFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImgUploading(true)
+    try {
+      const result = await uploadThumbnail(file, recipeId)
+      onChange({ ...recipe, thumbnail_url: result.url })
+    } catch {
+      // keep existing thumbnail on failure
+    } finally {
+      setImgUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }, [recipeId, recipe, onChange])
 
   const proxied = proxyUrl(recipe.thumbnail_url)
 
@@ -526,18 +533,30 @@ const EditableRecipeView = ({
 
   return (
     <div className="mt-4 border-t border-zinc-200 pt-4">
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleThumbnailFile}
+      />
+
       {/* Header */}
       <div className="flex gap-3 items-start mb-2">
         <button
           type="button"
-          onClick={openImgEditor}
-          className="relative w-16 h-16 rounded-lg shrink-0 overflow-hidden bg-zinc-100 group cursor-pointer"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={imgUploading}
+          className="relative w-16 h-16 rounded-lg shrink-0 overflow-hidden bg-zinc-100 group cursor-pointer disabled:opacity-60"
+          aria-label={t('common.changePhoto')}
         >
           {proxied ? (
             <img
               src={proxied}
               alt="thumbnail"
               className="w-full h-full object-cover"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-zinc-300 text-2xl">
@@ -546,7 +565,7 @@ const EditableRecipeView = ({
           )}
           <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
             <span className="text-white text-[10px] font-semibold uppercase tracking-wide">
-              {t('common.edit')}
+              {imgUploading ? t('common.uploading') : t('common.edit')}
             </span>
           </div>
         </button>
@@ -559,25 +578,6 @@ const EditableRecipeView = ({
           />
         </div>
       </div>
-
-      {showImgInput && (
-        <input
-          type="url"
-          value={imgDraft}
-          onChange={(e) => setImgDraft(e.target.value)}
-          onBlur={commitImg}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault()
-              commitImg()
-            }
-            if (e.key === 'Escape') setShowImgInput(false)
-          }}
-          placeholder={t('common.imageUrl')}
-          autoFocus
-          className="w-full text-sm border-b border-primary focus:outline-none bg-transparent mb-2"
-        />
-      )}
 
       {/* Tags */}
       <div className="mb-3">
@@ -745,6 +745,7 @@ const AddRecipeModal = ({
 }: AddRecipeModalProps) => {
   const { t } = useTranslation()
   const { activeHouseholdId, activeHousehold } = useHousehold()
+  const tempRecipeIdRef = useRef(crypto.randomUUID())
   const [url, setUrl] = useState('')
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -1065,6 +1066,7 @@ const AddRecipeModal = ({
               {editable && (
                 <EditableRecipeView
                   recipe={editable}
+                  recipeId={tempRecipeIdRef.current}
                   selectedTags={selectedTags}
                   allTags={allTags}
                   activeAllergens={activeAllergens}

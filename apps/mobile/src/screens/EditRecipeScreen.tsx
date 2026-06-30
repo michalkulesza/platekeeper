@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'reac
 import {
   Alert,
   FlatList,
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -13,6 +14,8 @@ import {
   TextInput,
   View,
 } from 'react-native'
+import * as ImagePicker from 'expo-image-picker'
+import * as Haptics from 'expo-haptics'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
 import { useNavigation, useLocalSearchParams, useRouter } from 'expo-router'
@@ -28,7 +31,10 @@ import {
 import type { StructuredIngredient } from '@platekeeper/shared/utils/ingredientUtils'
 import { tTag } from '@platekeeper/shared/utils/tagUtils'
 import { colors } from '../theme/colors'
-import { isValidImageUrl } from '../api/thumbnailUrl'
+import { proxyThumbnailUrl } from '../api/thumbnailUrl'
+import { getToken } from '../api/client'
+
+const API_BASE = process.env.EXPO_PUBLIC_API_URL ?? ''
 
 interface EditComponent {
   name: string
@@ -167,6 +173,7 @@ const EditRecipeScreen = () => {
   const [state, setState] = useState<EditState | null>(null)
   const [selectedTags, setSelectedTags] = useState<Tag[]>([])
   const [saving, setSaving] = useState(false)
+  const [uploadingThumb, setUploadingThumb] = useState(false)
   const [unitPickerTarget, setUnitPickerTarget] = useState<{ ci: number; ii: number } | null>(null)
 
   useEffect(() => {
@@ -295,12 +302,50 @@ const EditRecipeScreen = () => {
     )
   }, [])
 
-  const handleSave = useCallback(async () => {
-    if (!state) return
-    if (state.thumbnail_url && !isValidImageUrl(state.thumbnail_url)) {
-      Alert.alert(t('common.invalidImageUrl'))
+  const handlePickImage = useCallback(async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
+    if (status !== 'granted') {
+      Alert.alert(t('recipes.galleryPermissionDenied'), t('recipes.galleryPermissionDeniedMsg'))
       return
     }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.9,
+      allowsEditing: false,
+    })
+    if (result.canceled || !result.assets[0]) return
+
+    const asset = result.assets[0]
+    setUploadingThumb(true)
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+    try {
+      const formData = new FormData()
+      formData.append('file', {
+        uri: asset.uri,
+        type: asset.mimeType ?? 'image/jpeg',
+        name: 'thumbnail.jpg',
+      } as unknown as Blob)
+      const token = getToken()
+      const response = await fetch(
+        `${API_BASE}/api/images/thumbnail?recipe_id=${encodeURIComponent(recipeId)}`,
+        {
+          method: 'POST',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          body: formData,
+        },
+      )
+      if (!response.ok) throw new Error('Upload failed')
+      const data = (await response.json()) as { url: string }
+      setState((s) => s && { ...s, thumbnail_url: data.url })
+    } catch (err) {
+      Alert.alert(t('common.ok'), err instanceof Error ? err.message : 'Upload failed')
+    } finally {
+      setUploadingThumb(false)
+    }
+  }, [recipeId, t])
+
+  const handleSave = useCallback(async () => {
+    if (!state) return
     setSaving(true)
     try {
       await api.updateRecipe(recipeId, {
@@ -391,15 +436,35 @@ const EditRecipeScreen = () => {
 
         {/* Thumbnail */}
         <Text style={styles.fieldLabel}>{t('common.thumbnail')}</Text>
-        <TextInput
-          style={styles.input}
-          value={state.thumbnail_url}
-          onChangeText={(v) => setState((s) => s && { ...s, thumbnail_url: v })}
-          autoCapitalize="none"
-          keyboardType="url"
-          placeholder="https://…"
-          accessibilityLabel={t('common.thumbnail')}
-        />
+        {state.thumbnail_url ? (
+          <Pressable
+            onPress={handlePickImage}
+            disabled={uploadingThumb}
+            accessibilityLabel={t('common.changePhoto')}
+            accessibilityRole="button"
+          >
+            <Image
+              source={{ uri: proxyThumbnailUrl(state.thumbnail_url) ?? undefined }}
+              style={styles.thumbnailPreview}
+              resizeMode="cover"
+            />
+            <Text style={styles.changePhotoText}>
+              {uploadingThumb ? t('common.uploading') : t('common.changePhoto')}
+            </Text>
+          </Pressable>
+        ) : (
+          <Pressable
+            style={({ pressed }) => [styles.thumbnailPlaceholder, pressed && { opacity: 0.7 }]}
+            onPress={handlePickImage}
+            disabled={uploadingThumb}
+            accessibilityLabel={t('common.addPhoto')}
+            accessibilityRole="button"
+          >
+            <Text style={styles.addPhotoText}>
+              {uploadingThumb ? t('common.uploading') : `+ ${t('common.addPhoto')}`}
+            </Text>
+          </Pressable>
+        )}
 
         {/* Notes */}
         <Text style={styles.fieldLabel}>{t('recipes.notes')}</Text>
@@ -564,6 +629,33 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   multiline: { minHeight: 80, textAlignVertical: 'top' },
+  thumbnailPreview: {
+    width: '100%',
+    height: 180,
+    borderRadius: 8,
+    backgroundColor: colors.secondaryBackground,
+  },
+  changePhotoText: {
+    fontSize: 13,
+    color: colors.blue,
+    marginTop: 6,
+    textAlign: 'center',
+  },
+  thumbnailPlaceholder: {
+    height: 100,
+    borderWidth: 1,
+    borderColor: colors.opaqueSeparator,
+    borderStyle: 'dashed',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.secondaryBackground,
+  },
+  addPhotoText: {
+    fontSize: 16,
+    color: colors.blue,
+    fontWeight: '500',
+  },
   row: { flexDirection: 'row', gap: 12 },
   halfField: { flex: 1 },
   tagCloud: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
