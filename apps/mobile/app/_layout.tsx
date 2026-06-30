@@ -20,7 +20,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { I18nextProvider } from 'react-i18next'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'
-import { ApiClientProvider } from '@platekeeper/shared/api/context'
+import { ApiClientProvider, useApiClient } from '@platekeeper/shared/api/context'
 import { AuthProvider, useAuth } from '../src/context/AuthContext'
 import { NotificationHistoryProvider } from '../src/context/NotificationHistoryContext'
 import { TimerProvider } from '../src/context/TimerContext'
@@ -37,8 +37,51 @@ function RootLayoutNav() {
   const router = useRouter()
   const qc = useQueryClient()
   const [processingShare, setProcessingShare] = useState(false)
+  const api = useApiClient()
   const { push: pushNotif, dismiss: dismissNotif, items: notifItems } = useNotificationHistory()
   const responseListenerRef = useRef<Notifications.EventSubscription | null>(null)
+  // Stable ref so the polling interval doesn't need to re-register when items change
+  const notifItemsRef = useRef(notifItems)
+  useEffect(() => { notifItemsRef.current = notifItems }, [notifItems])
+
+  // Poll job status while any recipe_importing entry is in the bell.
+  // This is the primary completion signal — APNs is a bonus if configured.
+  useEffect(() => {
+    if (!user) return
+    const id = setInterval(async () => {
+      const pending = notifItemsRef.current.filter((n) => n.type === 'recipe_importing' && n.job_id)
+      if (!pending.length) return
+      for (const notif of pending) {
+        try {
+          const job = await api.getImportJob(notif.job_id!)
+          if (job.status === 'succeeded' && job.result_recipe_id) {
+            dismissNotif(notif.id)
+            pushNotif({
+              type: 'recipe_imported',
+              title: t('bell.recipeImported'),
+              body: t('bell.recipeImportedBody'),
+              recipe_id: job.result_recipe_id,
+              job_id: job.id,
+            })
+            qc.invalidateQueries()
+          } else if (job.status === 'failed') {
+            dismissNotif(notif.id)
+            pushNotif({
+              type: 'recipe_failed',
+              title: t('bell.recipeImportFailed'),
+              body: job.error ?? t('bell.recipeImportFailedBody'),
+              job_id: job.id,
+              job_kind: notif.job_kind,
+              job_input: notif.job_input,
+            })
+          }
+        } catch {
+          // ignore transient network errors
+        }
+      }
+    }, 3000)
+    return () => clearInterval(id)
+  }, [user, api, dismissNotif, pushNotif, qc, t])
 
   // Handle APNs pushes from the background import worker
   useEffect(() => {
