@@ -541,14 +541,14 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   cardImage: {
-    width: 88,
-    height: 88,
+    width: 100,
+    height: 100,
     borderTopLeftRadius: 10,
     borderBottomLeftRadius: 10,
   },
   cardImagePlaceholder: {
-    width: 88,
-    height: 88,
+    width: 100,
+    height: 100,
     backgroundColor: colors.opaqueSeparator,
     borderTopLeftRadius: 10,
     borderBottomLeftRadius: 10,
