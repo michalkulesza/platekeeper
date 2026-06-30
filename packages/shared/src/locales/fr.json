@@ -304,6 +304,7 @@
     "highDemandTitle": "Forte demande",
     "highDemandMessage": "Gemini est surchargé en ce moment. Terminer l'import en arrière-plan et nous vous notifierons quand c'est fait — même si vous fermez l'application.",
     "highDemandAccept": "Traiter en arrière-plan",
+    "highDemandWait": "Continuer à attendre",
     "failedToEnqueueJob": "Impossible de planifier l'import en arrière-plan",
     "urlPlaceholder": "URL Instagram, TikTok ou toute page de recette",
     "editRecipe": "Modifier la recette",
