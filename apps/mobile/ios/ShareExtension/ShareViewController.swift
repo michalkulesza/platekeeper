@@ -174,8 +174,30 @@ final class ShareViewController: UIViewController {
         return b
     }()
 
+    // Text-share preview card: shows the shared text as a dense "document" thumbnail.
+    private lazy var textPreviewView: UIView = {
+        let v = UIView()
+        v.backgroundColor = .white
+        v.layer.cornerRadius = 14
+        v.clipsToBounds = true
+        v.layer.borderWidth = 0.5
+        v.layer.borderColor = UIColor.black.withAlphaComponent(0.08).cgColor
+        v.translatesAutoresizingMaskIntoConstraints = false
+        v.isHidden = true
+        return v
+    }()
+
+    private lazy var textPreviewLabel: UILabel = {
+        let l = UILabel()
+        l.font = .systemFont(ofSize: 7, weight: .regular)
+        l.textColor = UIColor(white: 0.15, alpha: 1)
+        l.numberOfLines = 0
+        l.translatesAutoresizingMaskIntoConstraints = false
+        return l
+    }()
+
     private lazy var stack: UIStackView = {
-        let s = UIStackView(arrangedSubviews: [imageView, spinner, statusLabel, detailLabel, saveButton, queueButton, keepWaitingButton, doneButton])
+        let s = UIStackView(arrangedSubviews: [imageView, textPreviewView, spinner, statusLabel, detailLabel, saveButton, queueButton, keepWaitingButton, doneButton])
         s.axis = .vertical
         s.alignment = .center
         s.spacing = 14
@@ -195,10 +217,17 @@ final class ShareViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
 
+        textPreviewView.addSubview(textPreviewLabel)
         view.addSubview(stack)
         NSLayoutConstraint.activate([
             imageView.widthAnchor.constraint(equalToConstant: 120),
             imageView.heightAnchor.constraint(equalToConstant: 120),
+            textPreviewView.widthAnchor.constraint(equalToConstant: 120),
+            textPreviewView.heightAnchor.constraint(equalToConstant: 120),
+            textPreviewLabel.leadingAnchor.constraint(equalTo: textPreviewView.leadingAnchor, constant: 7),
+            textPreviewLabel.trailingAnchor.constraint(equalTo: textPreviewView.trailingAnchor, constant: -7),
+            textPreviewLabel.topAnchor.constraint(equalTo: textPreviewView.topAnchor, constant: 7),
+            textPreviewLabel.bottomAnchor.constraint(lessThanOrEqualTo: textPreviewView.bottomAnchor, constant: -7),
             stack.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             stack.centerYAnchor.constraint(equalTo: view.centerYAnchor),
             stack.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 32),
@@ -302,6 +331,16 @@ final class ShareViewController: UIViewController {
         queueButton.isHidden = true
         keepWaitingButton.isHidden = true
         detailLabel.isHidden = true
+
+        // Show source preview on first attempt only (keep it visible on retries).
+        if attempt == 1 {
+            if shareType == "text" {
+                textPreviewLabel.text = shareValue
+                textPreviewView.isHidden = false
+            } else {
+                fetchOGImageIfNeeded(for: shareValue)
+            }
+        }
 
         activeTask?.cancel()
         NSLog("[ShareExtension] startURLTextExtraction type=\(shareType) attempt=\(attempt)")
@@ -599,6 +638,7 @@ final class ShareViewController: UIViewController {
 
         spinner.stopAnimating()
         spinner.isHidden = true
+        textPreviewView.isHidden = true
         statusLabel.text = (recipe.title?.isEmpty == false ? recipe.title : nil) ?? "Recipe found"
 
         let ingredientCount = recipe.components.reduce(0) { $0 + $1.ingredients.count }
@@ -663,6 +703,48 @@ final class ShareViewController: UIViewController {
         for name in [pendingShareFilename, sharedImageFilename] {
             try? FileManager.default.removeItem(at: containerURL.appendingPathComponent(name))
         }
+    }
+
+    // MARK: URL preview (og:image)
+
+    private func fetchOGImageIfNeeded(for urlString: String) {
+        guard imageView.isHidden, let pageURL = URL(string: urlString) else { return }
+        var request = URLRequest(url: pageURL, timeoutInterval: 8)
+        request.setValue("text/html,application/xhtml+xml", forHTTPHeaderField: "Accept")
+        URLSession.shared.dataTask(with: request) { [weak self] data, _, _ in
+            guard let self,
+                  let data,
+                  let html = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1),
+                  let ogURL = self.parseOGImageURL(from: html, baseURL: pageURL) else { return }
+            URLSession.shared.dataTask(with: ogURL) { [weak self] imgData, _, _ in
+                guard let imgData, let image = UIImage(data: imgData) else { return }
+                DispatchQueue.main.async { [weak self] in
+                    guard let self, self.imageView.isHidden else { return }
+                    self.imageView.image = image
+                    self.imageView.isHidden = false
+                }
+            }.resume()
+        }.resume()
+    }
+
+    private func parseOGImageURL(from html: String, baseURL: URL) -> URL? {
+        // Walk every <meta ...> tag; return the first og:image content value found.
+        var search = html.startIndex..<html.endIndex
+        while let tagStart = html.range(of: "<meta", options: .caseInsensitive, range: search) {
+            guard let tagEnd = html.range(of: ">", range: tagStart.upperBound..<html.endIndex) else { break }
+            let tag = String(html[tagStart.lowerBound..<tagEnd.upperBound])
+            if tag.lowercased().contains("og:image"),
+               let contentRange = tag.range(of: "content=\"", options: .caseInsensitive),
+               let closeQuote = tag.range(of: "\"", range: contentRange.upperBound..<tag.endIndex) {
+                let raw = String(tag[contentRange.upperBound..<closeQuote.lowerBound])
+                if !raw.isEmpty {
+                    if let url = URL(string: raw) { return url }
+                    if let url = URL(string: raw, relativeTo: baseURL) { return url.absoluteURL }
+                }
+            }
+            search = tagEnd.upperBound..<html.endIndex
+        }
+        return nil
     }
 
     // MARK: Direct API calls
