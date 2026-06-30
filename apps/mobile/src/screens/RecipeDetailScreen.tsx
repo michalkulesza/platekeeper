@@ -657,12 +657,9 @@ const RecipeDetailScreen = () => {
             </View>
             <View style={styles.toggleDivider} />
             <View style={styles.keepScreenRow}>
-              <View style={styles.fontSizeLabelRow}>
-                <Ionicons name="text" size={16} color={colors.secondaryLabel} />
-                <Text style={styles.keepScreenLabel}>{t('settings.textSize')}</Text>
-              </View>
+              <Text style={styles.keepScreenLabel}>{t('settings.textSize')}</Text>
               <View style={styles.fontSizeControl}>
-                <Text style={styles.fontSizeASmall}>A</Text>
+                <Ionicons name="text" size={13} color={colors.secondaryLabel} />
                 <View style={styles.fontSizeTrack}>
                   <View style={styles.fontSizeTrackLine} />
                   {FONT_SIZES.map((_, i) => (
@@ -678,7 +675,7 @@ const RecipeDetailScreen = () => {
                     </Pressable>
                   ))}
                 </View>
-                <Text style={styles.fontSizeALarge}>A</Text>
+                <Ionicons name="text" size={20} color={colors.secondaryLabel} />
               </View>
             </View>
           </View>
@@ -778,7 +775,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   keepScreenLabel: { fontSize: 16, color: colors.label },
-  fontSizeLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   fontSizeControl: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   fontSizeTrack: {
     flexDirection: 'row',
@@ -806,8 +802,6 @@ const styles = StyleSheet.create({
     borderColor: colors.blue,
     backgroundColor: colors.blue,
   },
-  fontSizeASmall: { fontSize: 13, color: colors.secondaryLabel, fontWeight: '400' },
-  fontSizeALarge: { fontSize: 20, color: colors.secondaryLabel, fontWeight: '400' },
   notesBlock: { marginBottom: 16 },
   notesText: { fontSize: 17, color: colors.secondaryLabel, lineHeight: 22 },
   componentBlock: { marginTop: 8 },
