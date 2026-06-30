@@ -295,7 +295,16 @@ final class ShareViewController: UIViewController {
                         }
                     } else {
                         // All retries exhausted — ask the user before queuing in the background
-                        self.offerBackgroundJob(shareType: shareType, shareValue: shareValue, auth: auth)
+                        let input = [shareType: shareValue]
+                        self.offerBackgroundJob(
+                            jobKind: shareType,
+                            jobInput: input,
+                            manifestInput: input,
+                            auth: auth,
+                            fallbackPersistType: shareType,
+                            fallbackPersistValue: shareValue,
+                            onRetry: { self.startURLTextExtraction(shareType: shareType, shareValue: shareValue) }
+                        )
                     }
                 }
             }
@@ -308,7 +317,15 @@ final class ShareViewController: UIViewController {
         }
     }
 
-    private func offerBackgroundJob(shareType: String, shareValue: String, auth: SharedAuth) {
+    private func offerBackgroundJob(
+        jobKind: String,
+        jobInput: [String: String],
+        manifestInput: [String: String],
+        auth: SharedAuth,
+        fallbackPersistType: String,
+        fallbackPersistValue: String,
+        onRetry: @escaping () -> Void
+    ) {
         spinner.stopAnimating()
         spinner.isHidden = true
         statusLabel.text = "Extraction is taking a while…"
@@ -320,22 +337,36 @@ final class ShareViewController: UIViewController {
             message: "Extraction is taking longer than expected. Queue it in the background?",
             preferredStyle: .alert
         )
-        alert.addAction(UIAlertAction(title: "Keep waiting", style: .cancel) { [weak self] _ in
-            guard let self else { return }
-            self.startURLTextExtraction(shareType: shareType, shareValue: shareValue, attempt: 1)
+        alert.addAction(UIAlertAction(title: "Keep waiting", style: .cancel) { _ in
+            onRetry()
         })
         alert.addAction(UIAlertAction(title: "Queue in background", style: .default) { [weak self] _ in
-            self?.enqueueBackgroundJob(shareType: shareType, shareValue: shareValue, auth: auth)
+            self?.enqueueBackgroundJob(
+                jobKind: jobKind,
+                jobInput: jobInput,
+                manifestInput: manifestInput,
+                auth: auth,
+                fallbackPersistType: fallbackPersistType,
+                fallbackPersistValue: fallbackPersistValue
+            )
         })
         present(alert, animated: true)
     }
 
-    private func enqueueBackgroundJob(shareType: String, shareValue: String, auth: SharedAuth) {
-        NSLog("[ShareExtension] enqueuing background job type=\(shareType)")
+    private func enqueueBackgroundJob(
+        jobKind: String,
+        jobInput: [String: String],
+        manifestInput: [String: String],
+        auth: SharedAuth,
+        fallbackPersistType: String,
+        fallbackPersistValue: String
+    ) {
+        NSLog("[ShareExtension] enqueuing background job kind=\(jobKind)")
         statusLabel.text = "Adding to queue…"
 
         guard let url = URL(string: "\(auth.apiBaseUrl)/api/imports/jobs") else {
-            showJobFallback(shareType: shareType, shareValue: shareValue)
+            persistPendingShare(type: fallbackPersistType, value: fallbackPersistValue)
+            showSavedFallback()
             return
         }
 
@@ -345,10 +376,12 @@ final class ShareViewController: UIViewController {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(auth.token)", forHTTPHeaderField: "Authorization")
 
-        let input: [String: String] = shareType == "url" ? ["url": shareValue] : ["text": shareValue]
-        let body: [String: Any] = ["kind": shareType, "input": input, "model": importModel]
+        var inputAny: [String: Any] = [:]
+        for (k, v) in jobInput { inputAny[k] = v }
+        let body: [String: Any] = ["kind": jobKind, "input": inputAny, "model": importModel]
         guard let bodyData = try? JSONSerialization.data(withJSONObject: body) else {
-            showJobFallback(shareType: shareType, shareValue: shareValue)
+            persistPendingShare(type: fallbackPersistType, value: fallbackPersistValue)
+            showSavedFallback()
             return
         }
         request.httpBody = bodyData
@@ -358,20 +391,21 @@ final class ShareViewController: UIViewController {
             DispatchQueue.main.async {
                 if let error {
                     NSLog("[ShareExtension] enqueueJob failed: \(error)")
-                    self.showJobFallback(shareType: shareType, shareValue: shareValue)
+                    self.persistPendingShare(type: fallbackPersistType, value: fallbackPersistValue)
+                    self.showSavedFallback()
                     return
                 }
                 guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode),
                       let data,
                       let job = try? JSONDecoder().decode(EnqueueJobResponse.self, from: data) else {
                     NSLog("[ShareExtension] enqueueJob bad response")
-                    self.showJobFallback(shareType: shareType, shareValue: shareValue)
+                    self.persistPendingShare(type: fallbackPersistType, value: fallbackPersistValue)
+                    self.showSavedFallback()
                     return
                 }
 
                 NSLog("[ShareExtension] background job enqueued id=\(job.id)")
-                // Write job manifest so the main app registers it in the bell on next foreground
-                self.persistJobManifest(jobId: job.id, jobKind: shareType, jobInput: input)
+                self.persistJobManifest(jobId: job.id, jobKind: jobKind, jobInput: manifestInput)
                 self.showJobQueued()
             }
         }.resume()
@@ -399,12 +433,6 @@ final class ShareViewController: UIViewController {
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { [weak self] in
             self?.complete()
         }
-    }
-
-    private func showJobFallback(shareType: String, shareValue: String) {
-        // Job enqueue failed — fall back to App Group + manual open
-        persistPendingShare(type: shareType, value: shareValue)
-        showSavedFallback()
     }
 
     // MARK: Image handling
@@ -451,23 +479,49 @@ final class ShareViewController: UIViewController {
         DispatchQueue.main.async { [weak self] in
             self?.imageView.image = UIImage(data: jpegData)
             self?.imageView.isHidden = false
-            self?.statusLabel.text = "Recognizing recipe…"
         }
+        startImageExtraction(imageBase64: imageBase64, mimeType: mimeType, auth: auth)
+    }
+
+    private func startImageExtraction(imageBase64: String, mimeType: String, auth: SharedAuth, attempt: Int = 1) {
+        let attemptLabel = attempt > 1 ? " (\(attempt)/\(maxExtractionAttempts))" : ""
+        statusLabel.text = "Recognizing recipe…\(attemptLabel)"
+        spinner.startAnimating()
+        spinner.isHidden = false
+        saveButton.isHidden = true
+        doneButton.isHidden = true
+        detailLabel.isHidden = true
+
+        NSLog("[ShareExtension] startImageExtraction attempt=\(attempt)")
 
         recognizeImage(auth: auth, imageBase64: imageBase64, mimeType: mimeType) { [weak self] outcome in
             guard let self else { return }
             switch outcome {
-            case .failure(let error):
-                NSLog("[ShareExtension] recognizeImage failed: \(error) — falling back to persist+deep-link")
-                DispatchQueue.main.async {
-                    self.openApp(type: "image", value: sharedImageFilename)
-                }
             case .success(let result):
                 DispatchQueue.main.async {
-                    if let recipe = result.recipe {
+                    if let recipe = result.recipe, !recipe.components.isEmpty {
                         self.showRecipeFound(recipe, thumbnailUrl: result.metadata.thumbnailUrl, imageBase64: imageBase64, mimeType: mimeType, auth: auth)
                     } else {
                         self.showNoRecipe(message: result.error ?? "No recipe found in this photo.")
+                    }
+                }
+            case .failure(let error):
+                NSLog("[ShareExtension] image extraction attempt \(attempt) failed: \(error)")
+                DispatchQueue.main.async {
+                    if attempt < maxExtractionAttempts {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                            self.startImageExtraction(imageBase64: imageBase64, mimeType: mimeType, auth: auth, attempt: attempt + 1)
+                        }
+                    } else {
+                        self.offerBackgroundJob(
+                            jobKind: "image",
+                            jobInput: ["image_base64": imageBase64, "mime_type": mimeType],
+                            manifestInput: [:],
+                            auth: auth,
+                            fallbackPersistType: "image",
+                            fallbackPersistValue: sharedImageFilename,
+                            onRetry: { self.startImageExtraction(imageBase64: imageBase64, mimeType: mimeType, auth: auth) }
+                        )
                     }
                 }
             }
