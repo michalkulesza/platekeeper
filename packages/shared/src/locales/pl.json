@@ -127,6 +127,7 @@
   },
   "timers": {
     "startTimer": "Uruchom minutnik",
+    "goToRecipe": "Przejdź do przepisu",
     "timerDone_one": "Minutnik gotowy",
     "timerDone_few": "{{count}} minutniki gotowe",
     "timerDone_many": "{{count}} minutników gotowych",

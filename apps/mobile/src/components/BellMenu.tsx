@@ -45,6 +45,7 @@ const BellMenu = () => {
           isRunning
             ? { id: `timer-pause-${timer.id}`, title: t('common.pause'), image: 'pause.circle' }
             : { id: `timer-resume-${timer.id}`, title: t('common.resume'), image: 'play.circle' },
+          { id: `timer-goto-${timer.id}`, title: t('timers.goToRecipe'), image: 'arrow.right.circle' },
           {
             id: `timer-cancel-${timer.id}`,
             title: t('common.cancel'),
@@ -119,6 +120,10 @@ const BellMenu = () => {
         pauseTimer(id.slice('timer-pause-'.length))
       } else if (id.startsWith('timer-resume-')) {
         resumeTimer(id.slice('timer-resume-'.length))
+      } else if (id.startsWith('timer-goto-')) {
+        const timerId = id.slice('timer-goto-'.length)
+        const t = [...timers.values()].find((t) => t.id === timerId)
+        if (t) router.push(`/recipe/${t.recipeId}`)
       } else if (id.startsWith('timer-cancel-')) {
         cancelTimer(id.slice('timer-cancel-'.length))
       } else if (id.startsWith('inv-accept-')) {
@@ -163,7 +168,7 @@ const BellMenu = () => {
         clearNotifHistory()
       }
     },
-    [pauseTimer, resumeTimer, cancelTimer, api, refetchInvitations, refetchHouseholds, clearNotifHistory, dismissNotif, notifHistory, router, t],
+    [timers, pauseTimer, resumeTimer, cancelTimer, api, refetchInvitations, refetchHouseholds, clearNotifHistory, dismissNotif, notifHistory, router, t],
   )
 
   return (
