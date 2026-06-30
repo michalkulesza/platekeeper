@@ -21,9 +21,20 @@ class Settings(BaseSettings):
     def origins(self) -> list[str]:
         return [o.strip() for o in self.allowed_origins.split(",")]
 
+    # R2 image storage (optional — uploads skipped when not configured)
+    r2_endpoint_url: str = ""
+    r2_access_key_id: str = ""
+    r2_secret_access_key: str = ""
+    r2_bucket_name: str = ""
+    r2_public_url: str = ""
+
     @property
     def apns_configured(self) -> bool:
         return bool(self.apns_key_p8 and self.apns_key_id and self.apns_team_id)
+
+    @property
+    def r2_configured(self) -> bool:
+        return bool(self.r2_endpoint_url and self.r2_access_key_id and self.r2_bucket_name)
 
 
 settings = Settings()  # type: ignore[call-arg]

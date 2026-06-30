@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Sun } from 'react-feather'
 import { useTranslation } from 'react-i18next'
 import {
@@ -35,9 +35,10 @@ import {
   deleteRecipe,
   removeTagFromRecipe,
   updateRecipe,
+  uploadThumbnail,
 } from '../api/client'
 import TagRow from './TagRow'
-import { proxyUrl } from '../utils/imageUtils'
+import { proxyUrl, PLACEHOLDER_URL } from '../utils/imageUtils'
 
 // ── Allergen popover ──────────────────────────────────────────────────────────
 
@@ -916,11 +917,11 @@ const RecipeDetailModal = ({
   const [localTags, setLocalTags] = useState<Tag[]>([])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [showImgInput, setShowImgInput] = useState(false)
-  const [imgDraft, setImgDraft] = useState('')
+  const [imgUploading, setImgUploading] = useState(false)
   const [localNotes, setLocalNotes] = useState(recipe?.notes ?? '')
   const [notesSaving, setNotesSaving] = useState(false)
   const savedNotesRef = useRef(recipe?.notes ?? '')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (recipe) {
@@ -955,16 +956,20 @@ const RecipeDetailModal = ({
     mode === 'editing' ? draft.thumbnail_url : r.thumbnail_url
   const proxied = proxyUrl(displayThumb)
 
-  const openImgEditor = () => {
-    setImgDraft(draft?.thumbnail_url ?? '')
-    setShowImgInput(true)
-  }
-
-  const commitImg = () => {
-    const trimmed = imgDraft.trim()
-    setDraft((d) => (d ? { ...d, thumbnail_url: trimmed || null } : d))
-    setShowImgInput(false)
-  }
+  const handleThumbnailFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImgUploading(true)
+    try {
+      const result = await uploadThumbnail(file, r.id)
+      setDraft((d) => (d ? { ...d, thumbnail_url: result.url } : d))
+    } catch {
+      // keep existing thumbnail on failure
+    } finally {
+      setImgUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }, [r.id])
 
   const components =
     mode === 'editing' ? draft.components : (r.components as SaveComponent[])
@@ -1196,7 +1201,6 @@ const RecipeDetailModal = ({
   const cancelMode = () => {
     if (mode === 'editing') setDraft(toEditState(r))
     setMode('view')
-    setShowImgInput(false)
     setError(null)
   }
 
@@ -1224,12 +1228,24 @@ const RecipeDetailModal = ({
             {/* ── Sticky header ── */}
             <ModalHeader className="flex-col gap-0 p-0">
               {/* Hero image (or solid colour in edit/confirm mode) */}
+              {/* Hidden file input for thumbnail upload */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleThumbnailFile}
+              />
+
               {proxied ? (
                 <div className="relative w-full h-48 shrink-0">
                   <img
                     src={proxied}
                     alt={r.title}
                     className="absolute inset-0 w-full h-full object-cover"
+                    onError={(e) => {
+                      if (PLACEHOLDER_URL) (e.target as HTMLImageElement).src = PLACEHOLDER_URL
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
 
@@ -1237,10 +1253,11 @@ const RecipeDetailModal = ({
                   {mode === 'editing' && (
                     <button
                       type="button"
-                      onClick={openImgEditor}
-                      className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/40 text-white text-xs font-semibold hover:bg-black/60 transition-colors backdrop-blur-sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={imgUploading}
+                      className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/40 text-white text-xs font-semibold hover:bg-black/60 transition-colors backdrop-blur-sm disabled:opacity-60"
                     >
-                      Edit image
+                      {imgUploading ? t('common.uploading') : t('common.changePhoto')}
                     </button>
                   )}
 
@@ -1302,25 +1319,17 @@ const RecipeDetailModal = ({
                 </div>
               )}
 
-              {/* Image URL input */}
-              {mode === 'editing' && showImgInput && (
+              {/* Edit-image button when no current image */}
+              {mode === 'editing' && !proxied && (
                 <div className={`px-5 pt-2 ${headerBg}`}>
-                  <input
-                    type="url"
-                    value={imgDraft}
-                    onChange={(e) => setImgDraft(e.target.value)}
-                    onBlur={commitImg}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault()
-                        commitImg()
-                      }
-                      if (e.key === 'Escape') setShowImgInput(false)
-                    }}
-                    placeholder={t('common.imageUrl')}
-                    autoFocus
-                    className="w-full text-sm border-b border-primary focus:outline-none bg-transparent"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={imgUploading}
+                    className="text-sm text-primary underline disabled:opacity-60"
+                  >
+                    {imgUploading ? t('common.uploading') : t('common.addPhoto')}
+                  </button>
                 </div>
               )}
 

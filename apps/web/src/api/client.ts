@@ -45,6 +45,7 @@ export const {
   toggleFavourite,
   reorderRecipes,
   importRecipes,
+  uploadThumbnail,
   listTags,
   createTag,
   addTagToRecipe,

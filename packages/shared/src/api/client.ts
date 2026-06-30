@@ -127,6 +127,17 @@ export const createApiClient = (config: ApiClientConfig) => {
     return res.json() as Promise<{ imported: number }>
   }
 
+  const uploadThumbnail = async (file: File, recipeId: string): Promise<{ url: string }> => {
+    const form = new FormData()
+    form.append('file', file)
+    const res = await apiFetch(`/api/images/thumbnail?recipe_id=${encodeURIComponent(recipeId)}`, {
+      method: 'POST',
+      body: form,
+    })
+    await throwOnError(res, 'Upload failed')
+    return res.json() as Promise<{ url: string }>
+  }
+
   // ── Tags ───────────────────────────────────────────────────────────────────
 
   const listTags = async (): Promise<Tag[]> => {
@@ -626,6 +637,7 @@ export const createApiClient = (config: ApiClientConfig) => {
     toggleFavourite,
     reorderRecipes,
     importRecipes,
+    uploadThumbnail,
     listTags,
     createTag,
     addTagToRecipe,

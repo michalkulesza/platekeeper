@@ -26,6 +26,9 @@
     "imageUrl": "URL obrazu",
     "addPrivateNotes": "Dodaj prywatne notatki…",
     "thumbnail": "Miniatura",
+    "addPhoto": "Dodaj zdjęcie",
+    "changePhoto": "Zmień zdjęcie",
+    "uploading": "Przesyłam…",
     "invalidImageUrl": "Nieprawidłowy URL. Podaj prawidłowy adres https://."
   },
   "recipes": {

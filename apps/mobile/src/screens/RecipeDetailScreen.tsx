@@ -34,7 +34,7 @@ import type { RecipeOut, SaveComponent, Ingredient, StepIngredientRef } from '@p
 import { displayIngredient, buildClientStepRefs } from '@platekeeper/shared/utils/ingredientUtils'
 import { tTag } from '@platekeeper/shared/utils/tagUtils'
 import { colors } from '../theme/colors'
-import { proxyThumbnailUrl } from '../api/thumbnailUrl'
+import { proxyThumbnailUrl, PLACEHOLDER_URL } from '../api/thumbnailUrl'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
@@ -462,6 +462,7 @@ const RecipeDetailScreen = () => {
   const [keepScreenOn, setKeepScreenOn] = useState(false)
   const [showStepQty, setShowStepQty] = useState(true)
   const [fontSizeIndex, setFontSizeIndex] = useState(2)
+  const [heroImageErrored, setHeroImageErrored] = useState(false)
   const [addMode, setAddMode] = useState(false)
   const [sessionAdded, setSessionAdded] = useState<Set<string>>(new Set())
   const insets = useSafeAreaInsets()
@@ -583,9 +584,17 @@ const RecipeDetailScreen = () => {
         contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}
         contentInsetAdjustmentBehavior="never"
       >
-        {hasImage ? (
+        {hasImage && !heroImageErrored ? (
           <Image
             source={{ uri: proxyThumbnailUrl(recipe.thumbnail_url!)! }}
+            style={styles.heroImage}
+            accessibilityLabel={recipe.title}
+            resizeMode="cover"
+            onError={() => setHeroImageErrored(true)}
+          />
+        ) : hasImage && heroImageErrored && PLACEHOLDER_URL ? (
+          <Image
+            source={{ uri: PLACEHOLDER_URL }}
             style={styles.heroImage}
             accessibilityLabel={recipe.title}
             resizeMode="cover"
