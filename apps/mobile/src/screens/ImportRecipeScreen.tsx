@@ -1750,7 +1750,7 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   textPasteInlineBtn: {
-    alignSelf: 'flex-start',
+    alignSelf: 'flex-end',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
