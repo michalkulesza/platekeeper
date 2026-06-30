@@ -177,9 +177,10 @@ final class ShareViewController: UIViewController {
         handleSharedContent()
     }
 
-    // Scan every attachment for image or text content. Image takes precedence when both
-    // are present. Text shares are handled inline in the extension UI rather than
-    // immediately deep-linking, which caused the card to flash and disappear.
+    // Scan every attachment for image, URL, or text content.
+    // Priority: image > URL > plain-text. URL is checked even though it is absent from
+    // the activation rule because apps like Safari provide BOTH public.url (the page URL)
+    // AND public.plain-text (the page *title*); we want the URL, not the title.
     private func handleSharedContent() {
         guard let items = extensionContext?.inputItems as? [NSExtensionItem] else {
             NSLog("[ShareExtension] no input items")
@@ -196,6 +197,18 @@ final class ShareViewController: UIViewController {
                 NSLog("[ShareExtension] matched image provider")
                 imageProvider.loadItem(forTypeIdentifier: UTType.image.identifier) { [weak self] result, _ in
                     self?.handleImageResult(result)
+                }
+                return
+            }
+
+            if let urlProvider = providers.first(where: { $0.hasItemConformingToTypeIdentifier(UTType.url.identifier) }) {
+                NSLog("[ShareExtension] matched url provider")
+                urlProvider.loadItem(forTypeIdentifier: UTType.url.identifier) { [weak self] result, _ in
+                    guard let self else { return }
+                    let urlString = (result as? URL)?.absoluteString ?? (result as? String)
+                    guard let value = urlString, !value.isEmpty else { self.complete(); return }
+                    self.persistPendingShare(type: "url", value: value)
+                    DispatchQueue.main.async { self.showSharedText(isURL: true, shareType: "url", shareValue: value) }
                 }
                 return
             }
@@ -224,13 +237,11 @@ final class ShareViewController: UIViewController {
                         return
                     }
 
-                    // Some apps (Instagram, X) share a link as plain text — detect it and
-                    // route accordingly so the main app opens the correct import mode.
+                    // Some apps (Instagram, X) share a link as plain text rather than as public.url.
                     let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
                     let isURL = URL(string: trimmed).flatMap { $0.scheme }.map { $0.hasPrefix("http") } ?? false
                     let shareType = isURL ? "url" : "text"
                     let shareValue = isURL ? trimmed : String(trimmed.prefix(2000))
-                    // Persist immediately as fallback for host apps that decline extensionContext.open().
                     self.persistPendingShare(type: shareType, value: shareValue)
                     DispatchQueue.main.async {
                         self.showSharedText(isURL: isURL, shareType: shareType, shareValue: shareValue)
@@ -335,6 +346,21 @@ final class ShareViewController: UIViewController {
         saveButton.isHidden = false
     }
 
+    private func showSavedFallback() {
+        spinner.stopAnimating()
+        spinner.isHidden = true
+        statusLabel.text = "Saved ✓"
+        detailLabel.text = "Open PlateKeeper to continue."
+        detailLabel.isHidden = false
+        saveButton.isHidden = true
+        doneButton.setTitle("Done", for: .normal)
+        doneButton.isHidden = false
+        // Auto-dismiss after 3 s so the user has time to read the message.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
+            self?.complete()
+        }
+    }
+
     // MARK: Rich recognize/save states (image shares with a valid shared auth only)
 
     private func showRecipeFound(_ recipe: RecipeExtraction, thumbnailUrl: String?, imageBase64: String, mimeType: String, auth: SharedAuth) {
@@ -362,10 +388,33 @@ final class ShareViewController: UIViewController {
     }
 
     @objc private func saveTapped() {
-        // Text/URL share — open the main app and let it handle the import.
+        // Text/URL share — try to open the main app via deep link.
+        // The share is already persisted to App Group, so if the host app (e.g. Safari) declines
+        // to relay the deep link the user can open PlateKeeper manually and it will pick it up.
         if let pending = pendingOpenShare {
             saveButton.isEnabled = false
-            openApp(type: pending.type, value: pending.value)
+            saveButton.setTitle("Opening…", for: .normal)
+
+            guard let encoded = pending.value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+                  let url = URL(string: "platekeeper://share?type=\(pending.type)&value=\(encoded)") else {
+                showSavedFallback()
+                return
+            }
+
+            var completionFired = false
+            extensionContext?.open(url) { [weak self] success in
+                completionFired = true
+                NSLog("[ShareExtension] extensionContext.open completion: success=\(success)")
+                DispatchQueue.main.async {
+                    if success { self?.complete() } else { self?.showSavedFallback() }
+                }
+            }
+            // Some host apps never invoke the completion handler — fall back after 1.5 s.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+                guard !completionFired else { return }
+                NSLog("[ShareExtension] extensionContext.open completion never fired — showing fallback")
+                self?.showSavedFallback()
+            }
             return
         }
 
