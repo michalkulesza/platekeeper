@@ -1086,15 +1086,10 @@ const ImportRecipeScreen = () => {
   // Handle content shared from the native Share Extension via deep link params
   useEffect(() => {
     if (!sharedTypeParam || !sharedValueParam || editable) return
-    if (sharedTypeParam === 'url') {
-      setMode('share')
-      setUrl(sharedValueParam)
-    } else if (sharedTypeParam === 'text') {
-      setMode('text')
-      setPastedText(sharedValueParam)
-    } else if (sharedTypeParam === 'image') {
-      setMode('gallery')
-      startImageImport(sharedValueParam, 'image/jpeg')
+    switch (sharedTypeParam) {
+      case 'url':   setMode('share'); setUrl(sharedValueParam); break
+      case 'text':  setMode('text'); setPastedText(sharedValueParam); break
+      case 'image': setMode('gallery'); startImageImport(sharedValueParam, 'image/jpeg'); break
     }
   }, [sharedTypeParam, sharedValueParam])
 
@@ -1383,17 +1378,11 @@ const ImportRecipeScreen = () => {
 
   const handleModeSelect = (selectedMode: ImportMode) => {
     reset()
-    if (selectedMode === 'camera') {
-      setMode('camera')
-      handleCamera()
-    } else if (selectedMode === 'gallery') {
-      setMode('gallery')
-      handleGallery()
-    } else if (selectedMode === 'scratch') {
-      setMode('scratch')
-      setEditable(blankRecipe())
-    } else {
-      setMode(selectedMode)
+    setMode(selectedMode)
+    switch (selectedMode) {
+      case 'camera':  handleCamera(); break
+      case 'gallery': handleGallery(); break
+      case 'scratch': setEditable(blankRecipe()); break
     }
   }
 
