@@ -149,8 +149,33 @@ final class ShareViewController: UIViewController {
         return b
     }()
 
+    // Inline high-demand offer row (avoids UIAlertController which can dismiss the share sheet).
+    private lazy var queueButton: UIButton = {
+        let b = UIButton(type: .system)
+        b.setTitle("Queue in background", for: .normal)
+        b.setTitleColor(.white, for: .normal)
+        b.titleLabel?.font = .systemFont(ofSize: 16, weight: .semibold)
+        b.backgroundColor = .systemBlue
+        b.layer.cornerRadius = 10
+        b.contentEdgeInsets = UIEdgeInsets(top: 12, left: 24, bottom: 12, right: 24)
+        b.translatesAutoresizingMaskIntoConstraints = false
+        b.isHidden = true
+        b.addTarget(self, action: #selector(queueTapped), for: .touchUpInside)
+        return b
+    }()
+
+    private lazy var keepWaitingButton: UIButton = {
+        let b = UIButton(type: .system)
+        b.setTitle("Keep waiting", for: .normal)
+        b.titleLabel?.font = .systemFont(ofSize: 16, weight: .regular)
+        b.translatesAutoresizingMaskIntoConstraints = false
+        b.isHidden = true
+        b.addTarget(self, action: #selector(keepWaitingTapped), for: .touchUpInside)
+        return b
+    }()
+
     private lazy var stack: UIStackView = {
-        let s = UIStackView(arrangedSubviews: [imageView, spinner, statusLabel, detailLabel, saveButton, doneButton])
+        let s = UIStackView(arrangedSubviews: [imageView, spinner, statusLabel, detailLabel, saveButton, queueButton, keepWaitingButton, doneButton])
         s.axis = .vertical
         s.alignment = .center
         s.spacing = 14
@@ -160,14 +185,11 @@ final class ShareViewController: UIViewController {
 
     // Recognized recipe + the original photo, kept around so Save can be retried on failure.
     private var pendingSave: (recipe: RecipeExtraction, thumbnailUrl: String?, imageBase64: String, mimeType: String, auth: SharedAuth)?
-    // In-flight network task — cancelled when the share sheet is dismissed.
+    // In-flight network task — stored so it can be cancelled when a new attempt starts.
     private var activeTask: URLSessionDataTask?
-
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        activeTask?.cancel()
-        activeTask = nil
-    }
+    // Actions stored for the inline high-demand offer row.
+    private var pendingRetryAction: (() -> Void)?
+    private var pendingQueueAction: (() -> Void)?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -277,6 +299,8 @@ final class ShareViewController: UIViewController {
         spinner.isHidden = false
         saveButton.isHidden = true
         doneButton.isHidden = true
+        queueButton.isHidden = true
+        keepWaitingButton.isHidden = true
         detailLabel.isHidden = true
 
         activeTask?.cancel()
@@ -337,19 +361,12 @@ final class ShareViewController: UIViewController {
     ) {
         spinner.stopAnimating()
         spinner.isHidden = true
-        statusLabel.text = "Extraction is taking a while…"
-        detailLabel.text = "PlateKeeper can continue in the background and notify you when ready."
+        statusLabel.text = "Taking longer than expected…"
+        detailLabel.text = "Queue it in the background and get notified when ready."
         detailLabel.isHidden = false
 
-        let alert = UIAlertController(
-            title: "High demand",
-            message: "Extraction is taking longer than expected. Queue it in the background?",
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: "Keep waiting", style: .cancel) { _ in
-            onRetry()
-        })
-        alert.addAction(UIAlertAction(title: "Queue in background", style: .default) { [weak self] _ in
+        pendingRetryAction = onRetry
+        pendingQueueAction = { [weak self] in
             self?.enqueueBackgroundJob(
                 jobKind: jobKind,
                 jobInput: jobInput,
@@ -358,8 +375,28 @@ final class ShareViewController: UIViewController {
                 fallbackPersistType: fallbackPersistType,
                 fallbackPersistValue: fallbackPersistValue
             )
-        })
-        present(alert, animated: true)
+        }
+
+        queueButton.isHidden = false
+        keepWaitingButton.isHidden = false
+    }
+
+    @objc private func queueTapped() {
+        queueButton.isHidden = true
+        keepWaitingButton.isHidden = true
+        let action = pendingQueueAction
+        pendingRetryAction = nil
+        pendingQueueAction = nil
+        action?()
+    }
+
+    @objc private func keepWaitingTapped() {
+        queueButton.isHidden = true
+        keepWaitingButton.isHidden = true
+        let action = pendingRetryAction
+        pendingRetryAction = nil
+        pendingQueueAction = nil
+        action?()
     }
 
     private func enqueueBackgroundJob(
@@ -499,6 +536,8 @@ final class ShareViewController: UIViewController {
         spinner.isHidden = false
         saveButton.isHidden = true
         doneButton.isHidden = true
+        queueButton.isHidden = true
+        keepWaitingButton.isHidden = true
         detailLabel.isHidden = true
 
         activeTask?.cancel()
