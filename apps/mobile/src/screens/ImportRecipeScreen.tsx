@@ -3,6 +3,7 @@ import type { ComponentProps } from 'react'
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   FlatList,
   Image,
   KeyboardAvoidingView,
@@ -51,10 +52,6 @@ import { proxyThumbnailUrl, isValidImageUrl } from '../api/thumbnailUrl'
 type ImportMode = 'url' | 'camera' | 'gallery' | 'text' | 'share' | 'scratch'
 
 // ── Local types ────────────────────────────────────────────────────────────────
-
-interface StepState extends StageEvent {
-  status: 'active' | 'done'
-}
 
 interface EditableComponent {
   name: string
@@ -153,6 +150,35 @@ const isBlankRecipe = (r: EditableRecipe): boolean =>
       c.ingredients.every((ing) => !ing.name.trim()) &&
       c.steps.every((s) => !s.trim()),
   )
+
+// Progress target per pipeline stage key (0..1)
+const STAGE_PROGRESS: Record<string, number> = {
+  fetching_page: 0.25,
+  analyzing_page: 0.70,
+  fetching_metadata: 0.15,
+  checking_description: 0.35,
+  checking_links: 0.55,
+  fetching_transcript: 0.65,
+  analyzing_transcript: 0.82,
+  analyzing_text: 0.70,
+  analyzing_image: 0.70,
+}
+
+// ── ImportProgressBar ──────────────────────────────────────────────────────────
+
+const ImportProgressBar = ({ anim, visible }: { anim: Animated.Value; visible: boolean }) => {
+  if (!visible) return null
+  return (
+    <View style={styles.progressBarTrack}>
+      <Animated.View
+        style={[
+          styles.progressBarFill,
+          { width: anim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) },
+        ]}
+      />
+    </View>
+  )
+}
 
 // ── UnitPickerModal ────────────────────────────────────────────────────────────
 
@@ -871,14 +897,14 @@ const UrlInputView = ({
   onPaste,
   onImport,
   loading,
-  progressSteps,
+  animProgress,
 }: {
   url: string
   onUrlChange: (v: string) => void
   onPaste: () => void
   onImport: () => void
   loading: boolean
-  progressSteps: StepState[]
+  animProgress: Animated.Value
 }) => {
   const { t } = useTranslation()
   return (
@@ -909,19 +935,7 @@ const UrlInputView = ({
           <Feather name="clipboard" size={20} color={colors.secondaryLabel} />
         </Pressable>
       </View>
-      {progressSteps.length > 0 && (
-        <View style={styles.progressList}>
-          {progressSteps.map((s) => (
-            <View key={s.key} style={styles.progressRow}>
-              <Text style={styles.progressIcon}>{s.status === 'done' ? '✓' : '⋯'}</Text>
-              <Text style={[styles.progressLabel, s.status === 'active' && styles.progressActive]}>
-                {s.label}
-              </Text>
-            </View>
-          ))}
-        </View>
-      )}
-      {loading && <ActivityIndicator style={styles.spinner} size="small" color={colors.brand} />}
+      <ImportProgressBar anim={animProgress} visible={loading} />
     </View>
   )
 }
@@ -934,14 +948,14 @@ const TextPasteView = ({
   onPaste,
   onExtract,
   loading,
-  progressSteps,
+  animProgress,
 }: {
   text: string
   onTextChange: (v: string) => void
   onPaste: () => void
   onExtract: () => void
   loading: boolean
-  progressSteps: StepState[]
+  animProgress: Animated.Value
 }) => {
   const { t } = useTranslation()
   return (
@@ -969,19 +983,7 @@ const TextPasteView = ({
           <Text style={styles.textPasteBtnText}>{t('addRecipe.paste')}</Text>
         </Pressable>
       </View>
-      {progressSteps.length > 0 && (
-        <View style={styles.progressList}>
-          {progressSteps.map((s) => (
-            <View key={s.key} style={styles.progressRow}>
-              <Text style={styles.progressIcon}>{s.status === 'done' ? '✓' : '⋯'}</Text>
-              <Text style={[styles.progressLabel, s.status === 'active' && styles.progressActive]}>
-                {s.label}
-              </Text>
-            </View>
-          ))}
-        </View>
-      )}
-      {loading && <ActivityIndicator style={styles.spinner} size="small" color={colors.brand} />}
+      <ImportProgressBar anim={animProgress} visible={loading} />
     </View>
   )
 }
@@ -994,14 +996,14 @@ const ShareView = ({
   onPaste,
   onImport,
   loading,
-  progressSteps,
+  animProgress,
 }: {
   url: string
   onUrlChange: (v: string) => void
   onPaste: () => void
   onImport: () => void
   loading: boolean
-  progressSteps: StepState[]
+  animProgress: Animated.Value
 }) => {
   const { t } = useTranslation()
   return (
@@ -1036,19 +1038,7 @@ const ShareView = ({
           <Text style={styles.pasteBtnText}>{t('addRecipe.paste')}</Text>
         </Pressable>
       </View>
-      {progressSteps.length > 0 && (
-        <View style={styles.progressList}>
-          {progressSteps.map((s) => (
-            <View key={s.key} style={styles.progressRow}>
-              <Text style={styles.progressIcon}>{s.status === 'done' ? '✓' : '⋯'}</Text>
-              <Text style={[styles.progressLabel, s.status === 'active' && styles.progressActive]}>
-                {s.label}
-              </Text>
-            </View>
-          ))}
-        </View>
-      )}
-      {loading && <ActivityIndicator style={styles.spinner} size="small" color={colors.brand} />}
+      <ImportProgressBar anim={animProgress} visible={loading} />
     </View>
   )
 }
@@ -1072,7 +1062,7 @@ const ImportRecipeScreen = () => {
   const [pastedText, setPastedText] = useState('')
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [progressSteps, setProgressSteps] = useState<StepState[]>([])
+  const progressAnim = useRef(new Animated.Value(0)).current
   const [editable, setEditable] = useState<EditableRecipe | null>(null)
   const [selectedTags, setSelectedTags] = useState<Tag[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -1182,7 +1172,7 @@ const ImportRecipeScreen = () => {
   const reset = () => {
     cancelRef.current?.()
     setLoading(false)
-    setProgressSteps([])
+    progressAnim.setValue(0)
     setEditable(null)
     setSelectedTags([])
     setError(null)
@@ -1273,22 +1263,22 @@ const ImportRecipeScreen = () => {
 
   const startStreamCallbacks = () => ({
     onStage(stage: StageEvent) {
-      setProgressSteps((prev) => [
-        ...prev.map((s) => (s.status === 'active' ? { ...s, status: 'done' as const } : s)),
-        { ...stage, status: 'active' },
-      ])
+      console.log('[import] stage:', stage.key, '—', stage.label)
+      const target = STAGE_PROGRESS[stage.key] ?? 0.5
+      Animated.timing(progressAnim, { toValue: target, duration: 400, useNativeDriver: false }).start()
     },
     onDone(res: ImportResult) {
-      setProgressSteps((prev) =>
-        prev.map((s) => (s.status === 'active' ? { ...s, status: 'done' as const } : s)),
-      )
+      console.log('[import] done:', res.stage, res.error ?? 'ok')
+      Animated.timing(progressAnim, { toValue: 1, duration: 300, useNativeDriver: false }).start()
       applyImportResult(res)
     },
     onError(msg: string) {
+      console.log('[import] error:', msg)
       setError(msg)
       setLoading(false)
     },
     onHighDemand() {
+      console.log('[import] high demand — offering background job')
       void handleHighDemand()
     },
   })
@@ -1298,11 +1288,11 @@ const ImportRecipeScreen = () => {
     cancelRef.current?.()
     highDemandJobRef.current = { kind: 'url', input: { url: url.trim() } }
     highDemandOfferedRef.current = false
+    progressAnim.setValue(0)
     setLoading(true)
     setError(null)
     setEditable(null)
     setSelectedTags([])
-    setProgressSteps([])
     cancelRef.current = api.streamImportFetch(url.trim(), startStreamCallbacks())
   }
 
@@ -1317,11 +1307,11 @@ const ImportRecipeScreen = () => {
     cancelRef.current?.()
     highDemandJobRef.current = { kind: 'text', input: { text: pastedText.trim() } }
     highDemandOfferedRef.current = false
+    progressAnim.setValue(0)
     setLoading(true)
     setError(null)
     setEditable(null)
     setSelectedTags([])
-    setProgressSteps([])
     cancelRef.current = api.streamTextImportFetch(pastedText.trim(), startStreamCallbacks())
   }
 
@@ -1382,11 +1372,11 @@ const ImportRecipeScreen = () => {
     highDemandJobRef.current = { kind: 'image', input: { image_base64: imageBase64, mime_type: mimeType } }
     highDemandOfferedRef.current = false
     pendingThumbRef.current = `data:${mimeType};base64,${imageBase64}`
+    progressAnim.setValue(0)
     setLoading(true)
     setError(null)
     setEditable(null)
     setSelectedTags([])
-    setProgressSteps([])
     cancelRef.current = api.streamImageImportFetch(imageBase64, mimeType, startStreamCallbacks())
   }
 
@@ -1479,7 +1469,7 @@ const ImportRecipeScreen = () => {
             onPaste={handlePasteUrl}
             onImport={handleImportUrl}
             loading={loading}
-            progressSteps={progressSteps}
+            animProgress={progressAnim}
           />
         )}
 
@@ -1491,7 +1481,7 @@ const ImportRecipeScreen = () => {
             onPaste={handlePasteText}
             onExtract={handleImportText}
             loading={loading}
-            progressSteps={progressSteps}
+            animProgress={progressAnim}
           />
         )}
 
@@ -1503,7 +1493,7 @@ const ImportRecipeScreen = () => {
             onPaste={handlePasteUrl}
             onImport={handleImportUrl}
             loading={loading}
-            progressSteps={progressSteps}
+            animProgress={progressAnim}
           />
         )}
 
@@ -1511,19 +1501,7 @@ const ImportRecipeScreen = () => {
         {(mode === 'camera' || mode === 'gallery') && !editable && (
           <View style={styles.imageLoadingSection}>
             <Ionicons name="image" size={80} color={PlatformColor('tertiaryLabel') as unknown as string} />
-            {progressSteps.length > 0 && (
-              <View style={styles.progressList}>
-                {progressSteps.map((s) => (
-                  <View key={s.key} style={styles.progressRow}>
-                    <Text style={styles.progressIcon}>{s.status === 'done' ? '✓' : '⋯'}</Text>
-                    <Text style={[styles.progressLabel, s.status === 'active' && styles.progressActive]}>
-                      {s.label}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            )}
-            {loading && <ActivityIndicator style={styles.spinner} size="large" color={colors.brand} />}
+            <ImportProgressBar anim={progressAnim} visible={loading} />
           </View>
         )}
 
@@ -1793,13 +1771,18 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
 
-  // Progress
-  progressList: { gap: 6 },
-  progressRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  progressIcon: { fontSize: 13, color: PlatformColor('secondaryLabel') as unknown as string, width: 14 },
-  progressLabel: { fontSize: 13, color: PlatformColor('secondaryLabel') as unknown as string, flex: 1 },
-  progressActive: { color: colors.brand, fontWeight: '600' },
-  spinner: { marginTop: 8 },
+  // Progress bar
+  progressBarTrack: {
+    height: 3,
+    backgroundColor: PlatformColor('systemGray5') as unknown as string,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: 3,
+    backgroundColor: colors.brand,
+    borderRadius: 2,
+  },
 
   // Error box
   errorBox: {
