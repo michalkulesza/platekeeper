@@ -228,7 +228,7 @@ function RootLayoutNav() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="import-recipe" options={{ title: t('addRecipe.addRecipe') }} />
         <Stack.Screen name="recipe/[id]" options={{ title: '' }} />
-        <Stack.Screen name="recipe/[id]/edit" options={{ title: '' }} />
+        <Stack.Screen name="recipe/[id]/edit" options={{ title: t('addRecipe.editRecipe') }} />
         <Stack.Screen name="household/[id]" options={{ title: '' }} />
       </Stack>
       {(loading || processingShare) && (
