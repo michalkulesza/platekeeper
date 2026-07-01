@@ -193,8 +193,8 @@ const EditRecipeScreen = () => {
       thumbnail_url: recipe.thumbnail_url ?? '',
       source_url: recipe.source_url ?? '',
       components: recipe.components.map((c) => ({
-        name: c.name,
-        yield_note: c.yield_note,
+        name: c.name ?? '',
+        yield_note: c.yield_note ?? '',
         ingredients: (c.ingredients as Array<string | StructuredIngredient>).map((raw) =>
           typeof raw === 'string' ? parseIngredient(raw) : raw,
         ),
@@ -397,8 +397,8 @@ const EditRecipeScreen = () => {
         notes: state.notes || null,
         creator_handle: recipe?.creator_handle ?? null,
         components: state.components.map((c) => ({
-          name: c.name,
-          yield_note: c.yield_note,
+          name: c.name ?? '',
+          yield_note: c.yield_note ?? '',
           ingredients: c.ingredients.filter((ing) => ing.name).map(serializeIngredient),
           steps: c.steps.filter(Boolean),
           ingredient_flags: [],
