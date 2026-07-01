@@ -12,7 +12,6 @@ export default function ShoppingTab() {
         options={{
           title: t('nav.shopping'),
           headerRight: () => <BellMenu />,
-          headerBlurEffect: 'systemMaterial',
         }}
       />
       <ShoppingListScreen />
