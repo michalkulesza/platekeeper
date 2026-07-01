@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useRef, useState, type ReactNode } from 'react'
 import {
   ActionSheetIOS,
   ActivityIndicator,
@@ -17,6 +17,12 @@ import { Swipeable } from 'react-native-gesture-handler'
 import { useShoppingList } from '@platekeeper/shared/hooks/useShoppingList'
 import type { ShoppingListItem, PresenceUser } from '@platekeeper/shared/types'
 import { colors } from '../theme/colors'
+import { useScreenLoading } from '../hooks/useScreenLoading'
+
+// Standard iOS tab bar chrome height. The native UITabBar overlays the content,
+// and contentInsetAdjustmentBehavior is disabled (DraggableFlatList breaks it),
+// so we inset the bottom manually — same as the top nav bar.
+const TAB_BAR_HEIGHT = 49
 
 // ── Checkbox ──────────────────────────────────────────────────────────────────
 
@@ -67,6 +73,114 @@ const PresenceBar = ({ users, currentUserId }: { users: PresenceUser[]; currentU
   )
 }
 
+// ── Add item row (self-contained state) ───────────────────────────────────────
+// Keeps its text in local state so typing never re-renders the parent list —
+// otherwise the FlatList footer remounts on each keystroke and the input loses focus.
+
+const AddItemRow = ({ onAdd }: { onAdd: (text: string) => void }) => {
+  const { t } = useTranslation()
+  const [text, setText] = useState('')
+  const inputRef = useRef<TextInput>(null)
+
+  const submit = useCallback(() => {
+    const trimmed = text.trim()
+    if (!trimmed) return
+    onAdd(trimmed)
+    setText('')
+    // Keep the keyboard up for rapid entry of multiple items.
+    setTimeout(() => inputRef.current?.focus(), 50)
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+  }, [text, onAdd])
+
+  return (
+    <Pressable style={styles.addRow} onPress={() => inputRef.current?.focus()}>
+      <View style={styles.addIconWrap}>
+        <Text style={styles.addPlusIcon}>+</Text>
+      </View>
+      <TextInput
+        ref={inputRef}
+        style={styles.addInput}
+        value={text}
+        onChangeText={setText}
+        placeholder={t('shoppingList.addItemPlaceholder')}
+        placeholderTextColor={colors.placeholderText}
+        returnKeyType="done"
+        onSubmitEditing={submit}
+        blurOnSubmit={false}
+        autoCapitalize="sentences"
+        autoCorrect
+      />
+    </Pressable>
+  )
+}
+
+// ── List footer (add row + completed section) ─────────────────────────────────
+// Defined at module scope so its component *type* is stable across renders. The
+// footer is passed to the list as a JSX element with fresh props each render, so
+// React reconciles (re-renders) instead of remounting — which is what keeps the
+// AddItemRow's TextInput from losing focus on every SSE-driven re-render.
+
+const ShoppingListFooter = ({
+  completedItems,
+  onAdd,
+  onToggle,
+  onClearCompleted,
+  renderRightDelete,
+  bottomInset,
+}: {
+  completedItems: ShoppingListItem[]
+  onAdd: (text: string) => void
+  onToggle: (id: string, completed: boolean) => void
+  onClearCompleted: () => void
+  renderRightDelete: (id: string, locked: boolean) => () => ReactNode
+  bottomInset: number
+}) => {
+  const { t } = useTranslation()
+  return (
+    <View>
+      {/* Inline add row */}
+      <AddItemRow onAdd={onAdd} />
+
+      {/* Completed section */}
+      {completedItems.length > 0 && (
+        <View>
+          <View style={styles.sectionDivider} />
+          <View style={styles.completedHeader}>
+            <Text style={styles.completedLabel}>
+              {completedItems.length} {t('shoppingList.completedSection')}
+            </Text>
+            <Pressable
+              onPress={onClearCompleted}
+              hitSlop={8}
+              accessibilityLabel={t('shoppingList.clearCompleted')}
+            >
+              <Text style={styles.clearBtn}>{t('shoppingList.clearCompleted')}</Text>
+            </Pressable>
+          </View>
+          {completedItems.map((item) => (
+            <Swipeable
+              key={item.id}
+              renderRightActions={renderRightDelete(item.id, false)}
+              overshootRight={false}
+            >
+              <View style={styles.item}>
+                <CheckCircle
+                  checked
+                  onPress={() => onToggle(item.id, item.completed)}
+                  accessibilityLabel={item.text}
+                />
+                <Text style={[styles.itemText, styles.completedText]}>{item.text}</Text>
+              </View>
+            </Swipeable>
+          ))}
+        </View>
+      )}
+
+      <View style={{ height: bottomInset + 24 }} />
+    </View>
+  )
+}
+
 // ── Main screen ───────────────────────────────────────────────────────────────
 
 const ShoppingListScreen = () => {
@@ -75,6 +189,11 @@ const ShoppingListScreen = () => {
   // DraggableFlatList's gesture-handler wrapping breaks the native
   // contentInsetAdjustmentBehavior mechanism — set the inset manually instead.
   const navBarInset = insets.top + 44
+  // Extra breathing room so the first row clears the transparent header and the
+  // list visibly scrolls underneath it.
+  const listTopInset = navBarInset + 12
+  // Clear the native tab bar so the last rows aren't hidden underneath it.
+  const listBottomInset = insets.bottom + TAB_BAR_HEIGHT
 
   const {
     incompleteItems,
@@ -89,9 +208,8 @@ const ShoppingListScreen = () => {
     remove,
     clearCompleted,
   } = useShoppingList()
+  const { busy, showSpinner } = useScreenLoading(isLoading)
 
-  const [addText, setAddText] = useState('')
-  const addInputRef = useRef<TextInput>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingText, setEditingText] = useState('')
 
@@ -114,14 +232,12 @@ const ShoppingListScreen = () => {
     )
   }, [clearCompleted, t])
 
-  const handleAdd = useCallback(() => {
-    const text = addText.trim()
-    if (!text) return
-    addItems.mutate([text])
-    setAddText('')
-    setTimeout(() => addInputRef.current?.focus(), 50)
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-  }, [addText, addItems])
+  const handleAdd = useCallback(
+    (text: string) => {
+      addItems.mutate([text])
+    },
+    [addItems]
+  )
 
   const handleToggle = useCallback(
     (id: string, completed: boolean) => {
@@ -253,79 +369,11 @@ const ShoppingListScreen = () => {
     [editingId, editingText, lockedByOther, handleToggle, handleEditStart, handleEditSubmit, renderRightDelete, t]
   )
 
-  const ListHeader = useCallback(
-    () => <PresenceBar users={presence} />,
-    [presence]
-  )
-
-  const ListFooter = useCallback(
-    () => (
-      <View>
-        {/* Inline add row */}
-        <Pressable style={styles.addRow} onPress={() => addInputRef.current?.focus()}>
-          <View style={styles.addIconWrap}>
-            <Text style={styles.addPlusIcon}>+</Text>
-          </View>
-          <TextInput
-            ref={addInputRef}
-            style={styles.addInput}
-            value={addText}
-            onChangeText={setAddText}
-            placeholder={t('shoppingList.addItemPlaceholder')}
-            placeholderTextColor={colors.placeholderText}
-            returnKeyType="done"
-            onSubmitEditing={handleAdd}
-            blurOnSubmit={false}
-            autoCapitalize="sentences"
-            autoCorrect
-          />
-        </Pressable>
-
-        {/* Completed section */}
-        {completedItems.length > 0 && (
-          <View>
-            <View style={styles.sectionDivider} />
-            <View style={styles.completedHeader}>
-              <Text style={styles.completedLabel}>
-                {completedItems.length} {t('shoppingList.completedSection')}
-              </Text>
-              <Pressable
-                onPress={handleClearCompleted}
-                hitSlop={8}
-                accessibilityLabel={t('shoppingList.clearCompleted')}
-              >
-                <Text style={styles.clearBtn}>{t('shoppingList.clearCompleted')}</Text>
-              </Pressable>
-            </View>
-            {completedItems.map((item) => (
-              <Swipeable
-                key={item.id}
-                renderRightActions={renderRightDelete(item.id, false)}
-                overshootRight={false}
-              >
-                <View style={styles.item}>
-                  <CheckCircle
-                    checked
-                    onPress={() => handleToggle(item.id, item.completed)}
-                    accessibilityLabel={item.text}
-                  />
-                  <Text style={[styles.itemText, styles.completedText]}>{item.text}</Text>
-                </View>
-              </Swipeable>
-            ))}
-          </View>
-        )}
-
-        <View style={{ height: insets.bottom + 24 }} />
-      </View>
-    ),
-    [addText, handleAdd, completedItems, handleToggle, handleClearCompleted, renderRightDelete, t, insets.bottom]
-  )
-
-  if (isLoading) {
+  if (busy) {
+    // Defer to the root loadingOverlay while auth is bootstrapping.
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" />
+        {showSpinner && <ActivityIndicator size="large" />}
       </View>
     )
   }
@@ -337,11 +385,21 @@ const ShoppingListScreen = () => {
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         onDragEnd={({ data }) => reorder.mutate(data.map((i) => i.id))}
-        ListHeaderComponent={ListHeader}
-        ListFooterComponent={ListFooter}
+        containerStyle={styles.listContainer}
+        ListHeaderComponent={<PresenceBar users={presence} />}
+        ListFooterComponent={
+          <ShoppingListFooter
+            completedItems={completedItems}
+            onAdd={handleAdd}
+            onToggle={handleToggle}
+            onClearCompleted={handleClearCompleted}
+            renderRightDelete={renderRightDelete}
+            bottomInset={listBottomInset}
+          />
+        }
         contentInsetAdjustmentBehavior="never"
-        scrollIndicatorInsets={{ top: navBarInset }}
-        contentContainerStyle={[styles.listContent, { paddingTop: navBarInset }]}
+        scrollIndicatorInsets={{ top: navBarInset, bottom: listBottomInset }}
+        contentContainerStyle={[styles.listContent, { paddingTop: listTopInset }]}
         ListEmptyComponent={
           completedItems.length === 0 ? (
             <View style={styles.emptyContainer}>
@@ -365,6 +423,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.background,
+  },
+  // DraggableFlatList's outer wrapper has no flex by default — without this it
+  // sizes to ~half the screen and clips the list. Must be flex: 1 to fill.
+  listContainer: {
+    flex: 1,
   },
   listContent: {
     flexGrow: 1,
