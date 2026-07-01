@@ -145,6 +145,15 @@ const blankRecipe = (): EditableRecipe => ({
   }],
 })
 
+const isBlankRecipe = (r: EditableRecipe): boolean =>
+  !r.title.trim() &&
+  !r.thumbnail_url &&
+  r.components.every(
+    (c) =>
+      c.ingredients.every((ing) => !ing.name.trim()) &&
+      c.steps.every((s) => !s.trim()),
+  )
+
 // ── UnitPickerModal ────────────────────────────────────────────────────────────
 
 const UNIT_OPTIONS: string[] = ['', ...UNITS]
@@ -1129,6 +1138,11 @@ const ImportRecipeScreen = () => {
       navigation.setOptions({
         gestureEnabled: false,
         headerLeft: renderBackButton(() => {
+          if (isBlankRecipe(editable)) {
+            reset()
+            setMode(null)
+            return
+          }
           Alert.alert(t('addRecipe.discard'), t('addRecipe.discardMessage'), [
             { text: t('common.cancel'), style: 'cancel' },
             { text: t('addRecipe.discard'), style: 'destructive', onPress: () => { reset(); setMode(null) } },
