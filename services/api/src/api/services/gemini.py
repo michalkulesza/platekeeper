@@ -20,6 +20,23 @@ _DEFAULT_MODEL = "gemini-2.5-flash"
 _T = TypeVar("_T")
 
 
+class UsageTracker:
+    """Accumulates token usage across every Gemini call made during one import."""
+
+    def __init__(self) -> None:
+        self.input_tokens = 0
+        self.output_tokens = 0
+        self.calls = 0
+
+    def add(self, response: object) -> None:
+        meta = getattr(response, "usage_metadata", None)
+        if meta is None:
+            return
+        self.input_tokens += meta.prompt_token_count or 0
+        self.output_tokens += meta.candidates_token_count or 0
+        self.calls += 1
+
+
 def _retry_delays(generous: bool = False):
     if generous:
         for d in (1, 2, 4, 8, 16, 30, 60):
@@ -144,6 +161,7 @@ async def extract_recipe(
     allergens: list[str] | None = None,
     on_high_demand: Callable[[], Awaitable[None]] | None = None,
     generous: bool = False,
+    usage: UsageTracker | None = None,
 ) -> RecipeExtraction:
     parts = []
     if source_hint:
@@ -169,6 +187,8 @@ async def extract_recipe(
         on_high_demand=on_high_demand,
         generous=generous,
     )
+    if usage is not None:
+        usage.add(response)
 
     raw = response.text
     log.debug("Gemini raw response (%s): %s", source_hint, raw[:500])
@@ -184,6 +204,7 @@ async def extract_recipe_from_image(
     allergens: list[str] | None = None,
     on_high_demand: Callable[[], Awaitable[None]] | None = None,
     generous: bool = False,
+    usage: UsageTracker | None = None,
 ) -> RecipeExtraction:
     parts_text = []
     if available_tags:
@@ -216,6 +237,8 @@ async def extract_recipe_from_image(
         on_high_demand=on_high_demand,
         generous=generous,
     )
+    if usage is not None:
+        usage.add(response)
 
     raw = response.text
     log.debug("Gemini image extraction raw: %s", raw[:500])
@@ -236,6 +259,7 @@ async def analyze_allergens(
     ingredients: list[str],
     allergens: list[str],
     model: str = _DEFAULT_MODEL,
+    usage: UsageTracker | None = None,
 ) -> list[_IngredientFlag]:
     if not ingredients or not allergens:
         return [_IngredientFlag() for _ in ingredients]
@@ -253,6 +277,8 @@ async def analyze_allergens(
             response_schema=_AllergenAnalysisResult,
         ),
     ))
+    if usage is not None:
+        usage.add(response)
 
     raw = response.text
     log.debug("Gemini allergen analysis raw: %s", raw[:500])
