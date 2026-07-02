@@ -15,6 +15,16 @@ const LoginScreen = () => {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [secretStage, setSecretStage] = useState({ email: false, password: false, taps: 0 })
+  const [showDemoButtons, setShowDemoButtons] = useState(false)
+
+  const handleEmailFocus = useCallback(() => {
+    setSecretStage((s) => (!s.email && !s.password && s.taps === 0 ? { ...s, email: true } : { email: false, password: false, taps: 0 }))
+  }, [])
+
+  const handlePasswordFocus = useCallback(() => {
+    setSecretStage((s) => (s.email && !s.password && s.taps === 0 ? { ...s, password: true } : { email: false, password: false, taps: 0 }))
+  }, [])
 
   const fillDemo = useCallback(() => {
     setEmail('demo@demo.com')
@@ -40,6 +50,19 @@ const LoginScreen = () => {
     }
   }
 
+  const handleSignInPress = () => {
+    handleLogin()
+    setSecretStage((s) => {
+      if (!s.email || !s.password || email || password) return { email: false, password: false, taps: 0 }
+      const taps = s.taps + 1
+      if (taps >= 5) {
+        setShowDemoButtons(true)
+        return { email: false, password: false, taps: 0 }
+      }
+      return { ...s, taps }
+    })
+  }
+
   return (
     <KeyboardAvoidingView style={styles.outer} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.container}>
@@ -53,6 +76,7 @@ const LoginScreen = () => {
           placeholderTextColor={colors.placeholderText}
           value={email}
           onChangeText={setEmail}
+          onFocus={handleEmailFocus}
           keyboardType="email-address"
           autoCapitalize="none"
           autoCorrect={false}
@@ -67,6 +91,7 @@ const LoginScreen = () => {
           placeholderTextColor={colors.placeholderText}
           value={password}
           onChangeText={setPassword}
+          onFocus={handlePasswordFocus}
           secureTextEntry
           autoComplete="current-password"
           textContentType="password"
@@ -76,7 +101,7 @@ const LoginScreen = () => {
 
         <Pressable
           style={({ pressed }) => [styles.button, styles.buttonPrimary, pressed && { opacity: 0.7 }]}
-          onPress={handleLogin}
+          onPress={handleSignInPress}
           disabled={submitting}
           accessibilityLabel={t('auth.signIn')}
           accessibilityRole="button"
@@ -86,24 +111,26 @@ const LoginScreen = () => {
           </Text>
         </Pressable>
 
-        <View style={styles.demoRow}>
-          <Pressable
-            style={({ pressed }) => [styles.demoBtn, styles.buttonDemo, pressed && { opacity: 0.7 }]}
-            onPress={fillDemo}
-            accessibilityLabel={t('auth.demoAccount')}
-            accessibilityRole="button"
-          >
-            <Text style={styles.buttonDemoText}>{t('auth.demoAccount')}</Text>
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [styles.demoBtn, styles.buttonDemo, pressed && { opacity: 0.7 }]}
-            onPress={fillDemoAlt}
-            accessibilityLabel={t('auth.demoAlt')}
-            accessibilityRole="button"
-          >
-            <Text style={styles.buttonDemoText}>{t('auth.demoAlt')}</Text>
-          </Pressable>
-        </View>
+        {showDemoButtons && (
+          <View style={styles.demoRow}>
+            <Pressable
+              style={({ pressed }) => [styles.demoBtn, styles.buttonDemo, pressed && { opacity: 0.7 }]}
+              onPress={fillDemo}
+              accessibilityLabel={t('auth.demoAccount')}
+              accessibilityRole="button"
+            >
+              <Text style={styles.buttonDemoText}>{t('auth.demoAccount')}</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.demoBtn, styles.buttonDemo, pressed && { opacity: 0.7 }]}
+              onPress={fillDemoAlt}
+              accessibilityLabel={t('auth.demoAlt')}
+              accessibilityRole="button"
+            >
+              <Text style={styles.buttonDemoText}>{t('auth.demoAlt')}</Text>
+            </Pressable>
+          </View>
+        )}
 
         <Pressable
           style={({ pressed }) => [styles.button, pressed && { opacity: 0.7 }]}
