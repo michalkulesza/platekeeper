@@ -33,6 +33,7 @@ import { usePreferences } from '@platekeeper/shared/hooks/usePreferences'
 import { UNITS } from '@platekeeper/shared/types'
 import type {
   AllergenFlag,
+  ImportDebugUsage,
   ImportJobKind,
   ImportResult,
   RecipeComponent,
@@ -71,6 +72,7 @@ interface EditableRecipe {
   source_url: string | null
   components: EditableComponent[]
   suggestedTagNames: string[]
+  debug: ImportDebugUsage | null
 }
 
 // ── Pure helpers ───────────────────────────────────────────────────────────────
@@ -85,6 +87,7 @@ const toEditable = (result: ImportResult, autoSubstitute: boolean): EditableReci
     creator_handle: metadata.creator_handle,
     source_url: metadata.source_url || null,
     suggestedTagNames: recipe?.tags ?? [],
+    debug: metadata.debug ?? null,
     components: (recipe?.components ?? []).map((c: RecipeComponent) => {
       const stepCount = c.steps.length
       let step_ingredient_refs: StepIngredientRef[][] | null = null
@@ -132,6 +135,7 @@ const blankRecipe = (): EditableRecipe => ({
   creator_handle: null,
   source_url: null,
   suggestedTagNames: [],
+  debug: null,
   components: [{
     name: 'Main',
     yield_note: '',
@@ -1402,6 +1406,10 @@ const ImportRecipeScreen = () => {
         thumbnail_url: editable.thumbnail_url,
         creator_handle: editable.creator_handle,
         source_url: editable.source_url,
+        debug_model: editable.debug?.model ?? null,
+        debug_input_tokens: editable.debug?.input_tokens ?? null,
+        debug_output_tokens: editable.debug?.output_tokens ?? null,
+        debug_total_tokens: editable.debug?.total_tokens ?? null,
         components: editable.components.map((c) => ({
           name: c.name,
           yield_note: c.yield_note,

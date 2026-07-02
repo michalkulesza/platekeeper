@@ -99,6 +99,10 @@ async def _save_recipe(session, user_id: uuid.UUID, result) -> Recipe:
         source_url=meta.source_url,
         components=components_json,
         tags=tags,
+        debug_model=meta.debug.model if meta.debug else None,
+        debug_input_tokens=meta.debug.input_tokens if meta.debug else None,
+        debug_output_tokens=meta.debug.output_tokens if meta.debug else None,
+        debug_total_tokens=meta.debug.total_tokens if meta.debug else None,
     )
     session.add(recipe)
     await session.commit()

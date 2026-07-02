@@ -21,6 +21,7 @@ import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { MenuView } from '@react-native-menu/menu'
 import { useAppearanceMode, type AppearanceMode } from '../context/ColorSchemeContext'
+import { useDebugMode } from '../context/DebugModeContext'
 import { usePreferences } from '@platekeeper/shared/hooks/usePreferences'
 import { useHouseholds } from '@platekeeper/shared/hooks/useHouseholds'
 import { useApiClient } from '@platekeeper/shared/api/context'
@@ -393,6 +394,7 @@ const SettingsScreen = () => {
   )
 
   const { mode: appearanceMode, setMode: setAppearanceMode } = useAppearanceMode()
+  const { enabled: debugMode, setEnabled: setDebugMode } = useDebugMode()
 
   const handleLanguagePicker = useCallback(() => {
     const labels = LANGUAGES.map(({ labelKey }) => t(labelKey))
@@ -686,6 +688,22 @@ const SettingsScreen = () => {
             scopeLabel={allergenScopeLabel}
             onSave={handleSaveAllergens}
             onReanalyze={api.streamReanalyze}
+          />
+        </View>
+      </View>
+
+      {/* Developer */}
+      <SectionHeader label={t('settings.developer')} />
+      <View style={styles.card}>
+        <View style={styles.switchRow}>
+          <View style={styles.switchLabelBlock}>
+            <Text style={styles.switchLabel}>{t('settings.debugMode')}</Text>
+            <Text style={styles.cardDesc}>{t('settings.debugModeDesc')}</Text>
+          </View>
+          <Switch
+            value={debugMode}
+            onValueChange={setDebugMode}
+            accessibilityLabel={t('settings.debugMode')}
           />
         </View>
       </View>

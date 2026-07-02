@@ -32,6 +32,7 @@ import {
 import BellMenu from '../components/BellMenu'
 import BugReportButton from '../components/BugReportButton'
 import type { RecipeOut, SaveComponent, Ingredient, StepIngredientRef } from '@platekeeper/shared/types'
+import { useDebugMode } from '../context/DebugModeContext'
 import { displayIngredient, buildClientStepRefs, serializeIngredient } from '@platekeeper/shared/utils/ingredientUtils'
 import { tTag } from '@platekeeper/shared/utils/tagUtils'
 import { colors } from '../theme/colors'
@@ -470,6 +471,7 @@ const RecipeDetailScreen = () => {
   const [addMode, setAddMode] = useState(false)
   const [sessionAdded, setSessionAdded] = useState<Set<string>>(new Set())
   const insets = useSafeAreaInsets()
+  const { enabled: debugMode } = useDebugMode()
 
   useEffect(() => {
     AsyncStorage.getItem(KEEP_AWAKE_STORAGE_KEY).then((val) => {
@@ -648,6 +650,20 @@ const RecipeDetailScreen = () => {
             </Pressable>
           ) : null}
 
+          {debugMode && recipe.debug_model ? (
+            <View style={styles.debugBox}>
+              <Text style={styles.debugTitle}>{t('recipes.debugInfo')}</Text>
+              <Text style={styles.debugText}>
+                {t('recipes.debugModel')}: {recipe.debug_model}
+              </Text>
+              <Text style={styles.debugText}>
+                {t('recipes.debugTokens')}: {recipe.debug_total_tokens ?? '—'}
+                {' '}({t('recipes.debugInputTokens')} {recipe.debug_input_tokens ?? '—'}
+                {' · '}{t('recipes.debugOutputTokens')} {recipe.debug_output_tokens ?? '—'})
+              </Text>
+            </View>
+          ) : null}
+
           <View style={styles.toggleGroup}>
             <View style={styles.keepScreenRow}>
               <Text style={styles.keepScreenLabel}>{t('settings.keepScreenOnDefault')}</Text>
@@ -772,6 +788,15 @@ const styles = StyleSheet.create({
   },
   sourceIcon: { marginRight: 5 },
   sourceText: { fontSize: 13, color: colors.blue },
+  debugBox: {
+    backgroundColor: colors.gray6,
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 12,
+    gap: 2,
+  },
+  debugTitle: { fontSize: 11, fontWeight: '600', color: colors.secondaryLabel, textTransform: 'uppercase', letterSpacing: 0.3, marginBottom: 2 },
+  debugText: { fontSize: 12, color: colors.secondaryLabel },
   toggleGroup: {
     borderTopWidth: StyleSheet.hairlineWidth,
     borderBottomWidth: StyleSheet.hairlineWidth,

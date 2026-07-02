@@ -58,10 +58,18 @@ export interface RecipeGroup {
   components: RecipeComponent[]
 }
 
+export interface ImportDebugUsage {
+  model: string
+  input_tokens: number
+  output_tokens: number
+  total_tokens: number
+}
+
 export interface ImportMetadata {
   creator_handle: string | null
   thumbnail_url: string | null
   source_url: string
+  debug?: ImportDebugUsage | null
 }
 
 export type ImportStage = 'description' | 'link' | 'transcript' | 'failed'
@@ -131,6 +139,10 @@ export interface RecipeSaveRequest {
   components: SaveComponent[]
   tag_ids: string[]
   shared_to_personal?: boolean
+  debug_model?: string | null
+  debug_input_tokens?: number | null
+  debug_output_tokens?: number | null
+  debug_total_tokens?: number | null
 }
 
 export interface RecipeOut {
@@ -142,6 +154,10 @@ export interface RecipeOut {
   creator_handle: string | null
   source_url: string | null
   notes: string | null
+  debug_model?: string | null
+  debug_input_tokens?: number | null
+  debug_output_tokens?: number | null
+  debug_total_tokens?: number | null
   components: SaveComponent[]
   created_at: string
   updated_at: string
