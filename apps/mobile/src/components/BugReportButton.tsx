@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useRef } from 'react'
 import { Pressable, StyleSheet } from 'react-native'
 import { useRouter, usePathname } from 'expo-router'
 import { Feather } from '@expo/vector-icons'
@@ -10,13 +10,18 @@ const BugReportButton = () => {
   const { t } = useTranslation()
   const router = useRouter()
   const pathname = usePathname()
+  const isCapturingRef = useRef(false)
 
   const handlePress = useCallback(async () => {
+    if (isCapturingRef.current) return
+    isCapturingRef.current = true
     let shot: string | undefined
     try {
       shot = await captureScreen({ format: 'png', result: 'base64' })
     } catch {
       shot = undefined
+    } finally {
+      isCapturingRef.current = false
     }
     router.push({ pathname: '/bug-report', params: { route: pathname, ...(shot ? { shot } : {}) } })
   }, [router, pathname])
