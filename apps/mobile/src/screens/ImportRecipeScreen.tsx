@@ -1525,6 +1525,15 @@ const ImportRecipeScreen = () => {
           <View style={styles.errorBox}>
             <Text style={styles.errorTitle}>{t('addRecipe.importFailed')}</Text>
             <Text style={styles.errorMsg}>{error}</Text>
+            {(mode === 'url' || mode === 'share') && url.trim() && (
+              <Pressable
+                style={({ pressed }) => [styles.openInBrowserBtn, pressed && { opacity: 0.7 }]}
+                onPress={() => router.push({ pathname: '/webview-import', params: { url: url.trim() } })}
+                accessibilityLabel={t('addRecipe.openInBrowser')}
+              >
+                <Text style={styles.openInBrowserText}>{t('addRecipe.openInBrowser')}</Text>
+              </Pressable>
+            )}
           </View>
         )}
       </ScrollView>
@@ -1795,6 +1804,15 @@ const styles = StyleSheet.create({
   },
   errorTitle: { fontSize: 13, fontWeight: '700', color: colors.brand, marginBottom: 4 },
   errorMsg: { fontSize: 13, color: colors.brand, lineHeight: 18, opacity: 0.8 },
+  openInBrowserBtn: {
+    marginTop: 10,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: colors.brand,
+  },
+  openInBrowserText: { fontSize: 13, fontWeight: '600', color: colors.background },
 
   // Action bar
   actionBar: {

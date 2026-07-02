@@ -237,6 +237,7 @@ function RootLayoutNav() {
           name="import-recipe"
           options={{ title: t('addRecipe.addRecipe'), headerRight: () => <BugReportButton /> }}
         />
+        <Stack.Screen name="webview-import" options={{ title: t('addRecipe.webviewTitle') }} />
         <Stack.Screen name="recipe/[id]" options={{ title: '', headerRight: () => <BugReportButton /> }} />
         <Stack.Screen
           name="recipe/[id]/edit"
