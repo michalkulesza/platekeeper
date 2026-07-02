@@ -1,5 +1,5 @@
 import { useCallback, useRef } from 'react'
-import { Pressable, StyleSheet } from 'react-native'
+import { Dimensions, Pressable, StyleSheet } from 'react-native'
 import { useRouter, usePathname } from 'expo-router'
 import { Feather } from '@expo/vector-icons'
 import { useTranslation } from 'react-i18next'
@@ -17,7 +17,12 @@ const BugReportButton = () => {
     isCapturingRef.current = true
     let shot: string | undefined
     try {
-      shot = await captureScreen({ format: 'png', result: 'base64' })
+      shot = await captureScreen({
+        format: 'jpg',
+        quality: 0.5,
+        result: 'base64',
+        width: Math.round(Dimensions.get('window').width),
+      })
     } catch {
       shot = undefined
     } finally {

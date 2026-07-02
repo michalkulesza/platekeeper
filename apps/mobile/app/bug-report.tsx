@@ -78,7 +78,7 @@ const BugReportScreen = () => {
             },
           },
           attachments: shot
-            ? [{ filename: 'screenshot.png', data: base64ToBytes(shot), contentType: 'image/png' }]
+            ? [{ filename: 'screenshot.jpg', data: base64ToBytes(shot), contentType: 'image/jpeg' }]
             : [],
         },
       )
@@ -142,7 +142,7 @@ const BugReportScreen = () => {
             <View style={styles.screenshotWrap}>
               <Text style={styles.label}>{t('bugReport.screenshot')}</Text>
               <View style={styles.screenshotRow}>
-                <Image source={{ uri: `data:image/png;base64,${shot}` }} style={styles.thumb} />
+                <Image source={{ uri: `data:image/jpeg;base64,${shot}` }} style={styles.thumb} />
                 <Pressable
                   onPress={handleRemoveScreenshot}
                   hitSlop={8}
