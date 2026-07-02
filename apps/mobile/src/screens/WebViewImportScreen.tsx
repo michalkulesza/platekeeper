@@ -80,6 +80,11 @@ const WebViewImportScreen = () => {
         onLoadEnd={() => setPageLoaded(true)}
         onMessage={handleMessage}
         accessibilityLabel={t('addRecipe.webviewTitle')}
+        // Never set `incognito` here — it forces a non-persistent WKWebsiteDataStore/
+        // CookieManager session, which would make the user log in again on every import.
+        // Leaving it unset (with cacheEnabled, the default) keeps logins on-disk and
+        // shared across app launches, so a site only needs to be logged into once.
+        cacheEnabled
       />
     </View>
   )
