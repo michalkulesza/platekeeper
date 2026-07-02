@@ -13,7 +13,6 @@ import {
 } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
-import { Feather } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
 import * as Sentry from '@sentry/react-native'
 import Constants from 'expo-constants'
@@ -59,8 +58,6 @@ const BugReportScreen = () => {
   const [error, setError] = useState<string | null>(null)
 
   const canSubmit = description.trim().length > 0 && !submitting
-
-  const handleRemoveScreenshot = useCallback(() => setShot(undefined), [])
 
   useEffect(() => {
     const pending = takeBugReportScreenshot()
@@ -169,18 +166,7 @@ const BugReportScreen = () => {
           {!capturingShot && shot && (
             <View style={styles.screenshotWrap}>
               <Text style={styles.label}>{t('bugReport.screenshot')}</Text>
-              <View style={styles.screenshotRow}>
-                <Image source={{ uri: `data:image/jpeg;base64,${shot}` }} style={styles.thumb} />
-                <Pressable
-                  onPress={handleRemoveScreenshot}
-                  hitSlop={8}
-                  style={({ pressed }) => [styles.removeBtn, pressed && { opacity: 0.7 }]}
-                  accessibilityLabel={t('bugReport.removeScreenshot')}
-                  accessibilityRole="button"
-                >
-                  <Feather name="x-circle" size={20} color={colors.secondaryLabel} />
-                </Pressable>
-              </View>
+              <Image source={{ uri: `data:image/jpeg;base64,${shot}` }} style={styles.thumb} />
             </View>
           )}
 
@@ -245,10 +231,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   screenshotWrap: { marginBottom: 20 },
-  screenshotRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   thumb: { width: 80, height: 140, borderRadius: 8, backgroundColor: colors.secondaryBackground },
   thumbLoading: { alignItems: 'center', justifyContent: 'center' },
-  removeBtn: { padding: 4 },
   button: { borderRadius: 8, paddingVertical: 14, alignItems: 'center', backgroundColor: colors.blue },
   buttonDisabled: { backgroundColor: colors.gray4 },
   buttonText: { color: colors.background, fontSize: 16, fontWeight: '600' },
