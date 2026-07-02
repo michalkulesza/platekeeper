@@ -104,7 +104,8 @@ const BugReportScreen = () => {
       if (!flushed) throw new Error('flush-timeout')
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       Alert.alert(t('bugReport.success'), undefined, [{ text: t('common.ok'), onPress: () => router.back() }])
-    } catch {
+    } catch (err) {
+      console.error('[bug-report] submit failed', err)
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
       setError(t('bugReport.sendFailed'))
       setSubmitting(false)
