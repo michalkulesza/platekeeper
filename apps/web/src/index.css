@@ -6,13 +6,14 @@
 .default,
 [data-theme="light"],
 [data-theme="default"] {
-  --accent: oklch(0.50 0.195 253.83);
+  --accent: oklch(0.61 0.147 42.20);
 }
 
 @theme {
-  /* primary — maps to HeroUI accent (blue-indigo) */
-  --color-primary: oklch(0.50 0.195 253.83);
-  --color-primary-foreground: oklch(1 0 0);
+  /* primary — Carrot brand orange (#cb6134) */
+  --color-primary: oklch(0.61 0.147 42.20);
+  /* near-black (#111) — white fails 4.5:1 AA on this orange */
+  --color-primary-foreground: oklch(0.15 0 0);
 
   /* secondary — violet, used for tags */
   --color-secondary: oklch(0.6 0.185 300);
