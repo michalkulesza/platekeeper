@@ -66,7 +66,7 @@ const GripIcon = () => (
 
 const SortIndicator = ({ field, sort }: { field: SortField; sort: Sort }) => {
   if (!sort || sort.field !== field) {
-    return <span className="ml-1 text-zinc-300 text-[10px]">↕</span>
+    return null
   }
 
   return (
