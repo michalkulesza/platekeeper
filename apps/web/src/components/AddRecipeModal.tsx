@@ -1,5 +1,11 @@
 import { FormEvent, useEffect, useRef, useState, useCallback } from 'react'
-import { ExternalLink, Search } from 'react-feather'
+import {
+  ExternalLink,
+  Search,
+  Link as LinkIcon,
+  Type,
+  Image as ImageIcon,
+} from 'react-feather'
 import { useTranslation } from 'react-i18next'
 import {
   Modal,
@@ -20,11 +26,14 @@ import type {
   RecipeOut,
   StageEvent,
   StepIngredientRef,
+  StreamCallbacks,
   Tag,
   UserPreferences,
 } from '@platekeeper/shared/types'
 import {
   streamImport,
+  streamTextImportFetch,
+  streamImageImportFetch,
   saveRecipe,
   createTag,
   listPersonalRecipes,
@@ -746,7 +755,10 @@ const AddRecipeModal = ({
   const { t } = useTranslation()
   const { activeHouseholdId, activeHousehold } = useHousehold()
   const tempRecipeIdRef = useRef(crypto.randomUUID())
+  const [importMode, setImportMode] = useState<'url' | 'text' | 'image'>('url')
   const [url, setUrl] = useState('')
+  const [pastedText, setPastedText] = useState('')
+  const importImageInputRef = useRef<HTMLInputElement>(null)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [progressSteps, setProgressSteps] = useState<StepState[]>([])
@@ -783,7 +795,10 @@ const AddRecipeModal = ({
 
   const reset = () => {
     cancelRef.current?.()
+    setImportMode('url')
     setUrl('')
+    setPastedText('')
+    if (importImageInputRef.current) importImageInputRef.current.value = ''
     setLoading(false)
     setSaving(false)
     setProgressSteps([])
@@ -873,8 +888,7 @@ const AddRecipeModal = ({
     }
   }
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault()
+  const startImport = (starter: (callbacks: StreamCallbacks) => () => void) => {
     cancelRef.current?.()
     setLoading(true)
     setError(null)
@@ -882,7 +896,7 @@ const AddRecipeModal = ({
     setSelectedTags([])
     setProgressSteps([])
 
-    cancelRef.current = streamImport(url, {
+    cancelRef.current = starter({
       onStage(stage) {
         setProgressSteps((prev) => {
           const updated = prev.map((s) =>
@@ -917,6 +931,27 @@ const AddRecipeModal = ({
         setLoading(false)
       },
     })
+  }
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault()
+    if (importMode === 'url') {
+      startImport((cb) => streamImport(url, cb))
+    } else if (importMode === 'text') {
+      startImport((cb) => streamTextImportFetch(pastedText.trim(), cb))
+    }
+  }
+
+  const handleImageFile = (file: File) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const dataUrl = reader.result as string
+      const base64 = dataUrl.slice(dataUrl.indexOf(',') + 1)
+      startImport((cb) =>
+        streamImageImportFetch(base64, file.type || 'image/jpeg', cb)
+      )
+    }
+    reader.readAsDataURL(file)
   }
 
   const parsed = editable !== null
@@ -1005,53 +1040,140 @@ const AddRecipeModal = ({
               )}
 
               {!parsed && (
-                <form
-                  id="import-form"
-                  onSubmit={handleSubmit}
-                  className="flex flex-col gap-3"
-                >
-                  <div className="flex gap-1.5 flex-wrap">
-                    {[
-                      { label: 'Web', icon: '🌐' },
-                      { label: 'Instagram', icon: '📸' },
-                      { label: 'TikTok', icon: '🎵' },
-                    ].map(({ label, icon }) => (
-                      <span
-                        key={label}
-                        className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-zinc-100 text-zinc-500"
+                <div className="flex flex-col gap-3">
+                  <div className="flex gap-1.5">
+                    {(
+                      [
+                        {
+                          key: 'url',
+                          label: t('addRecipe.fromUrl'),
+                          Icon: LinkIcon,
+                        },
+                        {
+                          key: 'text',
+                          label: t('addRecipe.fromText'),
+                          Icon: Type,
+                        },
+                        {
+                          key: 'image',
+                          label: t('addRecipe.fromImage'),
+                          Icon: ImageIcon,
+                        },
+                      ] as const
+                    ).map(({ key, label, Icon }) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setImportMode(key)}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                          importMode === key
+                            ? 'bg-primary text-white'
+                            : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200'
+                        }`}
                       >
-                        {icon} {label}
-                      </span>
+                        <Icon className="w-3.5 h-3.5" />
+                        {label}
+                      </button>
                     ))}
                   </div>
-                  <div className="flex gap-2 items-end">
-                    <div className="flex flex-col gap-1 flex-1">
+
+                  {importMode === 'url' && (
+                    <form
+                      id="import-form"
+                      onSubmit={handleSubmit}
+                      className="flex flex-col gap-3"
+                    >
+                      <div className="flex gap-1.5 flex-wrap">
+                        {[
+                          { label: 'Web', icon: '🌐' },
+                          { label: 'Instagram', icon: '📸' },
+                          { label: 'TikTok', icon: '🎵' },
+                        ].map(({ label, icon }) => (
+                          <span
+                            key={label}
+                            className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-zinc-100 text-zinc-500"
+                          >
+                            {icon} {label}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="flex gap-2 items-end">
+                        <div className="flex flex-col gap-1 flex-1">
+                          <label
+                            className="text-sm font-medium"
+                            htmlFor="recipe-url"
+                          >
+                            {t('addRecipe.recipeUrl')}
+                          </label>
+                          <input
+                            id="recipe-url"
+                            type="url"
+                            placeholder={t('addRecipe.urlPlaceholder')}
+                            value={url}
+                            onChange={(e) => setUrl(e.target.value)}
+                            required
+                            className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onPress={handlePaste}
+                          className="shrink-0 mb-0.5"
+                        >
+                          {t('addRecipe.paste')}
+                        </Button>
+                      </div>
+                    </form>
+                  )}
+
+                  {importMode === 'text' && (
+                    <form
+                      id="import-form"
+                      onSubmit={handleSubmit}
+                      className="flex flex-col gap-1"
+                    >
                       <label
                         className="text-sm font-medium"
-                        htmlFor="recipe-url"
+                        htmlFor="recipe-text"
                       >
-                        {t('addRecipe.recipeUrl')}
+                        {t('addRecipe.methodText')}
                       </label>
-                      <input
-                        id="recipe-url"
-                        type="url"
-                        placeholder={t('addRecipe.urlPlaceholder')}
-                        value={url}
-                        onChange={(e) => setUrl(e.target.value)}
+                      <textarea
+                        id="recipe-text"
+                        rows={7}
+                        placeholder={t('addRecipe.pasteTextPlaceholder')}
+                        value={pastedText}
+                        onChange={(e) => setPastedText(e.target.value)}
                         required
-                        className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                       />
+                    </form>
+                  )}
+
+                  {importMode === 'image' && (
+                    <div className="flex flex-col gap-2">
+                      <input
+                        ref={importImageInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) handleImageFile(file)
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onPress={() => importImageInputRef.current?.click()}
+                        isDisabled={loading}
+                      >
+                        {t('addRecipe.methodGallery')}
+                      </Button>
                     </div>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onPress={handlePaste}
-                      className="shrink-0 mb-0.5"
-                    >
-                      {t('addRecipe.paste')}
-                    </Button>
-                  </div>
-                </form>
+                  )}
+                </div>
               )}
 
               <ProgressList steps={progressSteps} />
@@ -1113,14 +1235,18 @@ const AddRecipeModal = ({
                     {t('common.save')}
                   </Button>
                 ) : (
-                  <Button
-                    variant="primary"
-                    type="submit"
-                    form="import-form"
-                    isDisabled={loading}
-                  >
-                    {t('addRecipe.import')}
-                  </Button>
+                  importMode !== 'image' && (
+                    <Button
+                      variant="primary"
+                      type="submit"
+                      form="import-form"
+                      isDisabled={loading}
+                    >
+                      {importMode === 'text'
+                        ? t('addRecipe.extractRecipe')
+                        : t('addRecipe.import')}
+                    </Button>
+                  )
                 )}
               </div>
             </ModalFooter>

@@ -46,6 +46,8 @@ export const {
   reorderRecipes,
   importRecipes,
   uploadThumbnail,
+  streamTextImportFetch,
+  streamImageImportFetch,
   listTags,
   createTag,
   addTagToRecipe,
