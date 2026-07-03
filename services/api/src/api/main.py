@@ -2,7 +2,7 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import APIRouter, Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from fastapi_users.exceptions import UserAlreadyExists
@@ -25,13 +25,16 @@ from api.routes.shopping_list import router as shopping_list_router
 from api.routes.signup import router as signup_router
 from api.routes.tags import router as tags_router
 from api.services import import_worker
+from api import showcase
 from api.users import (
     UserCreate,
     UserManager,
     UserRead,
     UserUpdate,
     auth_backend,
+    current_active_user,
     fastapi_users_instance,
+    get_user_manager,
     jwt_backend,
 )
 from fastapi_users.db import SQLAlchemyUserDatabase
@@ -95,15 +98,20 @@ async def lifespan(app: FastAPI):
         await conn.execute(text("ALTER TABLE recipes ADD COLUMN IF NOT EXISTS debug_input_tokens INTEGER"))
         await conn.execute(text("ALTER TABLE recipes ADD COLUMN IF NOT EXISTS debug_output_tokens INTEGER"))
         await conn.execute(text("ALTER TABLE recipes ADD COLUMN IF NOT EXISTS debug_total_tokens INTEGER"))
+        await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_activity_at TIMESTAMP"))
     await _seed_demo_user()
     await _seed_default_tags()
+    await showcase.ensure_showcase_user()
     worker_task = asyncio.create_task(import_worker.run())
+    showcase_task = asyncio.create_task(showcase.run())
     yield
     worker_task.cancel()
-    try:
-        await worker_task
-    except asyncio.CancelledError:
-        pass
+    showcase_task.cancel()
+    for task in (worker_task, showcase_task):
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
 
 
 app = FastAPI(title="Carrot API", lifespan=lifespan)
@@ -140,6 +148,24 @@ app.include_router(
     prefix="/api/auth/jwt",
     tags=["auth"],
 )
+me_router = APIRouter()
+
+
+@me_router.get("/me", response_model=UserRead)
+async def get_me(user: User = Depends(current_active_user)) -> User:
+    return user
+
+
+@me_router.patch("/me", response_model=UserRead)
+async def update_me(
+    user_update: UserUpdate,
+    user: User = Depends(current_active_user),
+    user_manager: UserManager = Depends(get_user_manager),
+) -> User:
+    return await user_manager.update(user_update, user, safe=True)
+
+
+app.include_router(me_router, prefix="/api/users", tags=["users"])
 app.include_router(
     fastapi_users_instance.get_users_router(UserRead, UserUpdate),
     prefix="/api/users",
