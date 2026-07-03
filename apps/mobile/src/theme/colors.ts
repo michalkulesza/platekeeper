@@ -37,6 +37,6 @@ export const colors = {
   gray6: ios('systemGray6', '#f2f2f7'),
 
   // Brand (non-system, kept as-is)
-  brand: '#7c3aed',
-  brandLight: '#ede9fe',
+  brand: '#cb6134',
+  brandLight: '#f8e9e3',
 }

@@ -12,7 +12,7 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "cover",
-      "backgroundColor": "#c0f0d0",
+      "backgroundColor": "#cb6134",
       "imageWidth": 437
     },
     "userInterfaceStyle": "light",
@@ -27,7 +27,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#c0f0d0"
+        "backgroundColor": "#cb6134"
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.kulesza.platekeeper"
