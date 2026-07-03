@@ -1,0 +1,698 @@
+{
+  "recipes": [
+    {
+      "fixture_id": "070a5166-7a52-454e-a407-7a640d64154b",
+      "title": "Chicken teriyaki",
+      "servings": 4,
+      "kcal_per_serving": 700,
+      "thumbnail_url": "http://www.andy-cooks.com/cdn/shop/articles/20250422063033-andy-20cooks-20-20easy-20chicken-20teriyaki-20recipe_e32b6b5e-cabd-41c2-8cd9-06bc7468a62d.jpg?v=1745459806",
+      "creator_handle": "andy-cooks.com",
+      "source_url": "https://www.andy-cooks.com/blogs/recipes/chicken-teriyaki",
+      "components": [
+        {
+          "name": "main",
+          "yield_note": "",
+          "ingredients": [
+            "2 spring onions, white and green parts separated",
+            "6 chicken thighs, skin on",
+            "2 tsp sesame oil",
+            "thumb-sized piece of ginger, finely grated",
+            "2 garlic cloves, finely grated",
+            "1½ tbsp sake",
+            "¼ cup (60ml) Tamari soy",
+            "¼ cup (60ml) mirin",
+            "1 tbsp honey",
+            "1 bunch pak choy, washed, halved lengthwise",
+            "steamed Jasmine rice, to serve",
+            "toasted sesame seeds, to garnish"
+          ],
+          "steps": [
+            "Dice the white part of the spring onions, and finely slice the green parts. Set aside.",
+            "Place chicken in a cold oiled frying pan, skin side down and place over a medium high heat.",
+            "When chicken starts to sizzle, reduce heat to medium low and cook slowly, until fat renders out.",
+            "When the skin side is golden brown, transfer chicken to a tray.",
+            "Heat sesame oil in the same pan on medium high.",
+            "Add white part of onion, ginger and garlic, cook for 2 minutes, until aromatic.",
+            "Add sake and stir to deglaze pan.",
+            "Add soy, mirin and honey, bring to a boil, stirring. Return chicken to pan, skin side up.",
+            "Cook chicken in sauce for 5 minutes, basting regularly, until sauce reduces and thickens.",
+            "Steam pak choy for 1-2 minutes, until just tender.",
+            "Slice chicken and serve on steamed rice, drizzled with the sauce, with pak choy on the side, garnished with green part of the spring onion and sesame seeds."
+          ],
+          "ingredient_flags": [
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            }
+          ],
+          "step_ingredient_refs": null
+        }
+      ],
+      "notes": null,
+      "shared_to_personal": true,
+      "tag_names": []
+    },
+    {
+      "fixture_id": "6bed0293-6a57-4f47-8baa-0215222e8d1d",
+      "title": "Beef Stew",
+      "servings": 4,
+      "kcal_per_serving": 495,
+      "thumbnail_url": "https://static01.nyt.com/images/2024/10/28/multimedia/beef-stew-mlfk/beef-stew-mlfk-facebookJumbo.jpg",
+      "creator_handle": "cooking.nytimes.com",
+      "source_url": "https://cooking.nytimes.com/recipes/4735-old-fashioned-beef-stew",
+      "components": [
+        {
+          "name": "main",
+          "yield_note": "",
+          "ingredients": [
+            "¼ cup all-purpose flour",
+            "¼ teaspoon freshly ground pepper",
+            "1 pound beef stewing meat, trimmed and cut into inch cubes",
+            "5 teaspoons vegetable oil",
+            "2 tablespoons red wine vinegar",
+            "1 cup red wine",
+            "3 ½ cups beef broth, homemade or low-sodium canned",
+            "2 bay leaves",
+            "1 medium onion, peeled and chopped",
+            "5 medium carrots, peeled and cut into ¼-inch rounds",
+            "2 large baking potatoes, peeled and cut into ¾-inch cubes",
+            "2 teaspoons salt"
+          ],
+          "steps": [
+            "Combine the flour and pepper in a bowl, add the beef and toss to coat well. Heat 3 teaspoons of the oil in a large pot. Add the beef a few pieces at a time; do not overcrowd. Cook, turning the pieces until beef is browned on all sides, about 5 minutes per batch; add more oil as needed between batches.",
+            "Remove the beef from the pot and add the vinegar and wine. Cook over medium-high heat, scraping the pan with a wooden spoon to loosen any browned bits. Add the beef, beef broth and bay leaves. Bring to a boil, then reduce to a slow simmer.",
+            "Cover and cook, skimming broth from time to time, until the beef is tender, about 1 ½ hours. Add the onions and carrots and simmer, covered, for 10 minutes. Add the potatoes and simmer until vegetables are tender, about 30 minutes more. Add broth or water if the stew is dry. Season with salt and pepper to taste. Ladle among 4 bowls and serve."
+          ],
+          "ingredient_flags": [
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            }
+          ],
+          "step_ingredient_refs": null
+        }
+      ],
+      "notes": null,
+      "shared_to_personal": true,
+      "tag_names": []
+    },
+    {
+      "fixture_id": "6d506c35-5a30-49c0-897d-b48e94add085",
+      "title": "Beef Stroganoff",
+      "servings": 6,
+      "kcal_per_serving": 700,
+      "thumbnail_url": "https://www.recipetineats.com/tachyon/2018/01/Beef-Stroganoff_2-1-1.jpg",
+      "creator_handle": "recipetineats.com",
+      "source_url": "https://www.recipetineats.com/beef-stroganoff/",
+      "components": [
+        {
+          "name": "Beef Stroganoff",
+          "yield_note": "",
+          "ingredients": [
+            "500 g beef sirloin (cut into 1cm wide strips)",
+            "2 tbsp olive oil",
+            "1 piece onion (finely chopped)",
+            "2 clove garlic (minced)",
+            "250 g mushrooms (sliced)",
+            "1 tbsp butter",
+            "2 tbsp flour",
+            "500 ml beef broth",
+            "150 ml sour cream",
+            "1 tbsp Dijon mustard",
+            "2 tbsp Worcestershire sauce",
+            "null pinch salt (to taste)",
+            "null pinch black pepper (to taste)",
+            "null bunch fresh parsley (chopped, for garnish)"
+          ],
+          "steps": [
+            "Pat the beef dry with paper towels. Season generously with salt and pepper.",
+            "Heat olive oil in a large skillet or Dutch oven over medium-high heat. Add beef in batches and sear until browned on all sides. Remove beef and set aside.",
+            "Add onion to the skillet and cook until softened, about 5 minutes. Add garlic and mushrooms and cook for another 5-7 minutes, until mushrooms are browned.",
+            "Stir in the butter and flour, cooking for 1 minute until lightly golden.",
+            "Gradually whisk in the beef broth, scraping up any browned bits from the bottom of the pan. Bring to a simmer.",
+            "Return the beef to the pan. Reduce heat to low, cover and simmer for 1.5 to 2 hours, or until the beef is tender.",
+            "Stir in the sour cream, Dijon mustard, and Worcestershire sauce. Heat through gently but do not boil.",
+            "Season with salt and pepper to taste. Garnish with fresh parsley before serving."
+          ],
+          "ingredient_flags": [
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            }
+          ],
+          "step_ingredient_refs": [
+            [
+              {
+                "ingredient_index": 0,
+                "mention": "beef"
+              },
+              {
+                "ingredient_index": 11,
+                "mention": "salt"
+              },
+              {
+                "ingredient_index": 12,
+                "mention": "pepper"
+              }
+            ],
+            [
+              {
+                "ingredient_index": 1,
+                "mention": "olive oil"
+              },
+              {
+                "ingredient_index": 0,
+                "mention": "beef"
+              }
+            ],
+            [
+              {
+                "ingredient_index": 2,
+                "mention": "onion"
+              },
+              {
+                "ingredient_index": 3,
+                "mention": "garlic"
+              },
+              {
+                "ingredient_index": 4,
+                "mention": "mushrooms"
+              }
+            ],
+            [
+              {
+                "ingredient_index": 5,
+                "mention": "butter"
+              },
+              {
+                "ingredient_index": 6,
+                "mention": "flour"
+              }
+            ],
+            [
+              {
+                "ingredient_index": 7,
+                "mention": "beef broth"
+              }
+            ],
+            [
+              {
+                "ingredient_index": 0,
+                "mention": "beef"
+              }
+            ],
+            [
+              {
+                "ingredient_index": 8,
+                "mention": "sour cream"
+              },
+              {
+                "ingredient_index": 9,
+                "mention": "Dijon mustard"
+              },
+              {
+                "ingredient_index": 10,
+                "mention": "Worcestershire sauce"
+              }
+            ],
+            [
+              {
+                "ingredient_index": 11,
+                "mention": "salt"
+              },
+              {
+                "ingredient_index": 12,
+                "mention": "pepper"
+              },
+              {
+                "ingredient_index": 13,
+                "mention": "fresh parsley"
+              }
+            ]
+          ]
+        }
+      ],
+      "notes": null,
+      "shared_to_personal": true,
+      "tag_names": [
+        "Dinner",
+        "Comfort Food",
+        "Italian"
+      ]
+    },
+    {
+      "fixture_id": "13e7a954-4876-4148-9115-ea004c9616cd",
+      "title": "Chicken teriyaki",
+      "servings": 4,
+      "kcal_per_serving": 700,
+      "thumbnail_url": "http://www.andy-cooks.com/cdn/shop/articles/20250422063033-andy-20cooks-20-20easy-20chicken-20teriyaki-20recipe_e32b6b5e-cabd-41c2-8cd9-06bc7468a62d.jpg?v=1745459806",
+      "creator_handle": "andy-cooks.com",
+      "source_url": "https://www.andy-cooks.com/blogs/recipes/chicken-teriyaki",
+      "components": [
+        {
+          "name": "main",
+          "yield_note": "",
+          "ingredients": [
+            "2 spring onions, white and green parts separated",
+            "6 chicken thighs, skin on",
+            "2 tsp sesame oil",
+            "thumb-sized piece of ginger, finely grated",
+            "2 garlic cloves, finely grated",
+            "1½ tbsp sake",
+            "¼ cup (60ml) Tamari soy",
+            "¼ cup (60ml) mirin",
+            "1 tbsp honey",
+            "1 bunch pak choy, washed, halved lengthwise",
+            "steamed Jasmine rice, to serve",
+            "toasted sesame seeds, to garnish"
+          ],
+          "steps": [
+            "Dice the white part of the spring onions, and finely slice the green parts. Set aside.",
+            "Place chicken in a cold oiled frying pan, skin side down and place over a medium high heat.",
+            "When chicken starts to sizzle, reduce heat to medium low and cook slowly, until fat renders out.",
+            "When the skin side is golden brown, transfer chicken to a tray.",
+            "Heat sesame oil in the same pan on medium high.",
+            "Add white part of onion, ginger and garlic, cook for 2 minutes, until aromatic.",
+            "Add sake and stir to deglaze pan.",
+            "Add soy, mirin and honey, bring to a boil, stirring. Return chicken to pan, skin side up.",
+            "Cook chicken in sauce for 5 minutes, basting regularly, until sauce reduces and thickens.",
+            "Steam pak choy for 1-2 minutes, until just tender.",
+            "Slice chicken and serve on steamed rice, drizzled with the sauce, with pak choy on the side, garnished with green part of the spring onion and sesame seeds."
+          ],
+          "ingredient_flags": [
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            }
+          ],
+          "step_ingredient_refs": null
+        }
+      ],
+      "notes": null,
+      "shared_to_personal": true,
+      "tag_names": []
+    },
+    {
+      "fixture_id": "f2221448-72f3-49e3-9a91-8ce5f51bb631",
+      "title": "Chicken and Pesto Rice With Peas",
+      "servings": 5,
+      "kcal_per_serving": 677,
+      "thumbnail_url": "https://static01.nyt.com/images/2026/03/20/multimedia/DP-One-Pot-Chicken-and-Pesto-Rice-with-Peas-kqvm/DP-One-Pot-Chicken-and-Pesto-Rice-with-Peas-kqvm-facebookJumbo.jpg",
+      "creator_handle": "cooking.nytimes.com",
+      "source_url": "https://cooking.nytimes.com/recipes/773766928-chicken-and-pesto-rice-with-peas",
+      "components": [
+        {
+          "name": "main",
+          "yield_note": "",
+          "ingredients": [
+            "2 pounds boneless, skinless chicken thighs, cut into 1-inch cubes",
+            "Salt and black pepper",
+            "Crushed red pepper",
+            "2 tablespoons extra-virgin olive oil",
+            "½ medium white or yellow onion, minced",
+            "6 garlic cloves, minced",
+            "2 cups long-grain white rice, rinsed",
+            "4 cups/32 ounces chicken broth",
+            "¾ cup store-bought or homemade pesto, plus more for serving",
+            "10 ounces frozen peas",
+            "¼ cup roughly chopped fresh basil, for serving",
+            "1 lemon, for serving"
+          ],
+          "steps": [
+            "Heat the oven to 400 degrees.",
+            "Season the chicken pieces with about 1 teaspoon each salt and pepper, plus a pinch of crushed red pepper.",
+            "Place a large Dutch oven or other heavy-bottomed pot over medium-high heat and add oil. Let oil heat up for a few minutes. Add the chicken and cook, stirring, until the chicken is slightly browned but not fully cooked through, about 5 minutes. Remove from the pot and set aside.",
+            "Add the onion, garlic and about 1 teaspoon each salt and pepper to the pot. Cook over medium-low heat, scraping browned bits from the bottom of the pan, until garlic is fragrant, 2 to 3 minutes. Turn the heat up to high. Add the rice, broth and pesto to the pot; stir to combine. Cover until it comes to a boil, 3 to 5 minutes.",
+            "Remove the pot from heat and stir the chicken and any juices into the rice. Place the pot, covered, into the oven and bake until the rice and chicken are fully cooked, about 20 minutes.",
+            "Remove the pot from the oven and stir in the peas. Cover and let sit for 5 minutes before serving, allowing the peas to cook and the rice to get creamy.",
+            "Serve topped with fresh basil, a squeeze of lemon and more pesto."
+          ],
+          "ingredient_flags": [
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            },
+            {
+              "allergen": null,
+              "substitute": null,
+              "substitute_applied": false,
+              "original_display": null
+            }
+          ],
+          "step_ingredient_refs": null
+        }
+      ],
+      "notes": null,
+      "shared_to_personal": true,
+      "tag_names": []
+    }
+  ],
+  "meal_plan_entries": [],
+  "shopping_list_items": []
+}

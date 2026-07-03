@@ -1,14 +1,15 @@
 import uuid
+from datetime import datetime
 
-from fastapi import Depends
+from fastapi import Depends, HTTPException, status
 from fastapi_users import BaseUserManager, FastAPIUsers, UUIDIDMixin
 from fastapi_users.authentication import AuthenticationBackend, BearerTransport, CookieTransport, JWTStrategy
 from fastapi_users.db import SQLAlchemyBaseUserTableUUID, SQLAlchemyUserDatabase
 from fastapi_users import schemas
-from sqlalchemy import String
+from sqlalchemy import String, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import ForeignKey
+from sqlalchemy import DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 
 from api.config import settings
@@ -23,6 +24,7 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
         ForeignKey("households.id", ondelete="SET NULL"),
         nullable=True,
     )
+    last_activity_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class UserRead(schemas.BaseUser[uuid.UUID]):
@@ -42,9 +44,28 @@ async def get_user_db(session: AsyncSession = Depends(get_async_session)):
     yield SQLAlchemyUserDatabase(session, User)
 
 
+SHOWCASE_EMAIL = "showcase@demo.com"
+
+
 class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
     reset_password_token_secret = settings.secret
     verification_token_secret = settings.secret
+
+    async def update(self, user_update, user, safe: bool = False, request=None):
+        if user.email == SHOWCASE_EMAIL and (user_update.email or user_update.password):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="The showcase account's email and password can't be changed.",
+            )
+        return await super().update(user_update, user, safe=safe, request=request)
+
+    async def delete(self, user, request=None):
+        if user.email == SHOWCASE_EMAIL:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="The showcase account can't be deleted.",
+            )
+        return await super().delete(user, request=request)
 
 
 async def get_user_manager(user_db: SQLAlchemyUserDatabase = Depends(get_user_db)):
@@ -82,4 +103,17 @@ jwt_backend = AuthenticationBackend(
 )
 
 fastapi_users_instance = FastAPIUsers[User, uuid.UUID](get_user_manager, [auth_backend, jwt_backend])
-current_active_user = fastapi_users_instance.current_user(active=True)
+_current_active_user = fastapi_users_instance.current_user(active=True)
+
+
+async def current_active_user(
+    user: User = Depends(_current_active_user),
+    session: AsyncSession = Depends(get_async_session),
+) -> User:
+    """Wraps fastapi-users' dependency to bump the showcase account's
+    last_activity_at on every authenticated request, so the idle-reset loop
+    only resets it after a real gap in usage, not a fixed clock tick."""
+    if user.email == SHOWCASE_EMAIL:
+        await session.execute(update(User).where(User.id == user.id).values(last_activity_at=datetime.utcnow()))
+        await session.commit()
+    return user
