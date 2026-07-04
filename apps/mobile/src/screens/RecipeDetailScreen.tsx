@@ -114,9 +114,9 @@ const TimerSpan = ({
       ]}
       onPress={isDone ? undefined : () => (isRunning ? pauseTimer(timerId) : resumeTimer(timerId))}
       accessibilityRole="button"
-      accessibilityLabel={isDone ? t('common.done') : isRunning ? t('common.pause') : t('common.resume')}
+      accessibilityLabel={isDone ? t('common.doneCheck') : isRunning ? t('common.pause') : t('common.resume')}
     >
-      {isDone ? `✓ ${t('common.done')}` : `⏱ ${formatCountdown(remaining)}`}
+      {isDone ? t('common.doneCheck') : `⏱ ${formatCountdown(remaining)}`}
     </Text>
   )
 }
