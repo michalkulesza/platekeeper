@@ -786,7 +786,7 @@ const ViewComponent = ({
                     type="button"
                     onClick={onAddAllIngredients}
                     disabled={allAdded}
-                    className="text-xs font-medium text-primary hover:underline disabled:text-zinc-300 disabled:no-underline"
+                    className="text-sm font-medium text-primary hover:underline cursor-pointer disabled:text-zinc-300 disabled:no-underline disabled:cursor-default px-1 py-0.5"
                   >
                     {allAdded
                       ? t('shoppingList.addedToList')
@@ -821,12 +821,16 @@ const ViewComponent = ({
                           ? t('shoppingList.addedToList')
                           : t('shoppingList.addToList')
                       }
-                      className={`shrink-0 mt-0.5 ${added ? 'text-emerald-500' : 'text-primary hover:text-primary-600'}`}
+                      className={`shrink-0 -mt-0.5 -mr-1 flex items-center justify-center w-7 h-7 rounded-full transition-colors ${
+                        added
+                          ? 'text-emerald-500 cursor-default'
+                          : 'text-primary hover:bg-primary/10 hover:text-primary-600 cursor-pointer'
+                      }`}
                     >
                       {added ? (
                         <svg
-                          width="16"
-                          height="16"
+                          width="18"
+                          height="18"
                           viewBox="0 0 24 24"
                           fill="none"
                           stroke="currentColor"
@@ -836,8 +840,8 @@ const ViewComponent = ({
                         </svg>
                       ) : (
                         <svg
-                          width="16"
-                          height="16"
+                          width="18"
+                          height="18"
                           viewBox="0 0 24 24"
                           fill="none"
                           stroke="currentColor"
@@ -1579,23 +1583,28 @@ const RecipeDetailModal = ({
                       {t('shoppingList.addToList')}
                     </Button>
                     {'wakeLock' in navigator && (
-                      <button
-                        type="button"
+                      <span
+                        className="ml-auto"
                         title={
                           wakeLock.active
                             ? t('recipes.screenAlwaysOnDisable')
                             : t('recipes.keepScreenOnWhileReading')
                         }
-                        onClick={wakeLock.toggle}
-                        className={`ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-                          wakeLock.active
-                            ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
-                            : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200'
-                        }`}
                       >
-                        <Sun className="w-3.5 h-3.5" />
-                        {wakeLock.active ? t('recipes.screenOn') : t('recipes.keepOn')}
-                      </button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className={
+                            wakeLock.active
+                              ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                              : ''
+                          }
+                          onPress={wakeLock.toggle}
+                        >
+                          <Sun className="w-3.5 h-3.5" />
+                          {wakeLock.active ? t('recipes.screenOn') : t('recipes.keepOn')}
+                        </Button>
+                      </span>
                     )}
                   </div>
                 )}
