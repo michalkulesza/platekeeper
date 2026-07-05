@@ -82,6 +82,10 @@ async def stream_shopping_list(
     scope = _scope_key(user.id, household_id)
     initial_items = await _snapshot(session, user.id, household_id)
     initial_presence = broadcaster.get_presence(scope)
+    # This is a long-lived SSE connection — release the DB connection back to
+    # the pool now instead of holding it for the stream's entire lifetime
+    # (otherwise a handful of open shopping-list screens exhausts the pool).
+    await session.close()
 
     async def event_gen():
         yield f"data: {json.dumps({'type': 'list_snapshot', 'items': initial_items})}\n\n"
