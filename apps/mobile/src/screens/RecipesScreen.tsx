@@ -365,7 +365,7 @@ const RecipesScreen = () => {
               <View style={styles.cardImagePlaceholder} />
             )}
             <View style={styles.cardBody}>
-              <Text style={styles.cardTitle} numberOfLines={2}>
+              <Text style={styles.cardTitle} numberOfLines={1} ellipsizeMode="tail">
                 {item.title}
               </Text>
               <Text
@@ -547,14 +547,14 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   cardImage: {
-    width: 100,
-    height: 100,
+    width: 72,
+    height: 72,
     borderTopLeftRadius: 10,
     borderBottomLeftRadius: 10,
   },
   cardImagePlaceholder: {
-    width: 100,
-    height: 100,
+    width: 72,
+    height: 72,
     backgroundColor: colors.opaqueSeparator,
     borderTopLeftRadius: 10,
     borderBottomLeftRadius: 10,
