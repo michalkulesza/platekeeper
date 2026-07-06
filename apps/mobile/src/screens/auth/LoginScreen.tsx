@@ -3,6 +3,8 @@ import { StyleSheet, Text, TextInput, Pressable, View, KeyboardAvoidingView, Pla
 import { useTranslation } from 'react-i18next'
 import { useRouter } from 'expo-router'
 import { Controller, useForm } from 'react-hook-form'
+import { AntDesign } from '@expo/vector-icons'
+import * as Haptics from 'expo-haptics'
 import { useAuth } from '../../context/AuthContext'
 import { colors } from '../../theme/colors'
 import { EMAIL_PATTERN } from '../../utils/validation'
@@ -17,9 +19,10 @@ interface LoginFormValues {
 const LoginScreen = () => {
   const router = useRouter()
   const { t } = useTranslation()
-  const { login } = useAuth()
+  const { login, loginWithGoogle } = useAuth()
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [googleSubmitting, setGoogleSubmitting] = useState(false)
 
   const {
     control,
@@ -38,6 +41,20 @@ const LoginScreen = () => {
       setError(msg === NOT_VERIFIED ? t('auth.notVerifiedError') : (msg || t('auth.signIn') + ' failed'))
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const onGooglePress = async () => {
+    setError(null)
+    setGoogleSubmitting(true)
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+    try {
+      await loginWithGoogle()
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : ''
+      setError(msg || t('auth.signIn') + ' failed')
+    } finally {
+      setGoogleSubmitting(false)
     }
   }
 
@@ -126,6 +143,23 @@ const LoginScreen = () => {
         >
           <Text style={styles.buttonOutlineText}>{t('auth.noAccount')} {t('auth.createOne')}</Text>
         </Pressable>
+
+        <View style={styles.dividerRow}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>{t('auth.orDivider')}</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <Pressable
+          style={({ pressed }) => [styles.button, styles.buttonGoogle, pressed && { opacity: 0.7 }]}
+          onPress={onGooglePress}
+          disabled={googleSubmitting}
+          accessibilityLabel={t('auth.continueWithGoogle')}
+          accessibilityRole="button"
+        >
+          <AntDesign name="google" size={18} color={colors.label as unknown as string} />
+          <Text style={styles.buttonGoogleText}>{t('auth.continueWithGoogle')}</Text>
+        </Pressable>
       </View>
     </KeyboardAvoidingView>
   )
@@ -151,6 +185,17 @@ const styles = StyleSheet.create({
   buttonPrimary: { backgroundColor: colors.blue },
   buttonPrimaryText: { color: colors.background, fontSize: 16, fontWeight: '600' },
   buttonOutlineText: { color: colors.secondaryLabel, fontSize: 16 },
+  dividerRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 16 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: colors.opaqueSeparator },
+  dividerText: { color: colors.secondaryLabel, fontSize: 13, marginHorizontal: 12 },
+  buttonGoogle: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderColor: colors.opaqueSeparator,
+  },
+  buttonGoogleText: { color: colors.label, fontSize: 16, fontWeight: '600' },
 })
 
 export default LoginScreen

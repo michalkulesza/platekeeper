@@ -386,6 +386,20 @@ export const createApiClient = (config: ApiClientConfig) => {
     return res.json() as Promise<{ access_token: string; token_type: string }>
   }
 
+  const googleLogin = async (idToken: string): Promise<{ access_token: string; token_type: string }> => {
+    const res = await fetch(`${baseUrl}/api/auth/google`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id_token: idToken }),
+      credentials,
+    })
+    if (!res.ok) {
+      const err = (await res.json().catch(() => ({}))) as { detail?: unknown }
+      throw new Error(parseAuthError(err.detail))
+    }
+    return res.json() as Promise<{ access_token: string; token_type: string }>
+  }
+
   // ── Auth ───────────────────────────────────────────────────────────────────
 
   const ERROR_MESSAGES: Record<string, string> = {
@@ -692,6 +706,7 @@ export const createApiClient = (config: ApiClientConfig) => {
     requestSignupCode,
     verifySignupCode,
     completeSignup,
+    googleLogin,
     login,
     logout,
     getMe,

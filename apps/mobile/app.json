@@ -46,7 +46,8 @@
           "color": "#ffffff"
         }
       ],
-      "@sentry/react-native"
+      "@sentry/react-native",
+      "@react-native-google-signin/google-signin"
     ],
     "extra": {
       "eas": {
