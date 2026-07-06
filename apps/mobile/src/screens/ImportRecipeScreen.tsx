@@ -233,6 +233,9 @@ const RecipeImportSkeleton = ({ progress }: { progress: Animated.Value }) => {
         <View style={styles.previewMetaRow}>
           <Animated.View style={[styles.skeletonBone, styles.skeletonMeta, { opacity, width: 64 }]} />
           <Animated.View style={[styles.skeletonBone, styles.skeletonMeta, { opacity, width: 92 }]} />
+          <Animated.View style={[styles.skeletonBone, styles.skeletonMeta, { opacity, width: 78 }]} />
+          <Animated.View style={[styles.skeletonBone, styles.skeletonMeta, { opacity, width: 70 }]} />
+          <Animated.View style={[styles.skeletonBone, styles.skeletonMeta, { opacity, width: 78 }]} />
         </View>
 
         <View style={styles.previewSection}>

@@ -328,9 +328,12 @@ const RecipeImportSkeleton = ({ progress }: { progress: number }) => (
       <Bone className="h-6 w-20 rounded-full" />
     </div>
 
-    <div className="flex gap-2 mb-4">
+    <div className="flex gap-2 flex-wrap mb-4">
       <Bone className="h-6 w-20 rounded-full" />
       <Bone className="h-6 w-28 rounded-full" />
+      <Bone className="h-6 w-24 rounded-full" />
+      <Bone className="h-6 w-20 rounded-full" />
+      <Bone className="h-6 w-24 rounded-full" />
     </div>
 
     <Bone className="h-3 w-24 mb-2" />
