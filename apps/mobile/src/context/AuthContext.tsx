@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import * as SecureStore from 'expo-secure-store'
 import { mobileClient, setToken } from '../api/client'
+import { signInWithGoogle } from '../utils/googleAuth'
 import type { AuthUser } from '@platekeeper/shared/types'
 
 const TOKEN_KEY = 'pk_auth_token'
@@ -17,6 +18,7 @@ interface AuthContextValue {
   signupEmail: string | null
   signupToken: string | null
   login: (email: string, password: string) => Promise<void>
+  loginWithGoogle: () => Promise<void>
   requestSignupCode: (email: string) => Promise<void>
   verifySignupCode: (email: string, code: string) => Promise<void>
   completeSignup: (password: string, nickname?: string) => Promise<void>
@@ -62,6 +64,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await SecureStore.setItemAsync(TOKEN_KEY, result.access_token)
       setToken(result.access_token)
     }
+    const me = await mobileClient.getMe()
+    setUser(me)
+  }, [])
+
+  const loginWithGoogle = useCallback(async (): Promise<void> => {
+    const idToken = await signInWithGoogle()
+    const result = await mobileClient.googleLogin(idToken)
+    await SecureStore.setItemAsync(TOKEN_KEY, result.access_token)
+    setToken(result.access_token)
     const me = await mobileClient.getMe()
     setUser(me)
   }, [])
@@ -112,6 +123,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         signupEmail,
         signupToken,
         login,
+        loginWithGoogle,
         requestSignupCode,
         verifySignupCode,
         completeSignup,

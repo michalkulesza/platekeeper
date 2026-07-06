@@ -134,6 +134,8 @@
     "completeProfileTitle": "Konto einrichten",
     "completeProfileSubtitle": "Wähle ein Passwort und wie du genannt werden möchtest.",
     "tagline": "Deine persönliche Rezeptbibliothek",
+    "continueWithGoogle": "Mit Google fortfahren",
+    "orDivider": "oder",
     "chooseLanguage": "Sprache wählen",
     "verifyTitle": "E-Mail prüfen",
     "verifySubtitle": "Gib den 6-stelligen Code ein, der an {{email}} gesendet wurde",

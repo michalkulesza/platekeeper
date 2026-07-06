@@ -14,6 +14,7 @@ from api.models import Tag
 from api.routes.auth import router as auth_verify_router
 from api.routes.allergens import router as allergens_router
 from api.routes.export import router as export_router
+from api.routes.google_auth import router as google_auth_router
 from api.routes.households import router as households_router
 from api.routes.images import router as images_router
 from api.routes.imports import router as imports_router
@@ -126,6 +127,7 @@ app.add_middleware(
 
 app.include_router(auth_verify_router, prefix="/api/auth", tags=["auth"])
 app.include_router(signup_router, prefix="/api/auth", tags=["auth"])
+app.include_router(google_auth_router, prefix="/api/auth", tags=["auth"])
 app.include_router(allergens_router, prefix="/api")
 app.include_router(export_router, prefix="/api")
 app.include_router(households_router, prefix="/api")

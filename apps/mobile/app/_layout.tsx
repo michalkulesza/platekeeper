@@ -29,6 +29,9 @@ import { HouseholdProvider } from '../src/context/HouseholdContext'
 import { ColorSchemeProvider } from '../src/context/ColorSchemeContext'
 import { DebugModeProvider } from '../src/context/DebugModeContext'
 import { mobileClient } from '../src/api/client'
+import { configureGoogleSignin } from '../src/utils/googleAuth'
+
+configureGoogleSignin()
 
 const queryClient = new QueryClient()
 
