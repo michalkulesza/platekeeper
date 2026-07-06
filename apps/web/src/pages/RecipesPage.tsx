@@ -175,6 +175,21 @@ const RecipeCard = ({
               {recipe.kcal_per_serving} kcal
             </span>
           )}
+          {recipe.protein_per_serving != null && (
+            <span className="text-xs text-zinc-600 font-medium bg-zinc-100 px-2 py-0.5 rounded-full">
+              {recipe.protein_per_serving}g {t('recipes.protein')}
+            </span>
+          )}
+          {recipe.fat_per_serving != null && (
+            <span className="text-xs text-zinc-600 font-medium bg-zinc-100 px-2 py-0.5 rounded-full">
+              {recipe.fat_per_serving}g {t('recipes.fat')}
+            </span>
+          )}
+          {recipe.carbs_per_serving != null && (
+            <span className="text-xs text-zinc-600 font-medium bg-zinc-100 px-2 py-0.5 rounded-full">
+              {recipe.carbs_per_serving}g {t('recipes.carbs')}
+            </span>
+          )}
         </div>
         {recipe.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-1.5">

@@ -100,6 +100,9 @@ interface EditableRecipe {
   title: string
   servings: string
   kcal: string
+  protein: string
+  fat: string
+  carbs: string
   thumbnail_url: string | null
   creator_handle: string | null
   source_url: string | null
@@ -118,6 +121,9 @@ const toEditable = (
     title: recipe?.title ?? '',
     servings: recipe?.servings?.toString() ?? '',
     kcal: recipe?.kcal_per_serving?.toString() ?? '',
+    protein: recipe?.protein_per_serving?.toString() ?? '',
+    fat: recipe?.fat_per_serving?.toString() ?? '',
+    carbs: recipe?.carbs_per_serving?.toString() ?? '',
     thumbnail_url: metadata.thumbnail_url,
     creator_handle: metadata.creator_handle,
     source_url: metadata.source_url || null,
@@ -508,6 +514,15 @@ const EditableRecipeView = ({
   const setKcal = (kcal: string) => {
     onChange({ ...recipe, kcal })
   }
+  const setProtein = (protein: string) => {
+    onChange({ ...recipe, protein })
+  }
+  const setFat = (fat: string) => {
+    onChange({ ...recipe, fat })
+  }
+  const setCarbs = (carbs: string) => {
+    onChange({ ...recipe, carbs })
+  }
 
   const setIngredient = (ci: number, ii: number, val: StructuredIngredient) => {
     setIsAdapted(true)
@@ -684,8 +699,12 @@ const EditableRecipeView = ({
             )}
           </div>
         )}
-        {(recipe.servings !== '' || recipe.kcal !== '') && (
-          <div className="flex gap-2">
+        {(recipe.servings !== '' ||
+          recipe.kcal !== '' ||
+          recipe.protein !== '' ||
+          recipe.fat !== '' ||
+          recipe.carbs !== '') && (
+          <div className="flex gap-2 flex-wrap">
             {recipe.servings !== '' && (
               <label className="flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-medium pl-3 pr-2 py-1.5 rounded-full cursor-text">
                 <span>{t('recipes.serves')}</span>
@@ -719,6 +738,54 @@ const EditableRecipeView = ({
                   className="w-[3.8ch] bg-transparent text-warning-700 font-semibold text-xs text-center focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
                 <span>{t('recipes.kcalPerServing')}</span>
+              </label>
+            )}
+            {recipe.protein !== '' && (
+              <label className="flex items-center gap-1.5 bg-zinc-100 text-zinc-600 text-xs font-medium pl-2 pr-3 py-1.5 rounded-full cursor-text">
+                <input
+                  type="number"
+                  min={0}
+                  max={999}
+                  value={recipe.protein}
+                  onChange={(e) => {
+                    const v = Math.min(999, Math.max(0, Number(e.target.value)))
+                    setProtein(String(v))
+                  }}
+                  className="w-[3ch] bg-transparent text-zinc-600 font-semibold text-xs text-center focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                />
+                <span>{t('recipes.proteinPerServing')}</span>
+              </label>
+            )}
+            {recipe.fat !== '' && (
+              <label className="flex items-center gap-1.5 bg-zinc-100 text-zinc-600 text-xs font-medium pl-2 pr-3 py-1.5 rounded-full cursor-text">
+                <input
+                  type="number"
+                  min={0}
+                  max={999}
+                  value={recipe.fat}
+                  onChange={(e) => {
+                    const v = Math.min(999, Math.max(0, Number(e.target.value)))
+                    setFat(String(v))
+                  }}
+                  className="w-[3ch] bg-transparent text-zinc-600 font-semibold text-xs text-center focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                />
+                <span>{t('recipes.fatPerServing')}</span>
+              </label>
+            )}
+            {recipe.carbs !== '' && (
+              <label className="flex items-center gap-1.5 bg-zinc-100 text-zinc-600 text-xs font-medium pl-2 pr-3 py-1.5 rounded-full cursor-text">
+                <input
+                  type="number"
+                  min={0}
+                  max={999}
+                  value={recipe.carbs}
+                  onChange={(e) => {
+                    const v = Math.min(999, Math.max(0, Number(e.target.value)))
+                    setCarbs(String(v))
+                  }}
+                  className="w-[3ch] bg-transparent text-zinc-600 font-semibold text-xs text-center focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                />
+                <span>{t('recipes.carbsPerServing')}</span>
               </label>
             )}
           </div>
@@ -900,6 +967,9 @@ const AddRecipeModal = ({
         title: editable.title,
         servings: editable.servings !== '' ? Number(editable.servings) : null,
         kcal_per_serving: editable.kcal !== '' ? Number(editable.kcal) : null,
+        protein_per_serving: editable.protein !== '' ? Number(editable.protein) : null,
+        fat_per_serving: editable.fat !== '' ? Number(editable.fat) : null,
+        carbs_per_serving: editable.carbs !== '' ? Number(editable.carbs) : null,
         thumbnail_url: editable.thumbnail_url,
         creator_handle: editable.creator_handle,
         source_url: editable.source_url,

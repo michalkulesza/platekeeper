@@ -28,6 +28,9 @@ type SortField =
   | 'title'
   | 'servings'
   | 'kcal_per_serving'
+  | 'protein_per_serving'
+  | 'fat_per_serving'
+  | 'carbs_per_serving'
   | 'creator_handle'
   | 'added_by'
   | 'created_at'
@@ -327,6 +330,33 @@ const SortableRow = ({
         )}
       </div>
 
+      {/* Protein */}
+      <div className="text-sm text-zinc-600 text-right tabular-nums pr-2 overflow-hidden">
+        {recipe.protein_per_serving != null ? (
+          recipe.protein_per_serving
+        ) : (
+          <span className="text-zinc-300">—</span>
+        )}
+      </div>
+
+      {/* Fat */}
+      <div className="text-sm text-zinc-600 text-right tabular-nums pr-2 overflow-hidden">
+        {recipe.fat_per_serving != null ? (
+          recipe.fat_per_serving
+        ) : (
+          <span className="text-zinc-300">—</span>
+        )}
+      </div>
+
+      {/* Carbs */}
+      <div className="text-sm text-zinc-600 text-right tabular-nums pr-2 overflow-hidden">
+        {recipe.carbs_per_serving != null ? (
+          recipe.carbs_per_serving
+        ) : (
+          <span className="text-zinc-300">—</span>
+        )}
+      </div>
+
       {/* Author */}
       <div className="text-sm text-zinc-500 truncate overflow-hidden">
         {recipe.creator_handle ? (
@@ -370,6 +400,12 @@ const getSortValue = (
       return recipe.servings
     case 'kcal_per_serving':
       return recipe.kcal_per_serving
+    case 'protein_per_serving':
+      return recipe.protein_per_serving
+    case 'fat_per_serving':
+      return recipe.fat_per_serving
+    case 'carbs_per_serving':
+      return recipe.carbs_per_serving
     case 'creator_handle':
       return recipe.creator_handle?.toLowerCase() ?? null
     case 'added_by':
@@ -450,8 +486,8 @@ const RecipesTable = ({
   const displayed = sort ? applySortRows(localRows, sort) : localRows
 
   const cols = showAddedBy
-    ? '32px 28px 56px minmax(135px,1fr) 72px 72px 120px 120px 100px 40px'
-    : '32px 28px 56px minmax(135px,1fr) 72px 72px 120px 100px 40px'
+    ? '32px 28px 56px minmax(135px,1fr) 72px 72px 72px 72px 72px 120px 120px 100px 40px'
+    : '32px 28px 56px minmax(135px,1fr) 72px 72px 72px 72px 72px 120px 100px 40px'
 
   return (
     <div className="px-4 mt-4 pb-6">
@@ -490,6 +526,33 @@ const RecipesTable = ({
               <ColHeader
                 label={t('recipes.colKcal')}
                 field="kcal_per_serving"
+                sort={sort}
+                onToggleSort={toggleSort}
+                align="right"
+              />
+            </div>
+            <div className="flex justify-end">
+              <ColHeader
+                label={t('recipes.colProtein')}
+                field="protein_per_serving"
+                sort={sort}
+                onToggleSort={toggleSort}
+                align="right"
+              />
+            </div>
+            <div className="flex justify-end">
+              <ColHeader
+                label={t('recipes.colFat')}
+                field="fat_per_serving"
+                sort={sort}
+                onToggleSort={toggleSort}
+                align="right"
+              />
+            </div>
+            <div className="flex justify-end">
+              <ColHeader
+                label={t('recipes.colCarbs')}
+                field="carbs_per_serving"
                 sort={sort}
                 onToggleSort={toggleSort}
                 align="right"

@@ -39,6 +39,7 @@ import {
   uploadThumbnail,
 } from '../api/client'
 import TagRow from './TagRow'
+import NutritionBoxGrid from './NutritionBoxGrid'
 import AssignToMealPlanModal from './AssignToMealPlanModal'
 import { proxyUrl, PLACEHOLDER_URL } from '../utils/imageUtils'
 import { useDebugMode } from '../context/DebugModeContext'
@@ -432,6 +433,9 @@ interface EditState {
   title: string
   servings: string
   kcal: string
+  protein: string
+  fat: string
+  carbs: string
   thumbnail_url: string | null
   components: SaveComponent[]
   shared_to_personal: boolean
@@ -442,6 +446,9 @@ const toEditState = (r: RecipeOut): EditState => {
     title: r.title,
     servings: r.servings?.toString() ?? '',
     kcal: r.kcal_per_serving?.toString() ?? '',
+    protein: r.protein_per_serving?.toString() ?? '',
+    fat: r.fat_per_serving?.toString() ?? '',
+    carbs: r.carbs_per_serving?.toString() ?? '',
     thumbnail_url: r.thumbnail_url,
     components: (r.components as SaveComponent[]).map((c) => ({
       ...c,
@@ -1135,6 +1142,9 @@ const RecipeDetailModal = ({
         title: r.title,
         servings: r.servings,
         kcal_per_serving: r.kcal_per_serving,
+        protein_per_serving: r.protein_per_serving,
+        fat_per_serving: r.fat_per_serving,
+        carbs_per_serving: r.carbs_per_serving,
         thumbnail_url: r.thumbnail_url,
         creator_handle: r.creator_handle,
         source_url: r.source_url,
@@ -1161,6 +1171,9 @@ const RecipeDetailModal = ({
         title: draft.title,
         servings: draft.servings !== '' ? Number(draft.servings) : null,
         kcal_per_serving: draft.kcal !== '' ? Number(draft.kcal) : null,
+        protein_per_serving: draft.protein !== '' ? Number(draft.protein) : null,
+        fat_per_serving: draft.fat !== '' ? Number(draft.fat) : null,
+        carbs_per_serving: draft.carbs !== '' ? Number(draft.carbs) : null,
         thumbnail_url: draft.thumbnail_url,
         creator_handle: r.creator_handle,
         source_url: r.source_url,
@@ -1208,6 +1221,9 @@ const RecipeDetailModal = ({
         title: r.title,
         servings: r.servings,
         kcal_per_serving: r.kcal_per_serving,
+        protein_per_serving: r.protein_per_serving,
+        fat_per_serving: r.fat_per_serving,
+        carbs_per_serving: r.carbs_per_serving,
         thumbnail_url: r.thumbnail_url,
         creator_handle: r.creator_handle,
         source_url: r.source_url,
@@ -1251,6 +1267,9 @@ const RecipeDetailModal = ({
         title: r.title,
         servings: r.servings,
         kcal_per_serving: r.kcal_per_serving,
+        protein_per_serving: r.protein_per_serving,
+        fat_per_serving: r.fat_per_serving,
+        carbs_per_serving: r.carbs_per_serving,
         thumbnail_url: r.thumbnail_url,
         creator_handle: r.creator_handle,
         source_url: r.source_url,
@@ -1500,93 +1519,35 @@ const RecipeDetailModal = ({
                   onCreateTag={handleTagCreate}
                 />
 
-                {/* Serves / kcal / source pills */}
-                {(draft.servings !== '' ||
-                  draft.kcal !== '' ||
-                  r.servings != null ||
-                  r.kcal_per_serving != null ||
-                  r.source_url) && (
-                  <div className="flex flex-wrap gap-2 items-center">
-                    {mode === 'editing' ? (
-                      <>
-                        <label className="flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-medium pl-3 pr-2 py-1.5 rounded-full cursor-text">
-                          <span>{t('recipes.serves')}</span>
-                          <input
-                            type="number"
-                            min={1}
-                            max={99}
-                            value={draft.servings}
-                            onChange={(e) =>
-                              setDraft((d) =>
-                                d
-                                  ? {
-                                      ...d,
-                                      servings: String(
-                                        Math.min(
-                                          99,
-                                          Math.max(1, Number(e.target.value))
-                                        )
-                                      ),
-                                    }
-                                  : d
-                              )
-                            }
-                            className="w-[2.2ch] bg-transparent text-primary font-semibold text-xs text-center focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                          />
-                        </label>
-                        <label className="flex items-center gap-1.5 bg-warning/10 text-warning-700 text-xs font-medium pl-2 pr-3 py-1.5 rounded-full cursor-text">
-                          <input
-                            type="number"
-                            min={1}
-                            max={9999}
-                            value={draft.kcal}
-                            onChange={(e) =>
-                              setDraft((d) =>
-                                d
-                                  ? {
-                                      ...d,
-                                      kcal: String(
-                                        Math.min(
-                                          9999,
-                                          Math.max(1, Number(e.target.value))
-                                        )
-                                      ),
-                                    }
-                                  : d
-                              )
-                            }
-                            className="w-[3.8ch] bg-transparent text-warning-700 font-semibold text-xs text-center focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                          />
-                          <span>{t('recipes.kcalPerServing')}</span>
-                        </label>
-                      </>
-                    ) : (
-                      <>
-                        {r.servings != null && (
-                          <span className="text-xs text-primary font-medium bg-primary/10 px-3 py-1.5 rounded-full">
-                            {t('recipes.serves')} {r.servings}
-                          </span>
-                        )}
-                        {r.kcal_per_serving != null && (
-                          <span className="text-xs text-warning-700 font-medium bg-warning/10 px-3 py-1.5 rounded-full">
-                            {r.kcal_per_serving} {t('recipes.kcalPerServing')}
-                          </span>
-                        )}
-                      </>
-                    )}
-                    {r.source_url && (
-                      <a
-                        href={r.source_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-600 transition-colors"
-                      >
-                        <Link className="w-3.5 h-3.5" />
-                        {t('recipes.source')}
-                      </a>
-                    )}
-                  </div>
-                )}
+                {/* Serves / kcal / protein / fat / carbs box grid + source pill */}
+                <div className="flex flex-wrap gap-2 items-center">
+                  <NutritionBoxGrid
+                    editing={mode === 'editing'}
+                    items={[
+                      { label: t('recipes.serves'), value: mode === 'editing' ? draft.servings : r.servings?.toString() ?? '', accessibilityLabel: t('recipes.serves') },
+                      { label: t('recipes.colKcal'), value: mode === 'editing' ? draft.kcal : r.kcal_per_serving?.toString() ?? '', accessibilityLabel: t('recipes.kcalPerServing') },
+                      { label: t('recipes.protein'), value: mode === 'editing' ? draft.protein : r.protein_per_serving?.toString() ?? '', accessibilityLabel: t('recipes.proteinPerServing') },
+                      { label: t('recipes.fat'), value: mode === 'editing' ? draft.fat : r.fat_per_serving?.toString() ?? '', accessibilityLabel: t('recipes.fatPerServing') },
+                      { label: t('recipes.carbs'), value: mode === 'editing' ? draft.carbs : r.carbs_per_serving?.toString() ?? '', accessibilityLabel: t('recipes.carbsPerServing') },
+                    ]}
+                    onChangeValue={(index, value) => {
+                      const key = (['servings', 'kcal', 'protein', 'fat', 'carbs'] as const)[index]
+                      setDraft((d) => d && { ...d, [key]: value })
+                    }}
+                    disclaimerText={t('recipes.nutritionEstimateDisclaimer')}
+                  />
+                  {r.source_url && (
+                    <a
+                      href={r.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-600 transition-colors"
+                    >
+                      <Link className="w-3.5 h-3.5" />
+                      {t('recipes.source')}
+                    </a>
+                  )}
+                </div>
 
                 {debugMode && r.debug_model && (
                   <div className="flex flex-col gap-0.5 rounded-lg bg-zinc-50 px-3 py-2">

@@ -45,6 +45,7 @@ import AddIngredientToShoppingListSheet, {
   type AddIngredientToShoppingListSheetHandle,
 } from '../components/AddIngredientToShoppingListSheet'
 import { UnitPickerModal, TagPickerModal, IngredientEditor } from '../components/RecipeFieldEditors'
+import NutritionBoxGrid from '../components/NutritionBoxGrid'
 import type { RecipeOut, SaveComponent, Ingredient, StepIngredientRef, Tag } from '@platekeeper/shared/types'
 import { useDebugMode } from '../context/DebugModeContext'
 import {
@@ -86,6 +87,9 @@ interface EditDraft {
   title: string
   servings: string
   kcal: string
+  protein: string
+  fat: string
+  carbs: string
   notes: string
   thumbnail_url: string | null
   components: EditComponent[]
@@ -95,6 +99,9 @@ const buildDraft = (recipe: RecipeOut): EditDraft => ({
   title: recipe.title,
   servings: recipe.servings?.toString() ?? '',
   kcal: recipe.kcal_per_serving?.toString() ?? '',
+  protein: recipe.protein_per_serving?.toString() ?? '',
+  fat: recipe.fat_per_serving?.toString() ?? '',
+  carbs: recipe.carbs_per_serving?.toString() ?? '',
   notes: recipe.notes ?? '',
   thumbnail_url: recipe.thumbnail_url,
   components: recipe.components.map((c) => ({
@@ -728,6 +735,9 @@ const RecipeDetailScreen = () => {
         title: draft.title,
         servings: draft.servings !== '' ? Number(draft.servings) : null,
         kcal_per_serving: draft.kcal !== '' ? Number(draft.kcal) : null,
+        protein_per_serving: draft.protein !== '' ? Number(draft.protein) : null,
+        fat_per_serving: draft.fat !== '' ? Number(draft.fat) : null,
+        carbs_per_serving: draft.carbs !== '' ? Number(draft.carbs) : null,
         thumbnail_url: draft.thumbnail_url || null,
         source_url: recipe.source_url ?? null,
         notes: draft.notes || null,
@@ -961,30 +971,22 @@ const RecipeDetailScreen = () => {
               </Pressable>
             </View>
 
-            <View style={styles.metaRow}>
-              <View style={styles.metaEditItem}>
-                <Text style={styles.metaItem}>{t('recipes.serves')}:</Text>
-                <TextInput
-                  style={styles.metaInput}
-                  value={draft.servings}
-                  onChangeText={(v) => setDraft((prev) => prev && { ...prev, servings: v })}
-                  keyboardType="number-pad"
-                  placeholder="—"
-                  accessibilityLabel={t('recipes.serves')}
-                />
-              </View>
-              <View style={styles.metaEditItem}>
-                <TextInput
-                  style={styles.metaInput}
-                  value={draft.kcal}
-                  onChangeText={(v) => setDraft((prev) => prev && { ...prev, kcal: v })}
-                  keyboardType="number-pad"
-                  placeholder="—"
-                  accessibilityLabel={t('recipes.kcalPerServing')}
-                />
-                <Text style={styles.metaItem}>{t('recipes.kcalPerServing')}</Text>
-              </View>
-            </View>
+            <NutritionBoxGrid
+              editing
+              items={[
+                { label: t('recipes.serves'), value: draft.servings, accessibilityLabel: t('recipes.serves') },
+                { label: t('recipes.kcalPerServing'), value: draft.kcal, accessibilityLabel: t('recipes.kcalPerServing') },
+                { label: t('recipes.proteinPerServing'), value: draft.protein, accessibilityLabel: t('recipes.proteinPerServing') },
+                { label: t('recipes.fatPerServing'), value: draft.fat, accessibilityLabel: t('recipes.fatPerServing') },
+                { label: t('recipes.carbsPerServing'), value: draft.carbs, accessibilityLabel: t('recipes.carbsPerServing') },
+              ]}
+              onChangeValue={(index, value) => {
+                const key = (['servings', 'kcal', 'protein', 'fat', 'carbs'] as const)[index]
+                setDraft((prev) => prev && { ...prev, [key]: value })
+              }}
+              disclaimerText={t('recipes.nutritionEstimateDisclaimer')}
+              disclaimerAccessibilityLabel={t('recipes.nutritionEstimateDisclaimer')}
+            />
 
             <TagPickerModal
               visible={showTagPicker}
@@ -1157,18 +1159,18 @@ const RecipeDetailScreen = () => {
             </View>
           )}
 
-          <View style={styles.metaRow}>
-            {recipe.servings != null && (
-              <Text style={styles.metaItem}>
-                {t('recipes.serves')}: {recipe.servings}
-              </Text>
-            )}
-            {recipe.kcal_per_serving != null && (
-              <Text style={styles.metaItem}>
-                {recipe.kcal_per_serving} {t('recipes.kcalPerServing')}
-              </Text>
-            )}
-          </View>
+          <NutritionBoxGrid
+            editing={false}
+            items={[
+              { label: t('recipes.serves'), value: recipe.servings?.toString() ?? '', accessibilityLabel: t('recipes.serves') },
+              { label: t('recipes.colKcal'), value: recipe.kcal_per_serving?.toString() ?? '', accessibilityLabel: t('recipes.kcalPerServing') },
+              { label: t('recipes.protein'), value: recipe.protein_per_serving?.toString() ?? '', accessibilityLabel: t('recipes.proteinPerServing') },
+              { label: t('recipes.fat'), value: recipe.fat_per_serving?.toString() ?? '', accessibilityLabel: t('recipes.fatPerServing') },
+              { label: t('recipes.carbs'), value: recipe.carbs_per_serving?.toString() ?? '', accessibilityLabel: t('recipes.carbsPerServing') },
+            ]}
+            disclaimerText={t('recipes.nutritionEstimateDisclaimer')}
+            disclaimerAccessibilityLabel={t('recipes.nutritionEstimateDisclaimer')}
+          />
 
           {recipe.source_url ? (
             <Pressable
@@ -1315,8 +1317,6 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   tagText: { color: colors.brand, fontSize: 12, fontWeight: '500' },
-  metaRow: { flexDirection: 'row', marginBottom: 10, gap: 16 },
-  metaItem: { fontSize: 13, color: colors.secondaryLabel },
   sourceRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1483,16 +1483,6 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   addTagBtnText: { fontSize: 12, color: colors.secondaryLabel },
-  metaEditItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  metaInput: {
-    fontSize: 13,
-    color: colors.label,
-    borderBottomWidth: 1,
-    borderColor: colors.opaqueSeparator,
-    minWidth: 28,
-    padding: 0,
-    textAlign: 'center',
-  },
   notesInput: {
     borderWidth: 1,
     borderColor: colors.opaqueSeparator,
