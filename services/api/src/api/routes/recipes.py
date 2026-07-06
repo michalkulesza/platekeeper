@@ -98,12 +98,24 @@ async def recipe_stats(
     )
     kcal_values = [r.kcal_per_serving for r in recipes if r.kcal_per_serving is not None]
     avg_kcal = round(sum(kcal_values) / len(kcal_values)) if kcal_values else None
+    protein_values = [r.protein_per_serving for r in recipes if r.protein_per_serving is not None]
+    avg_protein = round(sum(protein_values) / len(protein_values)) if protein_values else None
+    fat_values = [r.fat_per_serving for r in recipes if r.fat_per_serving is not None]
+    avg_fat = round(sum(fat_values) / len(fat_values)) if fat_values else None
+    carbs_values = [r.carbs_per_serving for r in recipes if r.carbs_per_serving is not None]
+    avg_carbs = round(sum(carbs_values) / len(carbs_values)) if carbs_values else None
 
     return {
         "total_recipes": total,
         "total_ingredients": total_ingredients,
         "avg_kcal": avg_kcal,
         "with_kcal": len(kcal_values),
+        "avg_protein": avg_protein,
+        "with_protein": len(protein_values),
+        "avg_fat": avg_fat,
+        "with_fat": len(fat_values),
+        "avg_carbs": avg_carbs,
+        "with_carbs": len(carbs_values),
     }
 
 
@@ -215,6 +227,9 @@ async def save_recipe(
         title=body.title,
         servings=body.servings,
         kcal_per_serving=body.kcal_per_serving,
+        protein_per_serving=body.protein_per_serving,
+        fat_per_serving=body.fat_per_serving,
+        carbs_per_serving=body.carbs_per_serving,
         thumbnail_url=body.thumbnail_url,
         creator_handle=body.creator_handle,
         source_url=body.source_url,
@@ -270,6 +285,9 @@ async def update_recipe(
     recipe.title = body.title
     recipe.servings = body.servings
     recipe.kcal_per_serving = body.kcal_per_serving
+    recipe.protein_per_serving = body.protein_per_serving
+    recipe.fat_per_serving = body.fat_per_serving
+    recipe.carbs_per_serving = body.carbs_per_serving
     recipe.thumbnail_url = body.thumbnail_url
     recipe.creator_handle = body.creator_handle
     recipe.source_url = body.source_url

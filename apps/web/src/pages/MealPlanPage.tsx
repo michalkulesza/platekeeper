@@ -269,9 +269,17 @@ const DayRow = ({
             <p className="text-sm font-semibold line-clamp-2 text-zinc-800 leading-snug">
               {entry.recipe.title}
             </p>
-            {entry.recipe.kcal_per_serving != null && (
+            {(entry.recipe.kcal_per_serving != null ||
+              entry.recipe.protein_per_serving != null ||
+              entry.recipe.fat_per_serving != null ||
+              entry.recipe.carbs_per_serving != null) && (
               <p className="text-xs text-zinc-400 mt-0.5">
-                {entry.recipe.kcal_per_serving} kcal
+                {[
+                  entry.recipe.kcal_per_serving != null ? `${entry.recipe.kcal_per_serving} kcal` : null,
+                  entry.recipe.protein_per_serving != null ? `${entry.recipe.protein_per_serving}g P` : null,
+                  entry.recipe.fat_per_serving != null ? `${entry.recipe.fat_per_serving}g F` : null,
+                  entry.recipe.carbs_per_serving != null ? `${entry.recipe.carbs_per_serving}g C` : null,
+                ].filter(Boolean).join('  ·  ')}
               </p>
             )}
           </div>
@@ -826,6 +834,21 @@ const MealPlanPage = ({
                                   {recipe.kcal_per_serving} kcal
                                 </span>
                               )}
+                              {recipe.protein_per_serving != null && (
+                                <span className="text-xs text-zinc-400">
+                                  {recipe.protein_per_serving}g P
+                                </span>
+                              )}
+                              {recipe.fat_per_serving != null && (
+                                <span className="text-xs text-zinc-400">
+                                  {recipe.fat_per_serving}g F
+                                </span>
+                              )}
+                              {recipe.carbs_per_serving != null && (
+                                <span className="text-xs text-zinc-400">
+                                  {recipe.carbs_per_serving}g C
+                                </span>
+                              )}
                               {recipe.creator_handle && (
                                 <span className="text-xs text-zinc-400">
                                   @{recipe.creator_handle}
@@ -872,9 +895,17 @@ const MealPlanPage = ({
                       <p className="text-sm font-semibold line-clamp-2 leading-snug">
                         {actionEntry.recipe.title}
                       </p>
-                      {actionEntry.recipe.kcal_per_serving != null && (
+                      {(actionEntry.recipe.kcal_per_serving != null ||
+                        actionEntry.recipe.protein_per_serving != null ||
+                        actionEntry.recipe.fat_per_serving != null ||
+                        actionEntry.recipe.carbs_per_serving != null) && (
                         <p className="text-xs text-zinc-400 mt-0.5">
-                          {actionEntry.recipe.kcal_per_serving} kcal
+                          {[
+                            actionEntry.recipe.kcal_per_serving != null ? `${actionEntry.recipe.kcal_per_serving} kcal` : null,
+                            actionEntry.recipe.protein_per_serving != null ? `${actionEntry.recipe.protein_per_serving}g P` : null,
+                            actionEntry.recipe.fat_per_serving != null ? `${actionEntry.recipe.fat_per_serving}g F` : null,
+                            actionEntry.recipe.carbs_per_serving != null ? `${actionEntry.recipe.carbs_per_serving}g C` : null,
+                          ].filter(Boolean).join('  ·  ')}
                         </p>
                       )}
                     </div>

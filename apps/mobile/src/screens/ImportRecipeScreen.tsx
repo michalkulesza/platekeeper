@@ -68,6 +68,9 @@ interface EditableRecipe {
   title: string
   servings: string
   kcal: string
+  protein: string
+  fat: string
+  carbs: string
   thumbnail_url: string | null
   creator_handle: string | null
   source_url: string | null
@@ -84,6 +87,9 @@ const toEditable = (result: ImportResult, autoSubstitute: boolean): EditableReci
     title: recipe?.title ?? '',
     servings: recipe?.servings?.toString() ?? '',
     kcal: recipe?.kcal_per_serving?.toString() ?? '',
+    protein: recipe?.protein_per_serving?.toString() ?? '',
+    fat: recipe?.fat_per_serving?.toString() ?? '',
+    carbs: recipe?.carbs_per_serving?.toString() ?? '',
     thumbnail_url: metadata.thumbnail_url,
     creator_handle: metadata.creator_handle,
     source_url: metadata.source_url || null,
@@ -132,6 +138,9 @@ const blankRecipe = (): EditableRecipe => ({
   title: '',
   servings: '',
   kcal: '',
+  protein: '',
+  fat: '',
+  carbs: '',
   thumbnail_url: null,
   creator_handle: null,
   source_url: null,
@@ -536,6 +545,39 @@ const RecipeFormView = ({
                 />
                 <Text style={styles.previewMetaItem}>{t('recipes.kcalPerServing')}</Text>
               </View>
+              <View style={styles.previewMetaEditItem}>
+                <TextInput
+                  style={styles.previewMetaInput}
+                  value={recipe.protein}
+                  onChangeText={(v) => onChange({ ...recipe, protein: v })}
+                  keyboardType="number-pad"
+                  placeholder="—"
+                  accessibilityLabel={t('recipes.proteinPerServing')}
+                />
+                <Text style={styles.previewMetaItem}>{t('recipes.proteinPerServing')}</Text>
+              </View>
+              <View style={styles.previewMetaEditItem}>
+                <TextInput
+                  style={styles.previewMetaInput}
+                  value={recipe.fat}
+                  onChangeText={(v) => onChange({ ...recipe, fat: v })}
+                  keyboardType="number-pad"
+                  placeholder="—"
+                  accessibilityLabel={t('recipes.fatPerServing')}
+                />
+                <Text style={styles.previewMetaItem}>{t('recipes.fatPerServing')}</Text>
+              </View>
+              <View style={styles.previewMetaEditItem}>
+                <TextInput
+                  style={styles.previewMetaInput}
+                  value={recipe.carbs}
+                  onChangeText={(v) => onChange({ ...recipe, carbs: v })}
+                  keyboardType="number-pad"
+                  placeholder="—"
+                  accessibilityLabel={t('recipes.carbsPerServing')}
+                />
+                <Text style={styles.previewMetaItem}>{t('recipes.carbsPerServing')}</Text>
+              </View>
             </>
           ) : (
             <>
@@ -547,6 +589,21 @@ const RecipeFormView = ({
               {recipe.kcal !== '' && (
                 <Text style={styles.previewMetaItem}>
                   {recipe.kcal} {t('recipes.kcalPerServing')}
+                </Text>
+              )}
+              {recipe.protein !== '' && (
+                <Text style={styles.previewMetaItem}>
+                  {recipe.protein} {t('recipes.proteinPerServing')}
+                </Text>
+              )}
+              {recipe.fat !== '' && (
+                <Text style={styles.previewMetaItem}>
+                  {recipe.fat} {t('recipes.fatPerServing')}
+                </Text>
+              )}
+              {recipe.carbs !== '' && (
+                <Text style={styles.previewMetaItem}>
+                  {recipe.carbs} {t('recipes.carbsPerServing')}
                 </Text>
               )}
             </>
@@ -1300,6 +1357,9 @@ const ImportRecipeScreen = () => {
         title: editable.title,
         servings: editable.servings !== '' ? Number(editable.servings) : null,
         kcal_per_serving: editable.kcal !== '' ? Number(editable.kcal) : null,
+        protein_per_serving: editable.protein !== '' ? Number(editable.protein) : null,
+        fat_per_serving: editable.fat !== '' ? Number(editable.fat) : null,
+        carbs_per_serving: editable.carbs !== '' ? Number(editable.carbs) : null,
         thumbnail_url: editable.thumbnail_url,
         creator_handle: editable.creator_handle,
         source_url: editable.source_url,
@@ -1791,7 +1851,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   previewTagText: { color: colors.brand, fontSize: 12, fontWeight: '500' },
-  previewMetaRow: { flexDirection: 'row', marginBottom: 10, gap: 16 },
+  previewMetaRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 10, gap: 16 },
   previewMetaItem: { fontSize: 13, color: PlatformColor('secondaryLabel') as unknown as string },
   previewSourceRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
   previewSourceText: { fontSize: 13, color: PlatformColor('secondaryLabel') as unknown as string },

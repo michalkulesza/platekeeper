@@ -54,6 +54,9 @@ export interface RecipeGroup {
   title: string | null
   servings: number | null
   kcal_per_serving: number | null
+  protein_per_serving: number | null
+  fat_per_serving: number | null
+  carbs_per_serving: number | null
   tags: string[]
   components: RecipeComponent[]
 }
@@ -132,6 +135,9 @@ export interface RecipeSaveRequest {
   title: string
   servings: number | null
   kcal_per_serving: number | null
+  protein_per_serving: number | null
+  fat_per_serving: number | null
+  carbs_per_serving: number | null
   thumbnail_url: string | null
   creator_handle: string | null
   source_url: string | null
@@ -150,6 +156,9 @@ export interface RecipeOut {
   title: string
   servings: number | null
   kcal_per_serving: number | null
+  protein_per_serving: number | null
+  fat_per_serving: number | null
+  carbs_per_serving: number | null
   thumbnail_url: string | null
   creator_handle: string | null
   source_url: string | null
@@ -173,6 +182,12 @@ export interface RecipeStats {
   total_ingredients: number
   avg_kcal: number | null
   with_kcal: number
+  avg_protein: number | null
+  with_protein: number
+  avg_fat: number | null
+  with_fat: number
+  avg_carbs: number | null
+  with_carbs: number
 }
 
 export interface MealPlanEntry {

@@ -171,6 +171,9 @@ class Recipe(Base):
     title: Mapped[str] = mapped_column(String, nullable=False)
     servings: Mapped[int | None] = mapped_column(nullable=True)
     kcal_per_serving: Mapped[int | None] = mapped_column(nullable=True)
+    protein_per_serving: Mapped[int | None] = mapped_column(nullable=True)
+    fat_per_serving: Mapped[int | None] = mapped_column(nullable=True)
+    carbs_per_serving: Mapped[int | None] = mapped_column(nullable=True)
     thumbnail_url: Mapped[str | None] = mapped_column(String, nullable=True)
     creator_handle: Mapped[str | None] = mapped_column(String(50), nullable=True)
     source_url: Mapped[str | None] = mapped_column(String, nullable=True)
@@ -217,6 +220,9 @@ class RecipeExtraction(BaseModel):
     title: str | None = None
     servings: int | None = None
     kcal_per_serving: int | None = None
+    protein_per_serving: int | None = None
+    fat_per_serving: int | None = None
+    carbs_per_serving: int | None = None
     tags: list[str] = []
     components: list[RecipeComponent] = []
 
@@ -290,6 +296,9 @@ class RecipeSaveRequest(BaseModel):
     title: str
     servings: int | None = None
     kcal_per_serving: int | None = None
+    protein_per_serving: int | None = None
+    fat_per_serving: int | None = None
+    carbs_per_serving: int | None = None
     thumbnail_url: str | None = None
     creator_handle: str | None = None
     source_url: str | None = None
@@ -310,6 +319,9 @@ class RecipeOut(BaseModel):
     title: str
     servings: int | None
     kcal_per_serving: int | None
+    protein_per_serving: int | None = None
+    fat_per_serving: int | None = None
+    carbs_per_serving: int | None = None
     thumbnail_url: str | None
     creator_handle: str | None
     source_url: str | None

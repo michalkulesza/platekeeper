@@ -100,6 +100,24 @@ const StatsSection = () => {
             </Text>
             <Text style={styles.statLabel}>{t('settings.avgKcal')}</Text>
           </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>
+              {stats?.avg_protein != null ? Math.round(stats.avg_protein) : '—'}
+            </Text>
+            <Text style={styles.statLabel}>{t('settings.avgProtein')}</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>
+              {stats?.avg_fat != null ? Math.round(stats.avg_fat) : '—'}
+            </Text>
+            <Text style={styles.statLabel}>{t('settings.avgFat')}</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>
+              {stats?.avg_carbs != null ? Math.round(stats.avg_carbs) : '—'}
+            </Text>
+            <Text style={styles.statLabel}>{t('settings.avgCarbs')}</Text>
+          </View>
         </>
       )}
     </View>
@@ -717,6 +735,7 @@ const styles = StyleSheet.create({
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   statsRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     marginHorizontal: 16,
     marginBottom: 4,
     gap: 8,
@@ -725,7 +744,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   statCard: {
-    flex: 1,
+    flexBasis: '30%',
+    flexGrow: 1,
     backgroundColor: colors.background,
     borderRadius: CARD_RADIUS,
     paddingVertical: 14,

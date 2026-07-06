@@ -111,6 +111,18 @@ count based on the ingredient quantities and dish type.
 kcal_per_serving: extract from the text if stated. If not stated, estimate based
 on the ingredients and typical preparation. Provide a realistic round number.
 
+protein_per_serving: extract from the text if stated. If not stated, estimate
+based on the ingredients and typical preparation. Provide a realistic round
+number in grams.
+
+fat_per_serving: extract from the text if stated. If not stated, estimate
+based on the ingredients and typical preparation. Provide a realistic round
+number in grams.
+
+carbs_per_serving: extract from the text if stated. If not stated, estimate
+based on the ingredients and typical preparation. Provide a realistic round
+number in grams.
+
 tags: if a list of available tags is provided, assign only those that clearly apply
 to this recipe. Use only tags from the provided list — never invent new ones.
 

@@ -434,11 +434,15 @@ const RecipesScreen = () => {
                   ? item.tags.map((tg) => tTag(tg.name, t)).join(', ')
                   : t('tags.noTags')}
               </Text>
-              {(item.servings != null || item.kcal_per_serving != null) && (
+              {(item.servings != null || item.kcal_per_serving != null || item.protein_per_serving != null || item.fat_per_serving != null || item.carbs_per_serving != null) && (
                 <Text style={styles.cardMeta}>
-                  {item.servings != null ? `${t('recipes.serves')}: ${item.servings}` : ''}
-                  {item.servings != null && item.kcal_per_serving != null ? '  ·  ' : ''}
-                  {item.kcal_per_serving != null ? `${item.kcal_per_serving} kcal` : ''}
+                  {[
+                    item.servings != null ? `${t('recipes.serves')}: ${item.servings}` : null,
+                    item.kcal_per_serving != null ? `${item.kcal_per_serving} kcal` : null,
+                    item.protein_per_serving != null ? `${item.protein_per_serving}g P` : null,
+                    item.fat_per_serving != null ? `${item.fat_per_serving}g F` : null,
+                    item.carbs_per_serving != null ? `${item.carbs_per_serving}g C` : null,
+                  ].filter(Boolean).join('  ·  ')}
                 </Text>
               )}
             </View>
