@@ -56,29 +56,33 @@ const NutritionBoxGrid = ({
   disclaimerText,
 }: NutritionBoxGridProps) => {
   return (
-    <div className="flex flex-wrap gap-2 items-center">
-      {items.map((item, i) => (
-        <div
-          key={item.label}
-          className="flex flex-col items-center justify-center border border-zinc-200 rounded-lg px-3 py-1.5 min-w-[64px]"
-        >
-          {editing ? (
-            <input
-              type="number"
-              value={item.value}
-              onChange={(e) => onChangeValue?.(i, e.target.value)}
-              placeholder="—"
-              aria-label={item.accessibilityLabel}
-              className="w-[3.5ch] bg-transparent text-zinc-900 font-semibold text-sm text-center focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-            />
-          ) : (
-            <span className="text-sm font-semibold text-zinc-900">
-              {item.value !== '' ? item.value : '—'}
+    <div className="flex items-center gap-2 w-full">
+      <div className="flex-1 grid grid-cols-5 gap-2 min-w-0">
+        {items.map((item, i) => (
+          <div
+            key={item.label}
+            className="flex flex-col items-center justify-center border border-zinc-200 rounded-lg px-2 py-1.5 min-w-0"
+          >
+            {editing ? (
+              <input
+                type="number"
+                value={item.value}
+                onChange={(e) => onChangeValue?.(i, e.target.value)}
+                placeholder="—"
+                aria-label={item.accessibilityLabel}
+                className="w-full bg-transparent text-zinc-900 font-semibold text-sm text-center focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              />
+            ) : (
+              <span className="text-sm font-semibold text-zinc-900">
+                {item.value !== '' ? item.value : '—'}
+              </span>
+            )}
+            <span className="text-[11px] text-zinc-500 truncate max-w-full">
+              {item.label}
             </span>
-          )}
-          <span className="text-[11px] text-zinc-500">{item.label}</span>
-        </div>
-      ))}
+          </div>
+        ))}
+      </div>
       <DisclaimerPopover text={disclaimerText} />
     </div>
   )

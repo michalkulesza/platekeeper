@@ -1519,24 +1519,26 @@ const RecipeDetailModal = ({
                   onCreateTag={handleTagCreate}
                 />
 
-                {/* Serves / kcal / protein / fat / carbs box grid + source pill */}
-                <div className="flex flex-wrap gap-2 items-center">
-                  <NutritionBoxGrid
-                    editing={mode === 'editing'}
-                    items={[
-                      { label: t('recipes.serves'), value: mode === 'editing' ? draft.servings : r.servings?.toString() ?? '', accessibilityLabel: t('recipes.serves') },
-                      { label: t('recipes.colKcal'), value: mode === 'editing' ? draft.kcal : r.kcal_per_serving?.toString() ?? '', accessibilityLabel: t('recipes.kcalPerServing') },
-                      { label: t('recipes.protein'), value: mode === 'editing' ? draft.protein : r.protein_per_serving?.toString() ?? '', accessibilityLabel: t('recipes.proteinPerServing') },
-                      { label: t('recipes.fat'), value: mode === 'editing' ? draft.fat : r.fat_per_serving?.toString() ?? '', accessibilityLabel: t('recipes.fatPerServing') },
-                      { label: t('recipes.carbs'), value: mode === 'editing' ? draft.carbs : r.carbs_per_serving?.toString() ?? '', accessibilityLabel: t('recipes.carbsPerServing') },
-                    ]}
-                    onChangeValue={(index, value) => {
-                      const key = (['servings', 'kcal', 'protein', 'fat', 'carbs'] as const)[index]
-                      setDraft((d) => d && { ...d, [key]: value })
-                    }}
-                    disclaimerText={t('recipes.nutritionEstimateDisclaimer')}
-                  />
-                  {r.source_url && (
+                {/* Serves / kcal / protein / fat / carbs box grid */}
+                <NutritionBoxGrid
+                  editing={mode === 'editing'}
+                  items={[
+                    { label: t('recipes.serves'), value: mode === 'editing' ? draft.servings : r.servings?.toString() ?? '', accessibilityLabel: t('recipes.serves') },
+                    { label: t('recipes.colKcal'), value: mode === 'editing' ? draft.kcal : r.kcal_per_serving?.toString() ?? '', accessibilityLabel: t('recipes.kcalPerServing') },
+                    { label: t('recipes.protein'), value: mode === 'editing' ? draft.protein : r.protein_per_serving?.toString() ?? '', accessibilityLabel: t('recipes.proteinPerServing') },
+                    { label: t('recipes.fat'), value: mode === 'editing' ? draft.fat : r.fat_per_serving?.toString() ?? '', accessibilityLabel: t('recipes.fatPerServing') },
+                    { label: t('recipes.carbs'), value: mode === 'editing' ? draft.carbs : r.carbs_per_serving?.toString() ?? '', accessibilityLabel: t('recipes.carbsPerServing') },
+                  ]}
+                  onChangeValue={(index, value) => {
+                    const key = (['servings', 'kcal', 'protein', 'fat', 'carbs'] as const)[index]
+                    setDraft((d) => d && { ...d, [key]: value })
+                  }}
+                  disclaimerText={t('recipes.nutritionEstimateDisclaimer')}
+                />
+
+                {/* Source pill */}
+                {r.source_url && (
+                  <div className="flex flex-wrap gap-2 items-center">
                     <a
                       href={r.source_url}
                       target="_blank"
@@ -1546,8 +1548,8 @@ const RecipeDetailModal = ({
                       <Link className="w-3.5 h-3.5" />
                       {t('recipes.source')}
                     </a>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {debugMode && r.debug_model && (
                   <div className="flex flex-col gap-0.5 rounded-lg bg-zinc-50 px-3 py-2">
