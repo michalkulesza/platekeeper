@@ -280,39 +280,65 @@ const AllergenPopover = ({
   )
 }
 
-// ── Progress bar ─────────────────────────────────────────────────────────────
+// ── Import skeleton ───────────────────────────────────────────────────────────
+// Shown in place of the import form while a recipe is streaming in. Mirrors the
+// layout of EditableRecipeView below so the transition into the real content,
+// once it arrives, doesn't jump.
 
-// Client-side heuristic mapping of stage keys to progress fractions, kept in
-// sync with the equivalent STAGE_PROGRESS table in
-// apps/mobile/src/screens/ImportRecipeScreen.tsx — the backend only emits
-// discrete named stages, no numeric progress value.
-const STAGE_PROGRESS: Record<string, number> = {
-  fetching_page: 0.25,
-  analyzing_page: 0.7,
-  fetching_metadata: 0.15,
-  checking_description: 0.35,
-  checking_links: 0.55,
-  fetching_transcript: 0.65,
-  analyzing_transcript: 0.82,
-  analyzing_text: 0.7,
-  analyzing_image: 0.7,
-}
+const Bone = ({ className = '', style }: { className?: string; style?: React.CSSProperties }) => (
+  <div className={`rounded bg-zinc-100 animate-pulse ${className}`} style={style} />
+)
 
-const ImportProgressBar = ({ steps }: { steps: StepState[] }) => {
-  if (steps.length === 0) return null
-  const current = steps[steps.length - 1]
-  const fraction =
-    current.status === 'done' ? 1 : (STAGE_PROGRESS[current.key] ?? 0.5)
+const INGREDIENT_BONE_WIDTHS = ['92%', '78%', '85%', '64%', '80%']
 
-  return (
-    <div className="mt-3 h-1.5 w-full rounded-full bg-zinc-200 overflow-hidden">
-      <div
-        className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
-        style={{ width: `${fraction * 100}%` }}
-      />
+const RecipeImportSkeleton = ({ stageLabel }: { stageLabel: string | null }) => (
+  <div className="mt-4 border-t border-zinc-200 pt-4">
+    <div className="flex gap-3 items-start mb-2">
+      <Bone className="w-16 h-16 rounded-lg shrink-0" />
+      <div className="flex-1 min-w-0 flex flex-col gap-2 pt-1">
+        <Bone className="h-5 w-3/4" />
+        <Bone className="h-5 w-1/2" />
+      </div>
     </div>
-  )
-}
+
+    <div className="flex gap-1.5 mb-3">
+      <Bone className="h-6 w-16 rounded-full" />
+      <Bone className="h-6 w-20 rounded-full" />
+    </div>
+
+    <div className="flex gap-2 mb-4">
+      <Bone className="h-6 w-20 rounded-full" />
+      <Bone className="h-6 w-28 rounded-full" />
+    </div>
+
+    <Bone className="h-3 w-24 mb-2" />
+    <ul className="space-y-2 mb-4">
+      {INGREDIENT_BONE_WIDTHS.map((w, i) => (
+        <li key={i} className="flex items-start gap-2">
+          <span className="text-zinc-300 mt-1 shrink-0">·</span>
+          <Bone className="h-4" style={{ width: w }} />
+        </li>
+      ))}
+    </ul>
+
+    <Bone className="h-3 w-16 mb-2" />
+    <ol className="space-y-3">
+      {[0, 1, 2].map((i) => (
+        <li key={i} className="flex items-start gap-2">
+          <span className="text-zinc-300 font-medium shrink-0">{i + 1}.</span>
+          <div className="flex-1 flex flex-col gap-1.5">
+            <Bone className="h-4 w-full" />
+            <Bone className="h-4 w-3/5" />
+          </div>
+        </li>
+      ))}
+    </ol>
+
+    {stageLabel && (
+      <p className="mt-4 text-xs text-zinc-400 text-center">{stageLabel}</p>
+    )}
+  </div>
+)
 
 // ── Inline editable text field ────────────────────────────────────────────────
 
@@ -987,7 +1013,7 @@ const AddRecipeModal = ({
               {parsed ? t('addRecipe.editRecipe') : t('addRecipe.importRecipe')}
             </ModalHeader>
             <ModalBody>
-              {!parsed && activeHouseholdId && personalRecipes.length > 0 && (
+              {!parsed && !loading && activeHouseholdId && personalRecipes.length > 0 && (
                 <div className="flex flex-col gap-2">
                   <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
                     {t('addRecipe.fromPersonalLibrary')}
@@ -1052,7 +1078,7 @@ const AddRecipeModal = ({
                 </div>
               )}
 
-              {!parsed && (
+              {!parsed && !loading && (
                 <div className="flex flex-col gap-3">
                   <div className="flex gap-1.5">
                     {(
@@ -1189,7 +1215,11 @@ const AddRecipeModal = ({
                 </div>
               )}
 
-              {!parsed && !error && <ImportProgressBar steps={progressSteps} />}
+              {!parsed && !error && loading && (
+                <RecipeImportSkeleton
+                  stageLabel={progressSteps[progressSteps.length - 1]?.label ?? null}
+                />
+              )}
 
               {error && (
                 <div className="bg-danger-50 text-danger rounded-lg p-3 text-sm mt-2">

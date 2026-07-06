@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  Easing,
   Image,
   KeyboardAvoidingView,
   Linking,
@@ -155,31 +156,79 @@ const isBlankRecipe = (r: EditableRecipe): boolean =>
       c.steps.every((s) => !s.trim()),
   )
 
-// Progress target per pipeline stage key (0..1)
-const STAGE_PROGRESS: Record<string, number> = {
-  fetching_page: 0.25,
-  analyzing_page: 0.70,
-  fetching_metadata: 0.15,
-  checking_description: 0.35,
-  checking_links: 0.55,
-  fetching_transcript: 0.65,
-  analyzing_transcript: 0.82,
-  analyzing_text: 0.70,
-  analyzing_image: 0.70,
+// ── RecipeImportSkeleton ────────────────────────────────────────────────────────
+// Shown in place of the recipe form while an import is streaming in. Mirrors the
+// exact layout of RecipeFormView/the saved-recipe detail screen so the transition
+// into the real content, once it arrives, doesn't jump.
+
+const useSkeletonPulse = () => {
+  const pulse = useRef(new Animated.Value(0.4)).current
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 900, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0.4, duration: 900, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ]),
+    )
+    loop.start()
+    return () => loop.stop()
+  }, [pulse])
+  return pulse
 }
 
-// ── ImportProgressBar ──────────────────────────────────────────────────────────
+const INGREDIENT_BONE_WIDTHS = ['92%', '78%', '85%', '64%', '80%'] as const
+const STEP_BONE_COUNT = 3
 
-const ImportProgressBar = ({ anim, visible }: { anim: Animated.Value; visible: boolean }) => {
-  if (!visible) return null
+const RecipeImportSkeleton = ({ stageLabel }: { stageLabel: string | null }) => {
+  const opacity = useSkeletonPulse()
   return (
-    <View style={styles.progressBarTrack}>
-      <Animated.View
-        style={[
-          styles.progressBarFill,
-          { width: anim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) },
-        ]}
-      />
+    <View>
+      <Animated.View style={[styles.previewHeroImage, styles.skeletonBone, { opacity }]} />
+      <View style={styles.previewCard}>
+        <Animated.View style={[styles.skeletonBone, styles.skeletonTitleLine, { opacity, width: '70%' }]} />
+        <Animated.View style={[styles.skeletonBone, styles.skeletonTitleLine, { opacity, width: '42%', marginBottom: 14 }]} />
+
+        <View style={styles.previewTagRow}>
+          {[54, 68, 46].map((w, i) => (
+            <Animated.View key={i} style={[styles.skeletonBone, styles.skeletonTag, { opacity, width: w }]} />
+          ))}
+        </View>
+
+        <View style={styles.previewMetaRow}>
+          <Animated.View style={[styles.skeletonBone, styles.skeletonMeta, { opacity, width: 64 }]} />
+          <Animated.View style={[styles.skeletonBone, styles.skeletonMeta, { opacity, width: 92 }]} />
+        </View>
+
+        <View style={styles.previewSection}>
+          <Animated.View style={[styles.skeletonBone, styles.skeletonLabel, { opacity }]} />
+          {INGREDIENT_BONE_WIDTHS.map((w, i) => (
+            <View key={i} style={styles.previewIngredientRow}>
+              <Animated.View style={[styles.skeletonBone, styles.skeletonBullet, { opacity }]} />
+              <Animated.View style={[styles.skeletonBone, styles.skeletonIngredientLine, { opacity, width: w }]} />
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.previewSection}>
+          <Animated.View style={[styles.skeletonBone, styles.skeletonLabel, { opacity }]} />
+          {Array.from({ length: STEP_BONE_COUNT }).map((_, i) => (
+            <View key={i} style={styles.previewStepRow}>
+              <Animated.View style={[styles.skeletonBone, styles.skeletonStepNum, { opacity }]} />
+              <View style={styles.flex}>
+                <Animated.View style={[styles.skeletonBone, styles.skeletonStepLine, { opacity, width: '100%', marginBottom: 6 }]} />
+                <Animated.View style={[styles.skeletonBone, styles.skeletonStepLine, { opacity, width: '58%' }]} />
+              </View>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      {stageLabel && (
+        <View style={styles.skeletonStageRow}>
+          <ActivityIndicator size="small" color={PlatformColor('secondaryLabel') as unknown as string} />
+          <Text style={styles.skeletonStageText}>{stageLabel}</Text>
+        </View>
+      )}
     </View>
   )
 }
@@ -715,15 +764,11 @@ const UrlInputView = ({
   onUrlChange,
   onPaste,
   onImport,
-  loading,
-  animProgress,
 }: {
   url: string
   onUrlChange: (v: string) => void
   onPaste: () => void
   onImport: () => void
-  loading: boolean
-  animProgress: Animated.Value
 }) => {
   const { t } = useTranslation()
   return (
@@ -738,7 +783,6 @@ const UrlInputView = ({
           autoCapitalize="none"
           autoCorrect={false}
           keyboardType="url"
-          editable={!loading}
           returnKeyType="go"
           onSubmitEditing={onImport}
           accessibilityLabel={t('addRecipe.recipeUrl')}
@@ -747,14 +791,12 @@ const UrlInputView = ({
         <Pressable
           style={({ pressed }) => [styles.pasteIconBtn, pressed && { opacity: 0.7 }]}
           onPress={onPaste}
-          disabled={loading}
           accessibilityLabel={t('addRecipe.paste')}
           hitSlop={4}
         >
           <Feather name="clipboard" size={20} color={colors.secondaryLabel} />
         </Pressable>
       </View>
-      <ImportProgressBar anim={animProgress} visible={loading} />
     </View>
   )
 }
@@ -766,15 +808,11 @@ const TextPasteView = ({
   onTextChange,
   onPaste,
   onExtract,
-  loading,
-  animProgress,
 }: {
   text: string
   onTextChange: (v: string) => void
   onPaste: () => void
   onExtract: () => void
-  loading: boolean
-  animProgress: Animated.Value
 }) => {
   const { t } = useTranslation()
   return (
@@ -787,7 +825,6 @@ const TextPasteView = ({
           placeholder={t('addRecipe.pasteTextPlaceholder')}
           placeholderTextColor={PlatformColor('placeholderText') as unknown as string}
           multiline
-          editable={!loading}
           autoCapitalize="sentences"
           autoCorrect
           accessibilityLabel={t('addRecipe.methodText')}
@@ -795,14 +832,12 @@ const TextPasteView = ({
         <Pressable
           style={({ pressed }) => [styles.textPasteInlineBtn, pressed && { opacity: 0.7 }]}
           onPress={onPaste}
-          disabled={loading}
           accessibilityLabel={t('addRecipe.paste')}
         >
           <Feather name="clipboard" size={16} color={PlatformColor('systemBlue') as unknown as string} />
           <Text style={styles.textPasteBtnText}>{t('addRecipe.paste')}</Text>
         </Pressable>
       </View>
-      <ImportProgressBar anim={animProgress} visible={loading} />
     </View>
   )
 }
@@ -814,15 +849,11 @@ const ShareView = ({
   onUrlChange,
   onPaste,
   onImport,
-  loading,
-  animProgress,
 }: {
   url: string
   onUrlChange: (v: string) => void
   onPaste: () => void
   onImport: () => void
-  loading: boolean
-  animProgress: Animated.Value
 }) => {
   const { t } = useTranslation()
   return (
@@ -841,7 +872,6 @@ const ShareView = ({
           autoCapitalize="none"
           autoCorrect={false}
           keyboardType="url"
-          editable={!loading}
           returnKeyType="go"
           onSubmitEditing={onImport}
           accessibilityLabel={t('addRecipe.shareUrlLabel')}
@@ -850,14 +880,12 @@ const ShareView = ({
         <Pressable
           style={({ pressed }) => [styles.pasteBtn, pressed && { opacity: 0.7 }]}
           onPress={onPaste}
-          disabled={loading}
           accessibilityLabel={t('addRecipe.paste')}
           hitSlop={4}
         >
           <Text style={styles.pasteBtnText}>{t('addRecipe.paste')}</Text>
         </Pressable>
       </View>
-      <ImportProgressBar anim={animProgress} visible={loading} />
     </View>
   )
 }
@@ -881,7 +909,7 @@ const ImportRecipeScreen = () => {
   const [pastedText, setPastedText] = useState('')
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
-  const progressAnim = useRef(new Animated.Value(0)).current
+  const [stageLabel, setStageLabel] = useState<string | null>(null)
   const [editable, setEditable] = useState<EditableRecipe | null>(null)
   const [previewMode, setPreviewMode] = useState(false)
   const [selectedTags, setSelectedTags] = useState<Tag[]>([])
@@ -1020,7 +1048,7 @@ const ImportRecipeScreen = () => {
   const reset = () => {
     cancelRef.current?.()
     setLoading(false)
-    progressAnim.setValue(0)
+    setStageLabel(null)
     setEditable(null)
     setPreviewMode(false)
     setSelectedTags([])
@@ -1074,7 +1102,7 @@ const ImportRecipeScreen = () => {
             // Abort the foreground stream
             cancelRef.current?.()
             setLoading(false)
-            setProgressSteps([])
+            setStageLabel(null)
 
             // Get device push token for fallback notification
             let devicePushToken: string | null = null
@@ -1114,12 +1142,10 @@ const ImportRecipeScreen = () => {
   const startStreamCallbacks = () => ({
     onStage(stage: StageEvent) {
       console.log('[import] stage:', stage.key, '—', stage.label)
-      const target = STAGE_PROGRESS[stage.key] ?? 0.5
-      Animated.timing(progressAnim, { toValue: target, duration: 400, useNativeDriver: false }).start()
+      setStageLabel(stage.label)
     },
     onDone(res: ImportResult) {
       console.log('[import] done:', res.stage, res.error ?? 'ok')
-      Animated.timing(progressAnim, { toValue: 1, duration: 300, useNativeDriver: false }).start()
       applyImportResult(res)
     },
     onError(msg: string) {
@@ -1138,7 +1164,7 @@ const ImportRecipeScreen = () => {
     cancelRef.current?.()
     highDemandJobRef.current = { kind: 'url', input: { url: url.trim() } }
     highDemandOfferedRef.current = false
-    progressAnim.setValue(0)
+    setStageLabel(null)
     setLoading(true)
     setError(null)
     setEditable(null)
@@ -1157,7 +1183,7 @@ const ImportRecipeScreen = () => {
     cancelRef.current?.()
     highDemandJobRef.current = { kind: 'text', input: { text: pastedText.trim() } }
     highDemandOfferedRef.current = false
-    progressAnim.setValue(0)
+    setStageLabel(null)
     setLoading(true)
     setError(null)
     setEditable(null)
@@ -1222,7 +1248,7 @@ const ImportRecipeScreen = () => {
     highDemandJobRef.current = { kind: 'image', input: { image_base64: imageBase64, mime_type: mimeType } }
     highDemandOfferedRef.current = false
     pendingThumbRef.current = `data:${mimeType};base64,${imageBase64}`
-    progressAnim.setValue(0)
+    setStageLabel(null)
     setLoading(true)
     setError(null)
     setEditable(null)
@@ -1316,48 +1342,44 @@ const ImportRecipeScreen = () => {
         )}
 
         {/* URL import */}
-        {mode === 'url' && !editable && (
+        {mode === 'url' && !editable && !loading && (
           <UrlInputView
             url={url}
             onUrlChange={setUrl}
             onPaste={handlePasteUrl}
             onImport={handleImportUrl}
-            loading={loading}
-            animProgress={progressAnim}
           />
         )}
 
         {/* Text paste */}
-        {mode === 'text' && !editable && (
+        {mode === 'text' && !editable && !loading && (
           <TextPasteView
             text={pastedText}
             onTextChange={setPastedText}
             onPaste={handlePasteText}
             onExtract={handleImportText}
-            loading={loading}
-            animProgress={progressAnim}
           />
         )}
 
         {/* Share */}
-        {mode === 'share' && !editable && (
+        {mode === 'share' && !editable && !loading && (
           <ShareView
             url={url}
             onUrlChange={setUrl}
             onPaste={handlePasteUrl}
             onImport={handleImportUrl}
-            loading={loading}
-            animProgress={progressAnim}
           />
         )}
 
-        {/* Camera/Gallery loading state (no dedicated view, just progress) */}
-        {(mode === 'camera' || mode === 'gallery') && !editable && (
+        {/* Camera/Gallery: brief wait for the native picker before the stream starts */}
+        {(mode === 'camera' || mode === 'gallery') && !editable && !loading && (
           <View style={styles.imageLoadingSection}>
             <Ionicons name="image" size={80} color={PlatformColor('tertiaryLabel') as unknown as string} />
-            <ImportProgressBar anim={progressAnim} visible={loading} />
           </View>
         )}
+
+        {/* Import in progress — skeleton preview of the recipe detail layout */}
+        {loading && !editable && <RecipeImportSkeleton stageLabel={stageLabel} />}
 
         {/* Imported recipe view — read-only preview or in-place edit form */}
         {editable && (
@@ -1635,18 +1657,28 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
 
-  // Progress bar
-  progressBarTrack: {
-    height: 3,
+  // Import skeleton
+  skeletonBone: {
     backgroundColor: PlatformColor('systemGray5') as unknown as string,
-    borderRadius: 2,
-    overflow: 'hidden',
+    borderRadius: 6,
   },
-  progressBarFill: {
-    height: 3,
-    backgroundColor: colors.brand,
-    borderRadius: 2,
+  skeletonTitleLine: { height: 26, borderRadius: 8, marginBottom: 8 },
+  skeletonTag: { height: 22, borderRadius: 12 },
+  skeletonMeta: { height: 13, borderRadius: 4 },
+  skeletonLabel: { width: 90, height: 12, borderRadius: 4, marginBottom: 10 },
+  skeletonBullet: { width: 6, height: 6, borderRadius: 3, marginRight: 8, marginTop: 8 },
+  skeletonIngredientLine: { height: 17, borderRadius: 5 },
+  skeletonStepNum: { width: 20, height: 17, borderRadius: 5, marginRight: 8 },
+  skeletonStepLine: { height: 17, borderRadius: 5 },
+  skeletonStageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingTop: 4,
+    paddingBottom: 24,
   },
+  skeletonStageText: { fontSize: 13, color: PlatformColor('secondaryLabel') as unknown as string },
 
   // Error box
   errorBox: {
