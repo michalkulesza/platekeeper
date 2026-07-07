@@ -35,6 +35,7 @@ import { useScreenLoading } from '../hooks/useScreenLoading'
 import { useHousehold } from '../context/HouseholdContext'
 
 const PERSONAL_MENU_ID = '__personal__'
+const MANAGE_TIP_MENU_ID = '__manage_tip__'
 
 const ThumbnailImage = ({ url, style }: { url: string; style: object }) => {
   const [errored, setErrored] = useState(false)
@@ -201,12 +202,22 @@ const RecipesScreen = () => {
         title: h.name,
         state: (h.id === activeHouseholdId ? 'on' : 'off') as 'on' | 'off',
       })),
+      ...(households.length === 0
+        ? [
+            {
+              id: MANAGE_TIP_MENU_ID,
+              title: t('households.manageTip'),
+              attributes: { disabled: true },
+            },
+          ]
+        : []),
     ],
     [households, activeHouseholdId, t],
   )
 
   const handleHouseholdAction = useCallback(
     ({ nativeEvent }: { nativeEvent: { event: string } }) => {
+      if (nativeEvent.event === MANAGE_TIP_MENU_ID) return
       const id = nativeEvent.event === PERSONAL_MENU_ID ? null : nativeEvent.event
       if (id !== activeHouseholdId) void switchHousehold(id)
     },
