@@ -186,6 +186,7 @@
     "notifications": "Notificaciones",
     "noNotifications": "Sin notificaciones",
     "householdInvitation": "Invitación al hogar",
+    "invitationTitle": "Invitación para unirte al hogar {{name}}",
     "from": "De {{name}}",
     "history": "Historial",
     "timerDone": "Temporizador listo",

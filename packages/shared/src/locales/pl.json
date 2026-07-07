@@ -190,6 +190,7 @@
     "notifications": "Powiadomienia",
     "noNotifications": "Brak powiadomień",
     "householdInvitation": "Zaproszenie do gospodarstwa",
+    "invitationTitle": "Zaproszenie do gospodarstwa {{name}}",
     "from": "Od {{name}}",
     "history": "Historia",
     "timerDone": "Minutnik gotowy",
