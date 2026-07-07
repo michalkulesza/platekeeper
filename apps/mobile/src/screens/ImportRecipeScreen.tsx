@@ -1166,11 +1166,15 @@ const ImportRecipeScreen = () => {
                 job_input: job.input,
               })
               skipGuardRef.current = true
-              // Not router.back(): the "open in browser" fallback can leave a second
-              // import-recipe screen underneath this one (WebViewImportScreen replaces
-              // itself with a fresh import-recipe rather than popping the original), so a
-              // single pop can land back on a stale import screen instead of home.
-              router.dismissTo('/(tabs)')
+              // Not router.back()/dismissTo(): the "open in browser" fallback can leave a
+              // second import-recipe screen underneath this one (WebViewImportScreen
+              // replaces itself with a fresh import-recipe rather than popping the
+              // original), and dismissTo requires an exact route-name match in the current
+              // stack's history which proved unreliable here. dismissAll() unconditionally
+              // pops everything, then replace() lands on home the same way the auth-redirect
+              // flow already does elsewhere in this codebase (app/_layout.tsx).
+              router.dismissAll()
+              router.replace('/(tabs)')
             } catch (err) {
               setError(err instanceof Error ? err.message : t('addRecipe.failedToEnqueueJob'))
               setLoading(false)
