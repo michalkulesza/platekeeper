@@ -100,24 +100,6 @@ const StatsSection = () => {
             </Text>
             <Text style={styles.statLabel}>{t('settings.avgKcal')}</Text>
           </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>
-              {stats?.avg_protein != null ? Math.round(stats.avg_protein) : '—'}
-            </Text>
-            <Text style={styles.statLabel}>{t('settings.avgProtein')}</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>
-              {stats?.avg_fat != null ? Math.round(stats.avg_fat) : '—'}
-            </Text>
-            <Text style={styles.statLabel}>{t('settings.avgFat')}</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>
-              {stats?.avg_carbs != null ? Math.round(stats.avg_carbs) : '—'}
-            </Text>
-            <Text style={styles.statLabel}>{t('settings.avgCarbs')}</Text>
-          </View>
         </>
       )}
     </View>
