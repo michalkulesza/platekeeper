@@ -290,7 +290,7 @@ const RootLayout = () => {
   )
 }
 
-export default Sentry.wrap(RootLayout)
+export default __DEV__ ? RootLayout : Sentry.wrap(RootLayout)
 
 const styles = StyleSheet.create({
   loadingOverlay: {
