@@ -360,7 +360,8 @@
   },
   "households": {
     "switchContext": "Changer de foyer",
-    "personal": "Personnel"
+    "personal": "Personnel",
+    "manageTip": "Gérer les foyers dans les Réglages"
   },
   "tags": {
     "tags": "Tags",

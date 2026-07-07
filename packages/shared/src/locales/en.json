@@ -360,7 +360,8 @@
   },
   "households": {
     "switchContext": "Switch household",
-    "personal": "Personal"
+    "personal": "Personal",
+    "manageTip": "Manage households in Settings"
   },
   "tags": {
     "tags": "Tags",

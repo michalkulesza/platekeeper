@@ -360,7 +360,8 @@
   },
   "households": {
     "switchContext": "Cambiar de hogar",
-    "personal": "Personal"
+    "personal": "Personal",
+    "manageTip": "Gestiona los hogares en Ajustes"
   },
   "tags": {
     "tags": "Etiquetas",

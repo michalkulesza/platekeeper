@@ -368,7 +368,8 @@
   },
   "households": {
     "switchContext": "Przełącz gospodarstwo domowe",
-    "personal": "Osobiste"
+    "personal": "Osobiste",
+    "manageTip": "Zarządzaj gospodarstwami w Ustawieniach"
   },
   "tags": {
     "tags": "Tagi",
