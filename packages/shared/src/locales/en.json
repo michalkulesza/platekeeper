@@ -144,6 +144,7 @@
     "accountExistsGoogleError": "An account with this email already exists via Google. Use \"Continue with Google\" to sign in.",
     "completeProfileTitle": "Set up your account",
     "completeProfileSubtitle": "Choose a password and how you'd like to be known.",
+    "brandName": "carrot",
     "tagline": "Your personal recipe library",
     "continueWithGoogle": "Continue with Google",
     "orDivider": "or",

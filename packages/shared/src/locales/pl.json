@@ -146,6 +146,7 @@
     "accountExistsGoogleError": "Konto z tym adresem e-mail już istnieje przez Google. Użyj \"Kontynuuj z Google\", aby się zalogować.",
     "completeProfileTitle": "Skonfiguruj swoje konto",
     "completeProfileSubtitle": "Wybierz hasło i sposób, w jaki chcesz być widoczny/a.",
+    "brandName": "carrot",
     "tagline": "Twoja osobista biblioteka przepisów",
     "continueWithGoogle": "Kontynuuj z Google",
     "orDivider": "lub",
