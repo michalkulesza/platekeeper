@@ -49,5 +49,9 @@ class Settings(BaseSettings):
     google_android_client_id: str = ""
     google_web_client_id: str = ""
 
+    # Debug only — forces the "high demand" background-import path to fire on the very
+    # first Gemini call instead of after 3 real transient failures. Never set in production.
+    debug_force_high_demand: bool = False
+
 
 settings = Settings()  # type: ignore[call-arg]
