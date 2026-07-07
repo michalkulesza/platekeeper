@@ -186,6 +186,7 @@
     "notifications": "Benachrichtigungen",
     "noNotifications": "Keine Benachrichtigungen",
     "householdInvitation": "Haushaltseinladung",
+    "invitationTitle": "Einladung zum Haushalt {{name}}",
     "from": "Von {{name}}",
     "history": "Verlauf",
     "timerDone": "Timer fertig",

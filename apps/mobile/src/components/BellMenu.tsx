@@ -60,7 +60,7 @@ const BellMenu = () => {
     for (const inv of invitations) {
       items.push({
         id: `inv-${inv.id}`,
-        title: `🏠 ${inv.household_name}`,
+        title: `🏠 ${t('bell.invitationTitle', { name: inv.household_name })}`,
         subtitle: t('bell.from', { name: inv.invited_by_nickname || inv.invited_by_email }),
         subactions: [
           { id: `inv-accept-${inv.id}`, title: t('common.accept'), image: 'checkmark.circle' },
