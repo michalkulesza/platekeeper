@@ -17,7 +17,10 @@ if (!__DEV__) {
     tracesSampleRate: 1.0,
   })
 }
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClient } from '@tanstack/react-query'
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
+import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { I18nextProvider } from 'react-i18next'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'
@@ -33,7 +36,20 @@ import { configureGoogleSignin } from '../src/utils/googleAuth'
 
 configureGoogleSignin()
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Cached data is shown immediately and refetched silently in the background
+      // instead of blocking on a spinner for this long after it's restored from disk.
+      staleTime: 60 * 1000,
+      gcTime: 24 * 60 * 60 * 1000,
+    },
+  },
+})
+
+const asyncStoragePersister = createAsyncStoragePersister({ storage: AsyncStorage })
+// Bump when the cached query data shape changes in a way older persisted caches can't handle.
+const QUERY_CACHE_BUSTER = '1'
 
 function RootLayoutNav() {
   const { t } = useTranslation()
@@ -268,7 +284,14 @@ const RootLayout = () => {
       <BottomSheetModalProvider>
         <ColorSchemeProvider>
           <DebugModeProvider>
-            <QueryClientProvider client={queryClient}>
+            <PersistQueryClientProvider
+              client={queryClient}
+              persistOptions={{
+                persister: asyncStoragePersister,
+                maxAge: 24 * 60 * 60 * 1000,
+                buster: QUERY_CACHE_BUSTER,
+              }}
+            >
               <I18nextProvider i18n={i18n}>
                 <ApiClientProvider client={mobileClient}>
                   <AuthProvider>
@@ -282,7 +305,7 @@ const RootLayout = () => {
                   </AuthProvider>
                 </ApiClientProvider>
               </I18nextProvider>
-            </QueryClientProvider>
+            </PersistQueryClientProvider>
           </DebugModeProvider>
         </ColorSchemeProvider>
       </BottomSheetModalProvider>
