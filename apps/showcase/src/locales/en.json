@@ -1,0 +1,29 @@
+{
+  "hero": {
+    "tagline": "Your personal recipe library"
+  },
+  "cta": {
+    "web": {
+      "title": "Web",
+      "subtitle": "Open in browser"
+    },
+    "ios": {
+      "title": "iOS",
+      "subtitle": "Join Public test on TestFlight"
+    },
+    "android": {
+      "title": "Android",
+      "subtitle": "Coming soon"
+    }
+  },
+  "modal": {
+    "title": "Try the iOS app",
+    "description": "This test account is preseeded. Feel free to make any changes as there is a cleanup worker that will bring this account state to default automatically.",
+    "email": "Email",
+    "password": "Password",
+    "copy": "Copy",
+    "copied": "Copied",
+    "openTestflight": "Open TestFlight",
+    "close": "Close"
+  }
+}

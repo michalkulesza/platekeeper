@@ -1,0 +1,29 @@
+{
+  "hero": {
+    "tagline": "Deine persönliche Rezeptsammlung"
+  },
+  "cta": {
+    "web": {
+      "title": "Web",
+      "subtitle": "Im Browser öffnen"
+    },
+    "ios": {
+      "title": "iOS",
+      "subtitle": "Am öffentlichen TestFlight-Test teilnehmen"
+    },
+    "android": {
+      "title": "Android",
+      "subtitle": "Demnächst verfügbar"
+    }
+  },
+  "modal": {
+    "title": "iOS-App ausprobieren",
+    "description": "Dieses Testkonto ist vorbereitet. Du kannst beliebige Änderungen vornehmen — ein Bereinigungsdienst setzt den Kontostatus automatisch zurück.",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "copy": "Kopieren",
+    "copied": "Kopiert",
+    "openTestflight": "TestFlight öffnen",
+    "close": "Schließen"
+  }
+}
