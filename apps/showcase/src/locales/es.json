@@ -1,0 +1,29 @@
+{
+  "hero": {
+    "tagline": "Tu biblioteca personal de recetas"
+  },
+  "cta": {
+    "web": {
+      "title": "Web",
+      "subtitle": "Abrir en el navegador"
+    },
+    "ios": {
+      "title": "iOS",
+      "subtitle": "Únete a la prueba pública en TestFlight"
+    },
+    "android": {
+      "title": "Android",
+      "subtitle": "Próximamente"
+    }
+  },
+  "modal": {
+    "title": "Prueba la app de iOS",
+    "description": "Esta cuenta de prueba está preconfigurada. Puedes hacer los cambios que quieras: un proceso de limpieza restablece automáticamente el estado predeterminado de la cuenta.",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "openTestflight": "Abrir TestFlight",
+    "close": "Cerrar"
+  }
+}

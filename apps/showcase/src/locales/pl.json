@@ -1,0 +1,29 @@
+{
+  "hero": {
+    "tagline": "Twoja osobista biblioteka przepisów"
+  },
+  "cta": {
+    "web": {
+      "title": "Web",
+      "subtitle": "Otwórz w przeglądarce"
+    },
+    "ios": {
+      "title": "iOS",
+      "subtitle": "Dołącz do publicznego testu na TestFlight"
+    },
+    "android": {
+      "title": "Android",
+      "subtitle": "Wkrótce"
+    }
+  },
+  "modal": {
+    "title": "Wypróbuj aplikację na iOS",
+    "description": "To konto testowe jest wstępnie skonfigurowane. Możesz wprowadzać dowolne zmiany — mechanizm czyszczący automatycznie przywróci domyślny stan konta.",
+    "email": "E-mail",
+    "password": "Hasło",
+    "copy": "Kopiuj",
+    "copied": "Skopiowano",
+    "openTestflight": "Otwórz TestFlight",
+    "close": "Zamknij"
+  }
+}
