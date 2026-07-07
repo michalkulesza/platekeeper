@@ -144,6 +144,7 @@
     "accountExistsGoogleError": "Ein Konto mit dieser E-Mail-Adresse existiert bereits über Google. Nutze \"Mit Google fortfahren\", um dich anzumelden.",
     "completeProfileTitle": "Konto einrichten",
     "completeProfileSubtitle": "Wähle ein Passwort und wie du genannt werden möchtest.",
+    "brandName": "carrot",
     "tagline": "Deine persönliche Rezeptbibliothek",
     "continueWithGoogle": "Mit Google fortfahren",
     "orDivider": "oder",

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { StyleSheet, Text, TextInput, Pressable, View, KeyboardAvoidingView, Platform } from 'react-native'
+import { Image, StyleSheet, Text, TextInput, Pressable, View, KeyboardAvoidingView, Platform } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { useRouter } from 'expo-router'
 import { Controller, useForm } from 'react-hook-form'
@@ -60,6 +60,16 @@ const LoginScreen = () => {
   return (
     <KeyboardAvoidingView style={styles.outer} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.container}>
+        <View style={styles.logoRow}>
+          <Image
+            source={require('../../../assets/icon.png')}
+            style={styles.logoIcon}
+            resizeMode="contain"
+            accessible={false}
+          />
+          <Text style={styles.logoText} accessibilityRole="header">{t('auth.brandName')}</Text>
+        </View>
+
         <Text style={styles.tagline}>{t('auth.tagline')}</Text>
 
         {error && <Text style={styles.error}>{error}</Text>}
@@ -167,6 +177,9 @@ const LoginScreen = () => {
 const styles = StyleSheet.create({
   outer: { flex: 1, backgroundColor: colors.background },
   container: { flex: 1, justifyContent: 'center', paddingHorizontal: 24 },
+  logoRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 16 },
+  logoIcon: { width: 56, height: 56, borderRadius: 14 },
+  logoText: { fontSize: 34, lineHeight: 41, fontWeight: '700', color: colors.label },
   tagline: { fontSize: 28, fontWeight: '700', textAlign: 'center', marginBottom: 40, color: colors.label },
   error: { color: colors.red, marginBottom: 12, textAlign: 'center' },
   field: { marginBottom: 14 },
