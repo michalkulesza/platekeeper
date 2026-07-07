@@ -21,6 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { Feather, Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
+import * as Haptics from 'expo-haptics'
 import * as ImagePicker from 'expo-image-picker'
 import * as Notifications from 'expo-notifications'
 import { useQueryClient } from '@tanstack/react-query'
@@ -1383,6 +1384,7 @@ const ImportRecipeScreen = () => {
         tag_ids: selectedTags.map((tag) => tag.id),
       })
       await qc.invalidateQueries({ queryKey: ['recipes'] })
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       skipGuardRef.current = true
       router.back()
     } catch (err) {
