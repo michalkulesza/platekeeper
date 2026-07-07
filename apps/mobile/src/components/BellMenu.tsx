@@ -21,12 +21,12 @@ const BellMenu = () => {
   const pathname = usePathname()
   const { timers, pauseTimer, resumeTimer, cancelTimer } = useTimers()
   const { items: notifHistory, dismiss: dismissNotif, clearAll: clearNotifHistory } = useNotificationHistory()
-  const { invitations, refetchHouseholds, refetchInvitations } = useHousehold()
+  const { invitations, leaveNotifications, dismissLeaveNotification, refetchHouseholds, refetchInvitations } = useHousehold()
   const { refreshUser } = useAuth()
   const api = useApiClient()
 
   const timerList = useMemo(() => [...timers.values()], [timers])
-  const totalCount = timerList.length + invitations.length + notifHistory.length
+  const totalCount = timerList.length + invitations.length + leaveNotifications.length + notifHistory.length
 
   const actions = useMemo(() => {
     if (totalCount === 0) {
@@ -76,6 +76,13 @@ const BellMenu = () => {
       })
     }
 
+    for (const n of leaveNotifications) {
+      items.push({
+        id: `leave-dismiss-${n.id}`,
+        title: `👋 ${t('bell.memberLeft', { name: n.left_user_nickname || n.left_user_email, household: n.household_name })}`,
+      })
+    }
+
     for (const notif of notifHistory) {
       switch (notif.type) {
         case 'recipe_importing':
@@ -114,7 +121,7 @@ const BellMenu = () => {
     }
 
     return items
-  }, [timerList, invitations, notifHistory, totalCount, pathname, t])
+  }, [timerList, invitations, leaveNotifications, notifHistory, totalCount, pathname, t])
 
   const handleAction = useCallback(
     async ({ nativeEvent }: { nativeEvent: { event: string } }) => {
@@ -159,6 +166,9 @@ const BellMenu = () => {
             // ignore
           }
           break
+        case 'leave-dismiss':
+          dismissLeaveNotification(payload)
+          break
         case 'recipe-imported': {
           const notif = notifHistory.find((n) => n.id === payload)
           if (notif?.recipe_id) router.push(`/recipe/${notif.recipe_id}`)
@@ -188,7 +198,7 @@ const BellMenu = () => {
           break
       }
     },
-    [timers, pauseTimer, resumeTimer, cancelTimer, api, refreshUser, refetchInvitations, refetchHouseholds, clearNotifHistory, dismissNotif, notifHistory, router, t],
+    [timers, pauseTimer, resumeTimer, cancelTimer, api, refreshUser, refetchInvitations, refetchHouseholds, dismissLeaveNotification, clearNotifHistory, dismissNotif, notifHistory, router, t],
   )
 
   return (

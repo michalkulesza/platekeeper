@@ -10,6 +10,7 @@ from api.database import get_async_session
 from api.models import (
     Household,
     HouseholdInvitation,
+    HouseholdLeaveNotification,
     HouseholdMember,
     InvitationStatus,
     Recipe,
@@ -61,6 +62,15 @@ class InvitationOut(BaseModel):
 
 class InviteRequest(BaseModel):
     email: str
+
+
+class HouseholdLeaveNotificationOut(BaseModel):
+    id: uuid.UUID
+    household_id: uuid.UUID
+    household_name: str
+    left_user_email: str
+    left_user_nickname: str | None
+    created_at: datetime
 
 
 class SwitchHouseholdRequest(BaseModel):
@@ -248,6 +258,19 @@ async def leave_household(
             components=recipe.components,
         ))
 
+    remaining_result = await session.execute(
+        select(HouseholdMember.user_id).where(
+            HouseholdMember.household_id == household_id,
+            HouseholdMember.user_id != user.id,
+        )
+    )
+    for recipient_id in remaining_result.scalars().all():
+        session.add(HouseholdLeaveNotification(
+            household_id=household_id,
+            recipient_user_id=recipient_id,
+            left_user_id=user.id,
+        ))
+
     await session.delete(member)
 
     if user.active_household_id == household_id:
@@ -256,6 +279,44 @@ async def leave_household(
 
     await session.flush()
     await _wipe_if_empty(session, household_id)
+    await session.commit()
+
+
+@router.get("/household-leave-notifications", response_model=list[HouseholdLeaveNotificationOut])
+async def list_household_leave_notifications(
+    user: User = Depends(current_active_user),
+    session: AsyncSession = Depends(get_async_session),
+) -> list[HouseholdLeaveNotificationOut]:
+    result = await session.execute(
+        select(HouseholdLeaveNotification, Household, User)
+        .join(Household, Household.id == HouseholdLeaveNotification.household_id)
+        .join(User, User.id == HouseholdLeaveNotification.left_user_id)
+        .where(HouseholdLeaveNotification.recipient_user_id == user.id)
+        .order_by(HouseholdLeaveNotification.created_at.desc())
+    )
+    return [
+        HouseholdLeaveNotificationOut(
+            id=n.id,
+            household_id=n.household_id,
+            household_name=h.name,
+            left_user_email=u.email,
+            left_user_nickname=u.nickname,
+            created_at=n.created_at,
+        )
+        for n, h, u in result.all()
+    ]
+
+
+@router.post("/household-leave-notifications/{notification_id}/dismiss", status_code=204)
+async def dismiss_household_leave_notification(
+    notification_id: uuid.UUID,
+    user: User = Depends(current_active_user),
+    session: AsyncSession = Depends(get_async_session),
+) -> None:
+    notif = await session.get(HouseholdLeaveNotification, notification_id)
+    if notif is None or notif.recipient_user_id != user.id:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    await session.delete(notif)
     await session.commit()
 
 

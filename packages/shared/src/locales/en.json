@@ -187,6 +187,7 @@
     "noNotifications": "No notifications",
     "householdInvitation": "Household invitation",
     "invitationTitle": "Invitation to join {{name}} household",
+    "memberLeft": "{{name}} left {{household}}",
     "from": "From {{name}}",
     "history": "History",
     "timerDone": "Timer done",

@@ -13,6 +13,7 @@
     "./hooks/usePreferences": "./src/hooks/usePreferences.ts",
     "./hooks/useHouseholds": "./src/hooks/useHouseholds.ts",
     "./hooks/useInvitations": "./src/hooks/useInvitations.ts",
+    "./hooks/useHouseholdLeaveNotifications": "./src/hooks/useHouseholdLeaveNotifications.ts",
     "./hooks/useMembers": "./src/hooks/useMembers.ts",
     "./hooks/useShoppingList": "./src/hooks/useShoppingList.ts",
     "./utils/*": "./src/utils/*.ts",

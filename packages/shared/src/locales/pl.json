@@ -191,6 +191,7 @@
     "noNotifications": "Brak powiadomień",
     "householdInvitation": "Zaproszenie do gospodarstwa",
     "invitationTitle": "Zaproszenie do gospodarstwa {{name}}",
+    "memberLeft": "{{name}} opuścił(a) gospodarstwo {{household}}",
     "from": "Od {{name}}",
     "history": "Historia",
     "timerDone": "Minutnik gotowy",
