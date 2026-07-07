@@ -187,6 +187,7 @@
     "noNotifications": "Aucune notification",
     "householdInvitation": "Invitation au foyer",
     "invitationTitle": "Invitation à rejoindre le foyer {{name}}",
+    "memberLeft": "{{name}} a quitté le foyer {{household}}",
     "from": "De {{name}}",
     "history": "Historique",
     "timerDone": "Minuteur terminé",

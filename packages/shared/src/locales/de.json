@@ -187,6 +187,7 @@
     "noNotifications": "Keine Benachrichtigungen",
     "householdInvitation": "Haushaltseinladung",
     "invitationTitle": "Einladung zum Haushalt {{name}}",
+    "memberLeft": "{{name}} hat den Haushalt {{household}} verlassen",
     "from": "Von {{name}}",
     "history": "Verlauf",
     "timerDone": "Timer fertig",

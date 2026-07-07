@@ -9,6 +9,7 @@ import type {
   HouseholdOut,
   MemberOut,
   InvitationOut,
+  HouseholdLeaveNotificationOut,
   ReanalyzeProgress,
   StreamCallbacks,
   ImportResult,
@@ -337,6 +338,17 @@ export const createApiClient = (config: ApiClientConfig) => {
   const declineInvitation = async (id: string): Promise<void> => {
     const res = await apiFetch(`/api/invitations/${id}/decline`, { method: 'POST' })
     if (!res.ok) throw new Error('Failed to decline invitation')
+  }
+
+  const listHouseholdLeaveNotifications = async (): Promise<HouseholdLeaveNotificationOut[]> => {
+    const res = await apiFetch('/api/household-leave-notifications')
+    if (!res.ok) throw new Error('Failed to load notifications')
+    return res.json() as Promise<HouseholdLeaveNotificationOut[]>
+  }
+
+  const dismissHouseholdLeaveNotification = async (id: string): Promise<void> => {
+    const res = await apiFetch(`/api/household-leave-notifications/${id}/dismiss`, { method: 'POST' })
+    if (!res.ok) throw new Error('Failed to dismiss notification')
   }
 
   // ── Signup (verify-before-account) ────────────────────────────────────────
@@ -703,6 +715,8 @@ export const createApiClient = (config: ApiClientConfig) => {
     listInvitations,
     acceptInvitation,
     declineInvitation,
+    listHouseholdLeaveNotifications,
+    dismissHouseholdLeaveNotification,
     requestSignupCode,
     verifySignupCode,
     completeSignup,
