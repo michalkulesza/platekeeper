@@ -177,18 +177,24 @@ async def _try_linked_url(
         return None
 
     jsonld = _extract_jsonld_recipe(html)
-    if jsonld and _is_complete(jsonld):
-        return jsonld
 
     page_text = _strip_html(html)
     if len(page_text) < 50:
-        return None
+        return jsonld if jsonld and _is_complete(jsonld) else None
 
     result = await gemini_svc.extract_recipe(
         page_text, source_hint="webpage", model=model,
         available_tags=available_tags, allergens=allergens,
         on_high_demand=on_high_demand, usage=usage,
     )
+    if jsonld and _is_complete(jsonld):
+        return jsonld.model_copy(update={
+            "kcal_per_serving": jsonld.kcal_per_serving if jsonld.kcal_per_serving is not None else result.kcal_per_serving,
+            "protein_per_serving": result.protein_per_serving,
+            "fat_per_serving": result.fat_per_serving,
+            "carbs_per_serving": result.carbs_per_serving,
+            "tags": result.tags,
+        })
     return result if _is_complete(result) else None
 
 
@@ -276,10 +282,6 @@ async def run_import_stream(url: str, model: str = "gemini-2.5-flash-lite", avai
         meta = ImportMetadata(source_url=url, thumbnail_url=thumbnail_url, creator_handle=domain)
 
         jsonld = _extract_jsonld_recipe(html)
-        if jsonld and _is_complete(jsonld) and jsonld.kcal_per_serving is not None:
-            r = ImportResult(stage=ImportStage.LINK, recipe=jsonld, metadata=meta)
-            yield _done_event(_attach_debug(await _with_allergens(r, allergens, usage), usage, model), cache_key=url)
-            return
 
         yield _stage_event("analyzing_page", "Analyzing page with Gemini…")
         page_text = _strip_html(html)
@@ -296,7 +298,16 @@ async def run_import_stream(url: str, model: str = "gemini-2.5-flash-lite", avai
                 yield _ev
             result = result_out[0]
             if jsonld and _is_complete(jsonld):
-                jsonld = jsonld.model_copy(update={"kcal_per_serving": result.kcal_per_serving})
+                # Prefer the site's own declared calories over Gemini's estimate,
+                # but tags/macros only ever come from Gemini — JSON-LD has no tag
+                # data and _jsonld_to_extraction doesn't parse macro fields.
+                jsonld = jsonld.model_copy(update={
+                    "kcal_per_serving": jsonld.kcal_per_serving if jsonld.kcal_per_serving is not None else result.kcal_per_serving,
+                    "protein_per_serving": result.protein_per_serving,
+                    "fat_per_serving": result.fat_per_serving,
+                    "carbs_per_serving": result.carbs_per_serving,
+                    "tags": result.tags,
+                })
                 r = ImportResult(stage=ImportStage.LINK, recipe=jsonld, metadata=meta)
                 yield _done_event(_attach_debug(await _with_allergens(r, allergens, usage), usage, model), cache_key=url)
             elif _is_complete(result):
