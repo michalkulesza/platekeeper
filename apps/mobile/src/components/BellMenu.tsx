@@ -12,6 +12,7 @@ import {
 } from '../context/TimerContext'
 import { useNotificationHistory } from '../context/NotificationHistoryContext'
 import { useHousehold } from '../context/HouseholdContext'
+import { useAuth } from '../context/AuthContext'
 import { useApiClient } from '@platekeeper/shared/api/context'
 
 const BellMenu = () => {
@@ -21,6 +22,7 @@ const BellMenu = () => {
   const { timers, pauseTimer, resumeTimer, cancelTimer } = useTimers()
   const { items: notifHistory, dismiss: dismissNotif, clearAll: clearNotifHistory } = useNotificationHistory()
   const { invitations, refetchHouseholds, refetchInvitations } = useHousehold()
+  const { refreshUser } = useAuth()
   const api = useApiClient()
 
   const timerList = useMemo(() => [...timers.values()], [timers])
@@ -140,6 +142,9 @@ const BellMenu = () => {
         case 'inv-accept':
           try {
             await api.acceptInvitation(payload)
+            // Accepting switches the user's active household server-side, so the
+            // local user object must be refreshed or the UI keeps showing stale state.
+            await refreshUser()
             refetchInvitations()
             refetchHouseholds()
           } catch (e) {
@@ -183,7 +188,7 @@ const BellMenu = () => {
           break
       }
     },
-    [timers, pauseTimer, resumeTimer, cancelTimer, api, refetchInvitations, refetchHouseholds, clearNotifHistory, dismissNotif, notifHistory, router, t],
+    [timers, pauseTimer, resumeTimer, cancelTimer, api, refreshUser, refetchInvitations, refetchHouseholds, clearNotifHistory, dismissNotif, notifHistory, router, t],
   )
 
   return (
