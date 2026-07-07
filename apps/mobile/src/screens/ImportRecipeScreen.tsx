@@ -1528,7 +1528,7 @@ export default ImportRecipeScreen
 // ── Styles ─────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
+  flex: { flex: 1, backgroundColor: colors.background },
   scrollContent: { paddingBottom: 120 },
 
   // Header back button
@@ -1798,7 +1798,7 @@ const styles = StyleSheet.create({
 
   // Read-only import preview (mirrors saved-recipe detail screen)
   previewHeroImage: { width: '100%', aspectRatio: 4 / 3 },
-  previewCard: { paddingHorizontal: 16, paddingTop: 20 },
+  previewCard: { backgroundColor: colors.background, paddingHorizontal: 16, paddingTop: 20 },
   previewTitle: {
     fontSize: 28,
     fontWeight: '700',
