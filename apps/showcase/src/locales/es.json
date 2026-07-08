@@ -25,5 +25,36 @@
     "copied": "Copiado",
     "openTestflight": "Abrir TestFlight",
     "close": "Cerrar"
+  },
+  "footer": {
+    "privacyPolicy": "Política de privacidad"
+  },
+  "privacyPolicy": {
+    "back": "← Volver al inicio",
+    "title": "Política de privacidad",
+    "updated": "Última actualización: julio de 2026",
+    "intro": "Carrot (\"nosotros\", \"nuestro\") es una biblioteca de recetas personal. Esta página explica qué información recopilamos cuando usas la aplicación, cómo la utilizamos y cómo puedes eliminarla.",
+    "sections": [
+      {
+        "heading": "Información que recopilamos",
+        "body": "Al crear tu cuenta, recopilamos tu dirección de correo electrónico y una contraseña cifrada de forma segura, o bien, si inicias sesión con Google, el correo de tu cuenta de Google. También puedes añadir un nombre visible. Mientras usas la aplicación, almacenamos las recetas que guardas o importas (incluido cualquier texto o foto que proporciones), tu pertenencia a un hogar, tus planes de comidas, listas de la compra y cualquier información sobre alergias o dieta que ingreses, incluidas etiquetas personalizadas y resultados de análisis de alérgenos asistido por IA. También almacenamos tus preferencias de unidades, idioma y apariencia, así como datos básicos de diagnóstico/fallos si la aplicación presenta un error."
+      },
+      {
+        "heading": "Cómo usamos tu información",
+        "body": "Usamos esta información únicamente para ofrecer las funciones de la aplicación: almacenar y organizar tus recetas, crear planes de comidas y listas de la compra, señalar los alérgenos que nos has indicado, y sincronizar tus datos entre los dispositivos con sesión iniciada en tu cuenta. No vendemos tus datos ni los usamos con fines publicitarios."
+      },
+      {
+        "heading": "Servicios de terceros",
+        "body": "Dependemos de un pequeño número de terceros para operar la aplicación: Google, para el inicio de sesión con Google (verificamos tu token de identidad; nunca vemos tu contraseña de Google); Sentry, para informes de fallos y errores, que puede incluir datos de diagnóstico del dispositivo y la aplicación, pero no el contenido de tus recetas; y Cloudflare R2, un proveedor de almacenamiento de objetos usado para alojar las fotos que subes. Cada uno de estos proveedores recibe únicamente el mínimo de datos necesario para su función."
+      },
+      {
+        "heading": "Conservación y eliminación de datos",
+        "body": "Tus datos se conservan mientras tu cuenta exista. Puedes eliminar permanentemente tu cuenta y todo lo asociado a ella —recetas, planes de comidas, listas de la compra, preferencias y fotos subidas— en cualquier momento desde Ajustes → Eliminar cuenta en la aplicación. Esta acción es inmediata y no se puede deshacer. Si iniciaste sesión con Google, eliminar tu cuenta también revoca el acceso de la aplicación a tu cuenta de Google."
+      },
+      {
+        "heading": "Contacto",
+        "body": "¿Preguntas sobre esta política o tus datos? Escribe a kulesza.michal@gmail.com."
+      }
+    ]
   }
 }

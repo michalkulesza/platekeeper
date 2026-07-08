@@ -25,5 +25,36 @@
     "copied": "Skopiowano",
     "openTestflight": "Otwórz TestFlight",
     "close": "Zamknij"
+  },
+  "footer": {
+    "privacyPolicy": "Polityka prywatności"
+  },
+  "privacyPolicy": {
+    "back": "← Powrót do strony głównej",
+    "title": "Polityka prywatności",
+    "updated": "Ostatnia aktualizacja: lipiec 2026",
+    "intro": "Carrot („my”, „nasz”) to osobista biblioteka przepisów. Ta strona wyjaśnia, jakie informacje zbieramy podczas korzystania z aplikacji, jak je wykorzystujemy i jak możesz je usunąć.",
+    "sections": [
+      {
+        "heading": "Jakie informacje zbieramy",
+        "body": "Podczas zakładania konta zbieramy Twój adres e-mail oraz bezpiecznie zahaszowane hasło — lub, jeśli logujesz się przez Google, adres e-mail Twojego konta Google. Możesz też dodać wyświetlaną nazwę. Podczas korzystania z aplikacji przechowujemy zapisane lub zaimportowane przez Ciebie przepisy (w tym wszelkie teksty lub zdjęcia), przynależność do gospodarstwa domowego, plany posiłków, listy zakupów oraz wszelkie wprowadzone informacje o alergiach lub diecie, w tym własne tagi i wyniki analizy alergenów wspomaganej przez AI. Przechowujemy również Twoje preferencje jednostek, języka i wyglądu oraz podstawowe dane diagnostyczne w razie błędu aplikacji."
+      },
+      {
+        "heading": "Jak wykorzystujemy Twoje informacje",
+        "body": "Wykorzystujemy te informacje wyłącznie do zapewnienia funkcji aplikacji: przechowywania i organizowania przepisów, tworzenia planów posiłków i list zakupów, oznaczania alergenów, o których nas poinformowałeś/aś, oraz synchronizacji danych między urządzeniami zalogowanymi na Twoje konto. Nie sprzedajemy Twoich danych ani nie wykorzystujemy ich do reklam."
+      },
+      {
+        "heading": "Usługi zewnętrzne",
+        "body": "Korzystamy z niewielkiej liczby usług zewnętrznych, aby aplikacja mogła działać: Google — do logowania przez Google (weryfikujemy token tożsamości — nigdy nie widzimy Twojego hasła do Google); Sentry — do raportowania awarii i błędów, co może obejmować dane diagnostyczne urządzenia i aplikacji, ale nie treść Twoich przepisów; oraz Cloudflare R2 — dostawcę przechowywania obiektów używanego do hostowania przesyłanych przez Ciebie zdjęć. Każdy z tych dostawców otrzymuje wyłącznie minimum danych potrzebnych do działania."
+      },
+      {
+        "heading": "Przechowywanie i usuwanie danych",
+        "body": "Twoje dane są przechowywane tak długo, jak istnieje Twoje konto. W każdej chwili możesz trwale usunąć swoje konto i wszystko, co jest z nim powiązane — przepisy, plany posiłków, listy zakupów, preferencje i przesłane zdjęcia — w aplikacji, w Ustawieniach → Usuń konto. Dzieje się to natychmiast i nie można tego cofnąć. Jeśli logowałeś/aś się przez Google, usunięcie konta cofa również dostęp aplikacji do Twojego konta Google."
+      },
+      {
+        "heading": "Kontakt",
+        "body": "Masz pytania dotyczące tej polityki lub swoich danych? Napisz na kulesza.michal@gmail.com."
+      }
+    ]
   }
 }

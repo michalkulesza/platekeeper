@@ -25,5 +25,36 @@
     "copied": "Kopiert",
     "openTestflight": "TestFlight öffnen",
     "close": "Schließen"
+  },
+  "footer": {
+    "privacyPolicy": "Datenschutzerklärung"
+  },
+  "privacyPolicy": {
+    "back": "← Zurück zur Startseite",
+    "title": "Datenschutzerklärung",
+    "updated": "Zuletzt aktualisiert: Juli 2026",
+    "intro": "Carrot („wir“, „unser“) ist eine persönliche Rezeptbibliothek. Diese Seite erklärt, welche Informationen wir bei der Nutzung der App erfassen, wie wir sie verwenden und wie du sie löschen kannst.",
+    "sections": [
+      {
+        "heading": "Welche Informationen wir erfassen",
+        "body": "Bei der Kontoerstellung erfassen wir deine E-Mail-Adresse und ein sicher gehashtes Passwort – oder, falls du dich mit Google anmeldest, die E-Mail-Adresse deines Google-Kontos. Du kannst außerdem einen Anzeigenamen hinzufügen. Während der Nutzung speichern wir die von dir gespeicherten oder importierten Rezepte (einschließlich Text oder Fotos), deine Haushaltszugehörigkeit, Essenspäne, Einkaufslisten sowie alle von dir eingegebenen Allergie- oder Ernährungsinformationen, einschließlich eigener Tags und KI-gestützter Allergenanalyse-Ergebnisse. Außerdem speichern wir deine Einheiten-, Sprach- und Erscheinungsbild-Einstellungen sowie grundlegende Absturz-/Diagnosedaten bei Fehlern."
+      },
+      {
+        "heading": "Wie wir deine Informationen verwenden",
+        "body": "Wir verwenden diese Informationen ausschließlich, um die Funktionen der App bereitzustellen: Speichern und Organisieren deiner Rezepte, Erstellen von Essensplänen und Einkaufslisten, Kennzeichnen von Allergenen, die du uns mitgeteilt hast, und Synchronisieren deiner Daten zwischen Geräten, die mit deinem Konto angemeldet sind. Wir verkaufen deine Daten nicht und nutzen sie nicht für Werbung."
+      },
+      {
+        "heading": "Drittanbieter-Dienste",
+        "body": "Wir sind auf wenige Drittanbieter angewiesen, um die App zu betreiben: Google, für die Google-Anmeldung (wir verifizieren dein Identitätstoken – wir sehen niemals dein Google-Passwort); Sentry, für Absturz- und Fehlerberichte, was Geräte- und App-Diagnosedaten umfassen kann, aber nicht den Inhalt deiner Rezepte; und Cloudflare R2, ein Objektspeicheranbieter, der zum Hosten deiner hochgeladenen Fotos verwendet wird. Jeder dieser Anbieter erhält nur die minimal notwendigen Daten."
+      },
+      {
+        "heading": "Datenspeicherung & Löschung",
+        "body": "Deine Daten werden gespeichert, solange dein Konto besteht. Du kannst dein Konto und alles, was damit verbunden ist – Rezepte, Essenspläne, Einkaufslisten, Einstellungen und hochgeladene Fotos – jederzeit in der App unter Einstellungen → Konto löschen dauerhaft löschen. Dies geschieht sofort und kann nicht rückgängig gemacht werden. Falls du dich mit Google angemeldet hast, wird beim Löschen deines Kontos auch der Zugriff der App auf dein Google-Konto widerrufen."
+      },
+      {
+        "heading": "Kontakt",
+        "body": "Fragen zu dieser Richtlinie oder deinen Daten? Schreib an kulesza.michal@gmail.com."
+      }
+    ]
   }
 }

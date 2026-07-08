@@ -25,5 +25,36 @@
     "copied": "Copied",
     "openTestflight": "Open TestFlight",
     "close": "Close"
+  },
+  "footer": {
+    "privacyPolicy": "Privacy Policy"
+  },
+  "privacyPolicy": {
+    "back": "← Back to home",
+    "title": "Privacy Policy",
+    "updated": "Last updated: July 2026",
+    "intro": "Carrot (\"we\", \"our\") is a personal recipe library. This page explains what information we collect when you use the app, how we use it, and how you can delete it.",
+    "sections": [
+      {
+        "heading": "Information we collect",
+        "body": "When you create an account, we collect your email address and a securely hashed password — or, if you sign in with Google, your Google account email. You can also add a display name. As you use the app we store the recipes you save or import (including any text or photos you provide), your household membership, meal plans, shopping lists, and any allergen or dietary information you enter, including custom tags and AI-assisted allergen analysis results. We also store your unit, language, and appearance preferences, and basic crash/diagnostic data if the app encounters an error."
+      },
+      {
+        "heading": "How we use your information",
+        "body": "We use this information only to provide the app's features: storing and organizing your recipes, building meal plans and shopping lists, flagging allergens you've told us about, and syncing your data across devices signed in to your account. We do not sell your data or use it for advertising."
+      },
+      {
+        "heading": "Third-party services",
+        "body": "We rely on a small number of third parties to run the app: Google, for Sign in with Google (we verify your identity token — we never see your Google password); Sentry, for crash and error reporting, which can include device and app diagnostic information but not your recipe content; and Cloudflare R2, an object storage provider used to host photos you upload. Each of these providers only receives the minimum data needed to do its job."
+      },
+      {
+        "heading": "Data retention & deletion",
+        "body": "Your data is kept for as long as your account exists. You can permanently delete your account and everything tied to it — recipes, meal plans, shopping lists, preferences, and uploaded photos — at any time from Settings → Delete Account in the app. This is immediate and can't be undone. If you signed in with Google, deleting your account also revokes the app's access to your Google account."
+      },
+      {
+        "heading": "Contact",
+        "body": "Questions about this policy or your data? Email kulesza.michal@gmail.com."
+      }
+    ]
   }
 }

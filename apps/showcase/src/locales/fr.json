@@ -25,5 +25,36 @@
     "copied": "Copié",
     "openTestflight": "Ouvrir TestFlight",
     "close": "Fermer"
+  },
+  "footer": {
+    "privacyPolicy": "Politique de confidentialité"
+  },
+  "privacyPolicy": {
+    "back": "← Retour à l'accueil",
+    "title": "Politique de confidentialité",
+    "updated": "Dernière mise à jour : juillet 2026",
+    "intro": "Carrot (« nous », « notre ») est une bibliothèque de recettes personnelle. Cette page explique quelles informations nous collectons lorsque vous utilisez l'application, comment nous les utilisons et comment vous pouvez les supprimer.",
+    "sections": [
+      {
+        "heading": "Informations que nous collectons",
+        "body": "Lors de la création de votre compte, nous collectons votre adresse e-mail et un mot de passe haché de façon sécurisée — ou, si vous vous connectez avec Google, l'adresse e-mail de votre compte Google. Vous pouvez également ajouter un nom d'affichage. Lors de l'utilisation de l'application, nous stockons les recettes que vous enregistrez ou importez (y compris tout texte ou photo fourni), votre appartenance à un foyer, vos plannings de repas, vos listes de courses, ainsi que toute information sur les allergies ou le régime alimentaire que vous saisissez, y compris les étiquettes personnalisées et les résultats d'analyse d'allergènes assistée par IA. Nous stockons également vos préférences d'unités, de langue et d'apparence, ainsi que des données de diagnostic/plantage de base en cas d'erreur."
+      },
+      {
+        "heading": "Comment nous utilisons vos informations",
+        "body": "Nous utilisons ces informations uniquement pour fournir les fonctionnalités de l'application : stocker et organiser vos recettes, créer des plannings de repas et des listes de courses, signaler les allergènes que vous nous avez indiqués, et synchroniser vos données entre les appareils connectés à votre compte. Nous ne vendons pas vos données et ne les utilisons pas à des fins publicitaires."
+      },
+      {
+        "heading": "Services tiers",
+        "body": "Nous faisons appel à un petit nombre de services tiers pour faire fonctionner l'application : Google, pour la connexion avec Google (nous vérifions votre jeton d'identité — nous ne voyons jamais votre mot de passe Google) ; Sentry, pour le signalement des plantages et des erreurs, ce qui peut inclure des informations de diagnostic sur l'appareil et l'application, mais pas le contenu de vos recettes ; et Cloudflare R2, un fournisseur de stockage d'objets utilisé pour héberger les photos que vous téléversez. Chacun de ces fournisseurs ne reçoit que le minimum de données nécessaire à son fonctionnement."
+      },
+      {
+        "heading": "Conservation et suppression des données",
+        "body": "Vos données sont conservées tant que votre compte existe. Vous pouvez supprimer définitivement votre compte et tout ce qui y est lié — recettes, plannings de repas, listes de courses, préférences et photos téléversées — à tout moment depuis Réglages → Supprimer le compte dans l'application. Cette action est immédiate et irréversible. Si vous vous êtes connecté avec Google, la suppression de votre compte révoque également l'accès de l'application à votre compte Google."
+      },
+      {
+        "heading": "Contact",
+        "body": "Des questions sur cette politique ou vos données ? Écrivez à kulesza.michal@gmail.com."
+      }
+    ]
   }
 }
