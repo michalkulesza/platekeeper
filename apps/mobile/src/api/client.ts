@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react-native'
 import { createApiClient } from '@carrot/shared/api/client'
 import { syncSharedAuth } from '../utils/sharedAuth'
 
@@ -16,4 +17,9 @@ export const mobileClient = createApiClient({
   credentials: 'omit',
   loginEndpoint: '/api/auth/jwt/login',
   logoutEndpoint: '/api/auth/jwt/logout',
+  reportError: (error, context) => {
+    Sentry.captureException(error instanceof Error ? error : new Error(String(error)), {
+      tags: { apiContext: context },
+    })
+  },
 })

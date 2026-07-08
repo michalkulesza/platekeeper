@@ -26,7 +26,13 @@ export interface ApiClientConfig {
   credentials?: RequestCredentials
   loginEndpoint?: string
   logoutEndpoint?: string
+  /** Called with the raw, unfiltered error when a request fails below the HTTP layer
+   * (network/TLS/DNS failures) — wire this to Sentry or similar. The user only ever
+   * sees the generic message thrown alongside it. */
+  reportError?: (error: unknown, context: string) => void
 }
+
+const GENERIC_NETWORK_ERROR = 'Unable to connect to the server. Please check your connection and try again.'
 
 export const createApiClient = (config: ApiClientConfig) => {
   const {
@@ -35,15 +41,29 @@ export const createApiClient = (config: ApiClientConfig) => {
     credentials = 'include',
     loginEndpoint = '/api/auth/cookie/login',
     logoutEndpoint = '/api/auth/cookie/logout',
+    reportError,
   } = config
+
+  const rawFetch = async (url: string, init: RequestInit, context: string): Promise<Response> => {
+    try {
+      return await fetch(url, init)
+    } catch (err) {
+      reportError?.(err, context)
+      throw new Error(GENERIC_NETWORK_ERROR)
+    }
+  }
 
   const apiFetch = (path: string, init: RequestInit = {}): Promise<Response> => {
     const authHeaders = getAuthHeaders()
-    return fetch(`${baseUrl}${path}`, {
-      credentials,
-      ...init,
-      headers: { ...authHeaders, ...(init.headers as Record<string, string> | undefined) },
-    })
+    return rawFetch(
+      `${baseUrl}${path}`,
+      {
+        credentials,
+        ...init,
+        headers: { ...authHeaders, ...(init.headers as Record<string, string> | undefined) },
+      },
+      path
+    )
   }
 
   const throwOnError = async (res: Response, fallback: string): Promise<void> => {
@@ -260,7 +280,10 @@ export const createApiClient = (config: ApiClientConfig) => {
           }
         }
       })
-      .catch(() => callbacks.onError('Connection error'))
+      .catch((err: unknown) => {
+        reportError?.(err, 'streamReanalyze')
+        callbacks.onError('Connection error')
+      })
     return () => { aborted = true }
   }
 
@@ -354,12 +377,12 @@ export const createApiClient = (config: ApiClientConfig) => {
   // ── Signup (verify-before-account) ────────────────────────────────────────
 
   const requestSignupCode = async (email: string): Promise<void> => {
-    const res = await fetch(`${baseUrl}/api/auth/request-signup-code`, {
+    const res = await rawFetch(`${baseUrl}/api/auth/request-signup-code`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
       credentials,
-    })
+    }, 'requestSignupCode')
     if (!res.ok) {
       const err = (await res.json().catch(() => ({}))) as { detail?: unknown }
       throw new Error(parseAuthError(err.detail))
@@ -367,12 +390,12 @@ export const createApiClient = (config: ApiClientConfig) => {
   }
 
   const verifySignupCode = async (email: string, code: string): Promise<{ token: string }> => {
-    const res = await fetch(`${baseUrl}/api/auth/verify-signup-code`, {
+    const res = await rawFetch(`${baseUrl}/api/auth/verify-signup-code`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, code }),
       credentials,
-    })
+    }, 'verifySignupCode')
     if (!res.ok) {
       const err = (await res.json().catch(() => ({}))) as { detail?: unknown }
       throw new Error(parseAuthError(err.detail))
@@ -385,12 +408,12 @@ export const createApiClient = (config: ApiClientConfig) => {
     password: string,
     nickname?: string
   ): Promise<{ access_token: string; token_type: string }> => {
-    const res = await fetch(`${baseUrl}/api/auth/complete-signup`, {
+    const res = await rawFetch(`${baseUrl}/api/auth/complete-signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token, password, nickname: nickname ?? null }),
       credentials,
-    })
+    }, 'completeSignup')
     if (!res.ok) {
       const err = (await res.json().catch(() => ({}))) as { detail?: unknown }
       throw new Error(parseAuthError(err.detail))
@@ -399,12 +422,12 @@ export const createApiClient = (config: ApiClientConfig) => {
   }
 
   const googleLogin = async (idToken: string): Promise<{ access_token: string; token_type: string }> => {
-    const res = await fetch(`${baseUrl}/api/auth/google`, {
+    const res = await rawFetch(`${baseUrl}/api/auth/google`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id_token: idToken }),
       credentials,
-    })
+    }, 'googleLogin')
     if (!res.ok) {
       const err = (await res.json().catch(() => ({}))) as { detail?: unknown }
       throw new Error(parseAuthError(err.detail))
@@ -428,12 +451,12 @@ export const createApiClient = (config: ApiClientConfig) => {
     password: string
   ): Promise<{ access_token: string; token_type: string } | null> => {
     const body = new URLSearchParams({ username: email, password })
-    const res = await fetch(`${baseUrl}${loginEndpoint}`, {
+    const res = await rawFetch(`${baseUrl}${loginEndpoint}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: body.toString(),
       credentials,
-    })
+    }, 'login')
     if (!res.ok) {
       const data = (await res.json().catch(() => ({}))) as { detail?: unknown }
       throw new Error(parseAuthError(data.detail))
@@ -448,7 +471,11 @@ export const createApiClient = (config: ApiClientConfig) => {
   }
 
   const logout = async (): Promise<void> => {
-    await fetch(`${baseUrl}${logoutEndpoint}`, { method: 'POST', credentials })
+    try {
+      await fetch(`${baseUrl}${logoutEndpoint}`, { method: 'POST', credentials })
+    } catch (err) {
+      reportError?.(err, 'logout')
+    }
   }
 
   const getMe = async (): Promise<AuthUser | null> => {
@@ -514,8 +541,8 @@ export const createApiClient = (config: ApiClientConfig) => {
         }
       })
       .catch((err: unknown) => {
+        reportError?.(err, 'streamImportFetch')
         if (!aborted) callbacks.onError('Connection error — check the API server.')
-        void err
       })
     return () => {
       aborted = true
@@ -551,8 +578,8 @@ export const createApiClient = (config: ApiClientConfig) => {
         }
       })
       .catch((err: unknown) => {
+        reportError?.(err, path)
         if (!aborted) callbacks.onError('Connection error — check the API server.')
-        void err
       })
     return () => {
       aborted = true
@@ -645,7 +672,7 @@ export const createApiClient = (config: ApiClientConfig) => {
           }
         }
       })
-      .catch(() => {})
+      .catch((err: unknown) => reportError?.(err, 'subscribeShoppingList'))
     return () => {
       aborted = true
       controller.abort()
