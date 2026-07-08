@@ -350,11 +350,11 @@ const RecipesScreen = () => {
         <View style={styles.headerBtns}>
           <Pressable
             onPress={() => router.push('/import-recipe')}
-            style={({ pressed }) => [styles.headerBtn, pressed && { opacity: 0.7 }]}
+            style={({ pressed }) => [styles.headerBtn, styles.addBtn, pressed && { opacity: 0.7 }]}
             accessibilityLabel={t('nav.addRecipe')}
             accessibilityRole="button"
           >
-            <Feather name="plus" size={26} color={colors.secondaryLabel} />
+            <Feather name="plus" size={20} color="white" />
           </Pressable>
           <MenuView
             title={t('recipes.sortBy')}
@@ -699,6 +699,14 @@ const styles = StyleSheet.create({
   },
   headerBtns: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   headerBtn: { paddingHorizontal: 4, paddingVertical: 4 },
+  addBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.brand,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   headerAddText: {
     fontSize: 26,
     color: colors.brand,
