@@ -2,6 +2,8 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
+  useRef,
   type ReactNode,
 } from 'react'
 import { useQueryClient as useQC } from '@tanstack/react-query'
@@ -46,6 +48,17 @@ export const HouseholdProvider = ({ children }: { children: ReactNode }) => {
   const refetchInvitations = useCallback(() => {
     void qc.invalidateQueries({ queryKey: ['invitations'] })
   }, [qc])
+
+  // Invalidate all household-scoped data when the active household changes
+  const prevHouseholdId = useRef(activeHouseholdId)
+  useEffect(() => {
+    if (prevHouseholdId.current === activeHouseholdId) return
+    prevHouseholdId.current = activeHouseholdId
+    void qc.invalidateQueries({ queryKey: ['recipes'] })
+    void qc.invalidateQueries({ queryKey: ['tags'] })
+    void qc.invalidateQueries({ queryKey: ['recipes', 'stats'] })
+    void qc.invalidateQueries({ queryKey: ['preferences'] })
+  }, [activeHouseholdId, qc])
 
   const switchHousehold = useCallback(async (id: string | null) => {
     await mobileClient.switchHousehold(id)
