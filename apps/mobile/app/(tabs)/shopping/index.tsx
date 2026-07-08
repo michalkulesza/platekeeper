@@ -3,6 +3,7 @@ import { Stack } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import BellMenu from '../../../src/components/BellMenu'
 import BugReportButton from '../../../src/components/BugReportButton'
+import HeaderTitle from '../../../src/components/HeaderTitle'
 import ShoppingListScreen from '../../../src/screens/ShoppingListScreen'
 
 export default function ShoppingTab() {
@@ -12,7 +13,7 @@ export default function ShoppingTab() {
     <>
       <Stack.Screen
         options={{
-          title: t('shoppingList.title'),
+          headerTitle: () => <HeaderTitle title={t('shoppingList.title')} />,
           headerRight: () => (
             <View style={styles.headerRight}>
               <BugReportButton />

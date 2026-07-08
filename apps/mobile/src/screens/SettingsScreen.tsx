@@ -33,6 +33,7 @@ import { useHousehold } from '../context/HouseholdContext'
 import { useTimers } from '../context/TimerContext'
 import { persistLanguage } from '../i18n'
 import { colors } from '../theme/colors'
+import HeaderTitle from '../components/HeaderTitle'
 
 const CARD_RADIUS = Platform.OS === 'ios' && parseInt(String(Platform.Version), 10) >= 26 ? 20 : 10
 
@@ -470,7 +471,7 @@ const SettingsScreen = () => {
     >
       <Stack.Screen
         options={{
-          title: t('nav.settings'),
+          headerTitle: () => <HeaderTitle title={t('nav.settings')} />,
           headerRight: () => (
             <View style={styles.headerRight}>
               <BugReportButton />

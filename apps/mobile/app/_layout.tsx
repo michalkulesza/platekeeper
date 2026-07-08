@@ -10,6 +10,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { consumePendingShare, hasPendingShare } from '../src/utils/pendingShare'
 import { useNotificationHistory } from '../src/context/NotificationHistoryContext'
 import BugReportButton from '../src/components/BugReportButton'
+import HeaderTitle from '../src/components/HeaderTitle'
 
 if (!__DEV__) {
   Sentry.init({
@@ -262,9 +263,15 @@ function RootLayoutNav() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
           name="import-recipe"
-          options={{ title: t('addRecipe.addRecipe'), headerRight: () => <BugReportButton /> }}
+          options={{
+            headerTitle: () => <HeaderTitle title={t('addRecipe.addRecipe')} />,
+            headerRight: () => <BugReportButton />,
+          }}
         />
-        <Stack.Screen name="webview-import" options={{ title: t('addRecipe.webviewTitle') }} />
+        <Stack.Screen
+          name="webview-import"
+          options={{ headerTitle: () => <HeaderTitle title={t('addRecipe.webviewTitle')} /> }}
+        />
         <Stack.Screen name="recipe/[id]" options={{ title: '', headerRight: () => <BugReportButton /> }} />
         <Stack.Screen name="household/[id]" options={{ title: '', headerRight: () => <BugReportButton /> }} />
         <Stack.Screen name="bug-report" options={{ presentation: 'modal' }} />

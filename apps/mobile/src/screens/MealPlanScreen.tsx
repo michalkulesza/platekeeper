@@ -31,6 +31,7 @@ import { toYYYYMM, toISODate, formatWeekdayShort, formatMonthYear } from '@plate
 import { getToken } from '../api/client'
 import BellMenu from '../components/BellMenu'
 import BugReportButton from '../components/BugReportButton'
+import HeaderTitle from '../components/HeaderTitle'
 import { colors } from '../theme/colors'
 import { proxyThumbnailUrl } from '../api/thumbnailUrl'
 import { useScreenLoading } from '../hooks/useScreenLoading'
@@ -289,7 +290,7 @@ const MealPlanScreen = () => {
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      title: t('nav.mealPlan'),
+      headerTitle: () => <HeaderTitle title={t('nav.mealPlan')} />,
       headerRight: () => (
         <View style={styles.headerRight}>
           <Pressable
