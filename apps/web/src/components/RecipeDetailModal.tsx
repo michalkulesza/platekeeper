@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Calendar, Edit2, Link, ShoppingCart, Sun, Trash2 } from 'react-feather'
+import { Calendar, Edit2, ShoppingCart, Sun, Trash2 } from 'react-feather'
 import { useTranslation } from 'react-i18next'
 import { useShoppingList } from '@platekeeper/shared/hooks/useShoppingList'
 import {
@@ -1377,7 +1377,7 @@ const RecipeDetailModal = ({
           scroll="inside"
           className="!rounded-xl overflow-hidden"
         >
-          <ModalDialog className="!p-0 max-h-[calc(100dvh-2rem)] sm:max-h-[700px]">
+          <ModalDialog className="!p-0 max-h-[calc(100dvh-2rem)] sm:max-h-[900px]">
             {/* ── Sticky header ── */}
             <ModalHeader className="flex-col gap-0 p-0">
               {/* Hero image (or solid colour in edit/confirm mode) */}
@@ -1432,9 +1432,20 @@ const RecipeDetailModal = ({
                         {r.title}
                       </h2>
                     )}
-                    {r.creator_handle && (
+                    {(r.creator_handle || r.source_url) && (
                       <p className="text-sm text-white/75 mt-0.5">
-                        @{r.creator_handle}
+                        {r.creator_handle && <span>@{r.creator_handle}</span>}
+                        {r.creator_handle && r.source_url && <span> · </span>}
+                        {r.source_url && (
+                          <a
+                            href={r.source_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline hover:text-white"
+                          >
+                            {t('recipes.source')}
+                          </a>
+                        )}
                       </p>
                     )}
                     {r.household_id && r.added_by && (
@@ -1462,9 +1473,20 @@ const RecipeDetailModal = ({
                       {r.title}
                     </h2>
                   )}
-                  {r.creator_handle && (
+                  {(r.creator_handle || r.source_url) && (
                     <p className="text-sm text-zinc-500 mt-0.5">
-                      @{r.creator_handle}
+                      {r.creator_handle && <span>@{r.creator_handle}</span>}
+                      {r.creator_handle && r.source_url && <span> · </span>}
+                      {r.source_url && (
+                        <a
+                          href={r.source_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline text-primary hover:text-primary-600"
+                        >
+                          {t('recipes.source')}
+                        </a>
+                      )}
                     </p>
                   )}
                   {r.household_id && r.added_by && (
@@ -1498,6 +1520,7 @@ const RecipeDetailModal = ({
                   onAdd={handleTagAdd}
                   onRemove={handleTagRemove}
                   onCreateTag={handleTagCreate}
+                  editable={mode === 'editing'}
                 />
 
                 {/* Serves / kcal / protein / fat / carbs box grid */}
@@ -1516,21 +1539,6 @@ const RecipeDetailModal = ({
                   }}
                   disclaimerText={t('recipes.nutritionEstimateDisclaimer')}
                 />
-
-                {/* Source pill */}
-                {r.source_url && (
-                  <div className="flex flex-wrap gap-2 items-center">
-                    <a
-                      href={r.source_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-600 transition-colors"
-                    >
-                      <Link className="w-3.5 h-3.5" />
-                      {t('recipes.source')}
-                    </a>
-                  </div>
-                )}
 
                 {debugMode && r.debug_model && (
                   <div className="flex flex-col gap-0.5 rounded-lg bg-zinc-50 px-3 py-2">

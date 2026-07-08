@@ -9,6 +9,7 @@ interface TagRowProps {
   onAdd: (tag: Tag) => void
   onRemove: (tagId: string) => void
   onCreateTag?: (name: string) => Promise<Tag>
+  editable?: boolean
 }
 
 const TagRow = ({
@@ -17,6 +18,7 @@ const TagRow = ({
   onAdd,
   onRemove,
   onCreateTag,
+  editable = true,
 }: TagRowProps) => {
   const { t } = useTranslation()
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -87,17 +89,20 @@ const TagRow = ({
           className="inline-flex items-center gap-0.5 text-xs font-medium px-2 py-0.5 rounded-full bg-secondary/15 text-secondary-700"
         >
           {tTag(tag.name, t)}
-          <button
-            type="button"
-            onClick={() => onRemove(tag.id)}
-            className="ml-0.5 leading-none text-secondary-400 hover:text-secondary-700 transition-colors"
-            aria-label={`Remove ${tTag(tag.name, t)}`}
-          >
-            ×
-          </button>
+          {editable && (
+            <button
+              type="button"
+              onClick={() => onRemove(tag.id)}
+              className="ml-0.5 leading-none text-secondary-400 hover:text-secondary-700 transition-colors"
+              aria-label={`Remove ${tTag(tag.name, t)}`}
+            >
+              ×
+            </button>
+          )}
         </span>
       ))}
 
+      {editable && (
       <div className="relative">
         <button
           type="button"
@@ -164,6 +169,7 @@ const TagRow = ({
           </div>
         )}
       </div>
+      )}
     </div>
   )
 }
