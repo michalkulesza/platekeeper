@@ -554,7 +554,6 @@ const RecipeFormView = ({
             onChange({ ...recipe, [key]: value })
           }}
           disclaimerText={t('recipes.nutritionEstimateDisclaimer')}
-          disclaimerAccessibilityLabel={t('recipes.nutritionEstimateDisclaimer')}
         />
 
         {(recipe.creator_handle || recipe.source_url) && (

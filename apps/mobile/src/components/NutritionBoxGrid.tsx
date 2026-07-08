@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
-import { Feather } from '@expo/vector-icons'
 import { colors } from '../theme/colors'
 
 export interface NutritionBoxGridItem {
@@ -14,7 +13,6 @@ interface NutritionBoxGridProps {
   editing: boolean
   onChangeValue?: (index: number, value: string) => void
   disclaimerText: string
-  disclaimerAccessibilityLabel: string
 }
 
 const NutritionBoxGrid = ({
@@ -22,60 +20,61 @@ const NutritionBoxGrid = ({
   editing,
   onChangeValue,
   disclaimerText,
-  disclaimerAccessibilityLabel,
 }: NutritionBoxGridProps) => {
-  const [showDisclaimer, setShowDisclaimer] = useState(false)
+  const [openIndex, setOpenIndex] = useState<number | null>(null)
 
   return (
     <View style={styles.wrapper}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
         {items.map((item, i) => (
-          <View key={item.label} style={styles.box}>
+          <View key={item.label} style={styles.boxWrapper}>
             {editing ? (
-              <TextInput
-                style={styles.numberInput}
-                value={item.value}
-                onChangeText={(v) => onChangeValue?.(i, v)}
-                keyboardType="number-pad"
-                placeholder="—"
-                placeholderTextColor={colors.placeholderText}
-                accessibilityLabel={item.accessibilityLabel}
-              />
+              <View style={styles.box}>
+                <TextInput
+                  style={styles.numberInput}
+                  value={item.value}
+                  onChangeText={(v) => onChangeValue?.(i, v)}
+                  keyboardType="number-pad"
+                  placeholder="—"
+                  placeholderTextColor={colors.placeholderText}
+                  accessibilityLabel={item.accessibilityLabel}
+                />
+                <Text style={styles.label}>{item.label}</Text>
+              </View>
             ) : (
-              <Text style={styles.number}>{item.value !== '' ? item.value : '—'}</Text>
+              <Pressable
+                style={({ pressed }) => [styles.box, pressed && { opacity: 0.7 }]}
+                onPress={() => setOpenIndex((prev) => (prev === i ? null : i))}
+                accessibilityLabel={item.accessibilityLabel}
+              >
+                <Text style={styles.number}>{item.value !== '' ? item.value : '—'}</Text>
+                <Text style={styles.label}>{item.label}</Text>
+              </Pressable>
             )}
-            <Text style={styles.label}>{item.label}</Text>
+
+            {openIndex === i && (
+              <>
+                <Pressable
+                  style={styles.backdrop}
+                  onPress={() => setOpenIndex(null)}
+                  accessibilityLabel={disclaimerText}
+                />
+                <View style={styles.popover}>
+                  <Text style={styles.popoverText}>{disclaimerText}</Text>
+                </View>
+              </>
+            )}
           </View>
         ))}
-        <Pressable
-          hitSlop={12}
-          onPress={() => setShowDisclaimer((prev) => !prev)}
-          style={({ pressed }) => [styles.infoBtn, pressed && { opacity: 0.6 }]}
-          accessibilityLabel={disclaimerAccessibilityLabel}
-        >
-          <Feather name="info" size={16} color={colors.secondaryLabel} />
-        </Pressable>
       </ScrollView>
-
-      {showDisclaimer && (
-        <>
-          <Pressable
-            style={styles.backdrop}
-            onPress={() => setShowDisclaimer(false)}
-            accessibilityLabel={disclaimerAccessibilityLabel}
-          />
-          <View style={styles.popover}>
-            <Text style={styles.popoverText}>{disclaimerText}</Text>
-          </View>
-        </>
-      )}
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  wrapper: { marginBottom: 10, position: 'relative' },
+  wrapper: { marginBottom: 10 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  boxWrapper: { position: 'relative' },
   box: {
     backgroundColor: colors.secondaryBackground,
     borderRadius: 10,
@@ -95,13 +94,6 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   label: { fontSize: 13, lineHeight: 18, color: colors.secondaryLabel, marginTop: 2 },
-  infoBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   backdrop: {
     position: 'absolute',
     top: -1000,
@@ -113,12 +105,12 @@ const styles = StyleSheet.create({
   popover: {
     position: 'absolute',
     top: '100%',
-    right: 0,
+    left: 0,
     marginTop: 6,
     backgroundColor: colors.tertiaryBackground,
     borderRadius: 10,
     padding: 12,
-    width: 240,
+    width: 220,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,

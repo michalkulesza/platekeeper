@@ -983,7 +983,6 @@ const RecipeDetailScreen = () => {
                 setDraft((prev) => prev && { ...prev, [key]: value })
               }}
               disclaimerText={t('recipes.nutritionEstimateDisclaimer')}
-              disclaimerAccessibilityLabel={t('recipes.nutritionEstimateDisclaimer')}
             />
 
             <TagPickerModal
@@ -1167,7 +1166,6 @@ const RecipeDetailScreen = () => {
               { label: t('recipes.carbs'), value: recipe.carbs_per_serving?.toString() ?? '', accessibilityLabel: t('recipes.carbsPerServing') },
             ]}
             disclaimerText={t('recipes.nutritionEstimateDisclaimer')}
-            disclaimerAccessibilityLabel={t('recipes.nutritionEstimateDisclaimer')}
           />
 
           {recipe.source_url ? (
