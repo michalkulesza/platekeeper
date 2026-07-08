@@ -1432,8 +1432,18 @@ const RecipeDetailModal = ({
                         {r.title}
                       </h2>
                     )}
+                    <div className="mt-1.5">
+                      <TagRow
+                        tags={localTags}
+                        allTags={allTags}
+                        onAdd={handleTagAdd}
+                        onRemove={handleTagRemove}
+                        onCreateTag={handleTagCreate}
+                        editable={mode === 'editing'}
+                      />
+                    </div>
                     {(r.creator_handle || r.source_url) && (
-                      <p className="text-sm text-white/75 mt-0.5">
+                      <p className="text-sm text-white/75 mt-1">
                         {r.creator_handle && <span>@{r.creator_handle}</span>}
                         {r.creator_handle && r.source_url && <span> · </span>}
                         {r.source_url && (
@@ -1473,8 +1483,18 @@ const RecipeDetailModal = ({
                       {r.title}
                     </h2>
                   )}
+                  <div className="mt-1.5">
+                    <TagRow
+                      tags={localTags}
+                      allTags={allTags}
+                      onAdd={handleTagAdd}
+                      onRemove={handleTagRemove}
+                      onCreateTag={handleTagCreate}
+                      editable={mode === 'editing'}
+                    />
+                  </div>
                   {(r.creator_handle || r.source_url) && (
-                    <p className="text-sm text-zinc-500 mt-0.5">
+                    <p className="text-sm text-zinc-500 mt-1">
                       {r.creator_handle && <span>@{r.creator_handle}</span>}
                       {r.creator_handle && r.source_url && <span> · </span>}
                       {r.source_url && (
@@ -1511,18 +1531,8 @@ const RecipeDetailModal = ({
                 </div>
               )}
 
-              {/* Metadata: tags, pills, actions */}
+              {/* Metadata: pills, actions */}
               <div className={`px-5 pt-3 pb-3 flex flex-col gap-2 ${headerBg}`}>
-                {/* Tags — always visible */}
-                <TagRow
-                  tags={localTags}
-                  allTags={allTags}
-                  onAdd={handleTagAdd}
-                  onRemove={handleTagRemove}
-                  onCreateTag={handleTagCreate}
-                  editable={mode === 'editing'}
-                />
-
                 {/* Serves / kcal / protein / fat / carbs box grid */}
                 <NutritionBoxGrid
                   editing={mode === 'editing'}
