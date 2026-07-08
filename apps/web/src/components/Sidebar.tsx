@@ -38,9 +38,14 @@ export default function Sidebar() {
       <div
         className={`flex items-center mb-5 ${collapsed ? 'justify-center' : 'justify-between px-1'}`}
       >
-        {!collapsed && (
-          <span className="text-lg font-bold tracking-tight">Carrot</span>
-        )}
+        <div className="flex items-center gap-2 min-w-0">
+          <img src="/favicon.svg" alt="" className="w-7 h-7 rounded-lg shrink-0" />
+          {!collapsed && (
+            <span className="text-lg font-bold tracking-tight truncate">
+              Carrot
+            </span>
+          )}
+        </div>
         <button
           type="button"
           onClick={() => setCollapsed((c) => !c)}
