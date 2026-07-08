@@ -19,9 +19,3 @@ Scoped to `apps/web/`. Root `CLAUDE.md` conventions still apply; these add/overr
 ## Props & types
 - Explicit TypeScript prop interfaces/types per component — no implicit `any`.
 - Prefer narrow, specific prop types over broad/optional-everything shapes.
-
-## Structure
-- (add project-specific folder/module conventions here as they come up)
-
-## Anti-patterns to avoid
-- (add specific examples here as they're identified)
