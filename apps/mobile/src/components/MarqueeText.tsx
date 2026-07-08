@@ -22,6 +22,14 @@ type Props = {
 
 // Single-line text that scrolls back and forth (like a K.I.T. scanner) when it
 // doesn't fit its container, instead of wrapping or truncating with an ellipsis.
+//
+// The visible text is given an explicit numeric width (measured via an
+// invisible absolutely-positioned copy) rather than left to "auto" — a plain
+// auto-width Text nested under an overflow:hidden ancestor gets clamped to
+// the available space by Yoga's layout pass, so it never actually reports a
+// width wider than its container and the "does it overflow" check never
+// trips. Absolute positioning removes the measurer from that flow so it
+// reports its true intrinsic width.
 const MarqueeText = ({ text, style, containerStyle }: Props) => {
   const [containerWidth, setContainerWidth] = useState(0)
   const [textWidth, setTextWidth] = useState(0)
@@ -60,8 +68,17 @@ const MarqueeText = ({ text, style, containerStyle }: Props) => {
 
   return (
     <View style={[{ overflow: 'hidden' }, containerStyle]} onLayout={onContainerLayout}>
-      <Reanimated.View style={[{ flexDirection: 'row', alignSelf: 'flex-start' }, animatedStyle]}>
-        <Text numberOfLines={1} onLayout={onTextLayout} style={style}>
+      <Text
+        style={[style, { position: 'absolute', opacity: 0 }]}
+        onLayout={onTextLayout}
+      >
+        {text}
+      </Text>
+      <Reanimated.View style={[{ flexDirection: 'row' }, animatedStyle]}>
+        <Text
+          numberOfLines={1}
+          style={[style, textWidth > 0 ? { width: textWidth } : null]}
+        >
           {text}
         </Text>
       </Reanimated.View>
