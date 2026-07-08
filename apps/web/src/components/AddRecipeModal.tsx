@@ -58,7 +58,7 @@ interface StructuredIngredient {
 }
 
 const parseIngredient = (s: string): StructuredIngredient => {
-  const trimmed = s.trim()
+  const trimmed = typeof s === 'string' ? s.trim() : ''
   if (!trimmed) return { qty: '', unit: '', name: '' }
   const parts = trimmed.split(/\s+/)
   let idx = 0

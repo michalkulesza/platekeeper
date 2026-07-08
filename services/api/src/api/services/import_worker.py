@@ -16,7 +16,9 @@ from api.models import (
     ImportJob,
     ImportJobKind,
     ImportJobStatus,
+    Ingredient,
     Recipe,
+    RecipeComponent,
     Tag,
     UserPreferences,
 )
@@ -58,6 +60,30 @@ async def _get_tags_and_allergens(session, user_id: uuid.UUID, household_id: uui
     return available_tags, allergens
 
 
+def _flatten_ingredient(ing: Ingredient, auto_substitute: bool) -> str:
+    """Match the web client's serializeIngredient: join qty/unit/name, dropping blanks.
+
+    The frontend (web and mobile) renders SaveComponent.ingredients as display
+    strings, not structured objects — this mirrors AddRecipeModal.tsx's
+    serializeIngredient so ingredients imported via the background job queue
+    render the same as ones saved through the synchronous /recipes route.
+    """
+    use_sub = auto_substitute and bool(ing.allergen) and bool(ing.substitute)
+    name = ing.substitute if use_sub else ing.name
+    parts = [ing.qty, ing.unit.value if ing.unit else None, name]
+    return " ".join(p for p in parts if p)
+
+
+def _step_ingredient_refs(component: RecipeComponent) -> list[list[dict]] | None:
+    if not component.step_refs:
+        return None
+    refs: list[list[dict]] = [[] for _ in component.steps]
+    for ref in component.step_refs:
+        if ref.step_index < len(refs):
+            refs[ref.step_index].append({"ingredient_index": ref.ingredient_index, "mention": ref.mention})
+    return refs
+
+
 async def _save_recipe(session, user_id: uuid.UUID, household_id: uuid.UUID | None, result) -> Recipe:
     """Save an ImportResult's recipe to the DB and return the new Recipe."""
     recipe_data = result.recipe
@@ -75,15 +101,31 @@ async def _save_recipe(session, user_id: uuid.UUID, household_id: uuid.UUID | No
         )
         tags = list(tag_result.scalars().all())
 
+    auto_substitute = False
+    prefs_result = await session.execute(
+        select(UserPreferences).where(UserPreferences.user_id == user_id)
+    )
+    prefs = prefs_result.scalar_one_or_none()
+    if prefs is not None:
+        auto_substitute = prefs.auto_substitute
+
     components_json = []
     for c in (recipe_data.components or []):
         components_json.append({
-            "role": c.role,
-            "name": c.name,
-            "yield_note": c.yield_note,
-            "ingredients": [i.model_dump() for i in c.ingredients],
+            "name": c.name or c.role,
+            "yield_note": c.yield_note or "",
+            "ingredients": [_flatten_ingredient(i, auto_substitute) for i in c.ingredients],
             "steps": c.steps,
-            "step_refs": [r.model_dump() for r in (c.step_refs or [])],
+            "ingredient_flags": [
+                {
+                    "allergen": i.allergen,
+                    "substitute": i.substitute,
+                    "substitute_applied": auto_substitute and bool(i.allergen) and bool(i.substitute),
+                    "original_display": None,
+                }
+                for i in c.ingredients
+            ],
+            "step_ingredient_refs": _step_ingredient_refs(c),
         })
 
     recipe = Recipe(
