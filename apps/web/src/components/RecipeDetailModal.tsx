@@ -1391,7 +1391,7 @@ const RecipeDetailModal = ({
               />
 
               {proxied ? (
-                <div className="relative w-full h-48 shrink-0">
+                <div className="relative w-full h-64 shrink-0">
                   <img
                     src={proxied}
                     alt={r.title}
