@@ -442,7 +442,7 @@ const SettingsScreen = () => {
         onPress: () => {
           Alert.prompt(
             t('settings.deleteAccountTypeEmailTitle'),
-            t('settings.deleteAccountTypeEmailMessage', { email: user?.email ?? '' }),
+            t('settings.deleteAccountTypeEmailMessage'),
             [
               { text: t('common.cancel'), style: 'cancel' },
               {
