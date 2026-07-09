@@ -1830,8 +1830,7 @@ const styles = StyleSheet.create({
   secondaryBtnText: { fontSize: 16, color: PlatformColor('secondaryLabel') as unknown as string, fontWeight: '500' },
   primaryBtn: {
     backgroundColor: colors.blue,
-    borderRadius: 12,
-    borderCurve: 'continuous',
+    borderRadius: 999,
     overflow: 'hidden',
     paddingVertical: 13,
     alignItems: 'center',
