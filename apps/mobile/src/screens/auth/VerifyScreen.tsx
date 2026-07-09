@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     backgroundColor: PlatformColor('secondarySystemBackground') as unknown as string,
     color: PlatformColor('label') as unknown as string,
-    borderRadius: 12,
+    borderRadius: 999,
     paddingVertical: 20,
     paddingHorizontal: 16,
     marginBottom: 16,
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: PlatformColor('systemBlue') as unknown as string,
-    borderRadius: 12,
+    borderRadius: 999,
     paddingVertical: 16,
     alignItems: 'center',
     marginBottom: 16,
