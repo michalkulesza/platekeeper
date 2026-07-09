@@ -519,6 +519,7 @@ const MealPlanScreen = () => {
           getItemLayout={getItemLayout}
           contentOffset={{ x: 0, y: initialScrollOffset }}
           onScrollBeginDrag={handleScrollBeginDrag}
+          style={styles.list}
           contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 16 }]}
           contentInsetAdjustmentBehavior="automatic"
           showsVerticalScrollIndicator={false}
