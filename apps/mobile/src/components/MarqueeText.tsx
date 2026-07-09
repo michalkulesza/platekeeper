@@ -24,15 +24,15 @@ type Props = {
 // doesn't fit its container, instead of wrapping or truncating with an ellipsis.
 //
 // The visible text is given an explicit numeric width (measured via an
-// invisible absolutely-positioned copy) rather than left to "auto" — a plain
-// auto-width Text nested under an overflow:hidden ancestor gets clamped to
-// the available space by Yoga's layout pass, so it never actually reports a
-// width wider than its container and the "does it overflow" check never
-// trips. Absolute positioning alone isn't enough to escape that: the default
-// alignItems: 'stretch' on the column parent still stretches an absolutely
-// positioned Text to the container's cross-axis width, so alignSelf:
-// 'flex-start' is required for the measurer to report its true intrinsic
-// width instead of the clamped one.
+// invisible copy) rather than left to "auto". Position: 'absolute' plus
+// alignSelf: 'flex-start' keeps the measurer out of the parent's stretch
+// layout, but that alone still isn't enough — Yoga's shrink-to-fit sizing
+// for an auto-width node is itself capped at the nearest ancestor's
+// available width during the measure pass, so onLayout would still report
+// (at most) the container's width. Giving the measurer a generous explicit
+// maxWidth (far beyond any real title) raises that cap so it reports the
+// text's true, uncapped single-line content width.
+const MEASURE_MAX_WIDTH = 2000
 const MarqueeText = ({ text, style, containerStyle }: Props) => {
   const [containerWidth, setContainerWidth] = useState(0)
   const [textWidth, setTextWidth] = useState(0)
@@ -72,7 +72,11 @@ const MarqueeText = ({ text, style, containerStyle }: Props) => {
   return (
     <View style={[{ overflow: 'hidden' }, containerStyle]} onLayout={onContainerLayout}>
       <Text
-        style={[style, { position: 'absolute', opacity: 0, alignSelf: 'flex-start' }]}
+        numberOfLines={1}
+        style={[
+          style,
+          { position: 'absolute', opacity: 0, alignSelf: 'flex-start', maxWidth: MEASURE_MAX_WIDTH },
+        ]}
         onLayout={onTextLayout}
       >
         {text}
