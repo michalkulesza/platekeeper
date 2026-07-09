@@ -39,6 +39,7 @@ import BugReportButton from '../components/BugReportButton'
 import GlassViewSafe from '../components/GlassViewSafe'
 import MarqueeText from '../components/MarqueeText'
 import MarqueeRow from '../components/MarqueeRow'
+import MarqueeGroup from '../components/MarqueeGroup'
 import { colors } from '../theme/colors'
 import { proxyThumbnailUrl, PLACEHOLDER_URL } from '../api/thumbnailUrl'
 import { useNotificationHistory, type NotificationItem } from '../context/NotificationHistoryContext'
@@ -564,20 +565,39 @@ const RecipesScreen = () => {
               <View style={styles.cardImagePlaceholder} />
             )}
             <View style={styles.cardBody}>
-              <MarqueeText text={item.title} style={styles.cardTitle} containerStyle={styles.cardTitleMarquee} />
-              {item.tags.length > 0 ? (
-                <MarqueeRow containerStyle={styles.cardTagRow} gap={4}>
-                  {item.tags.map((tg) => (
-                    <View key={tg.id} style={styles.cardTagPill}>
-                      <Text style={styles.cardTagPillText} numberOfLines={1}>
-                        {tTag(tg.name, t)}
-                      </Text>
-                    </View>
-                  ))}
-                </MarqueeRow>
-              ) : (
-                <Text style={[styles.cardTags, styles.cardTagsEmpty]}>{t('tags.noTags')}</Text>
-              )}
+              <MarqueeGroup count={2}>
+                {([titleTurn, tagsTurn]) => (
+                  <>
+                    <MarqueeText
+                      text={item.title}
+                      style={styles.cardTitle}
+                      containerStyle={styles.cardTitleMarquee}
+                      turn={titleTurn.turn}
+                      onOverflowChange={titleTurn.onOverflowChange}
+                      onDone={titleTurn.onDone}
+                    />
+                    {item.tags.length > 0 ? (
+                      <MarqueeRow
+                        containerStyle={styles.cardTagRow}
+                        gap={4}
+                        turn={tagsTurn.turn}
+                        onOverflowChange={tagsTurn.onOverflowChange}
+                        onDone={tagsTurn.onDone}
+                      >
+                        {item.tags.map((tg) => (
+                          <View key={tg.id} style={styles.cardTagPill}>
+                            <Text style={styles.cardTagPillText} numberOfLines={1}>
+                              {tTag(tg.name, t)}
+                            </Text>
+                          </View>
+                        ))}
+                      </MarqueeRow>
+                    ) : (
+                      <Text style={[styles.cardTags, styles.cardTagsEmpty]}>{t('tags.noTags')}</Text>
+                    )}
+                  </>
+                )}
+              </MarqueeGroup>
               {(item.servings != null || item.kcal_per_serving != null || item.protein_per_serving != null || item.fat_per_serving != null || item.carbs_per_serving != null) && (
                 <Text style={styles.cardMeta}>
                   {[

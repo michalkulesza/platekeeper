@@ -1,27 +1,22 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { LayoutChangeEvent, StyleProp, Text, TextStyle, View, ViewStyle } from 'react-native'
-import Reanimated, {
-  cancelAnimation,
-  Easing,
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withRepeat,
-  withSequence,
-  withTiming,
-} from 'react-native-reanimated'
-
-const PAUSE_MS = 1200
-const SPEED_PX_PER_SEC = 28
+import Reanimated from 'react-native-reanimated'
+import { useMarqueeAnimation } from './useMarqueeAnimation'
 
 type Props = {
   text: string
   style?: StyleProp<TextStyle>
   containerStyle?: StyleProp<ViewStyle>
+  turn: number | null
+  onOverflowChange: (overflows: boolean) => void
+  onDone: () => void
 }
 
-// Single-line text that scrolls back and forth (like a K.I.T. scanner) when it
-// doesn't fit its container, instead of wrapping or truncating with an ellipsis.
+// Single-line text that scrolls back and forth (like a K.I.T. scanner) for
+// one pause-scroll-pause-scroll-back cycle whenever `turn` changes, instead
+// of wrapping or truncating with an ellipsis. Meant to be driven by a
+// MarqueeGroup (via turn/onOverflowChange/onDone) so it takes turns with
+// sibling marquees instead of scrolling simultaneously.
 //
 // The visible text is given an explicit numeric width (measured via an
 // invisible copy) rather than left to "auto". A plain `maxWidth` clamp on
@@ -34,10 +29,9 @@ type Props = {
 // constraints — so the inner Text's own available-space bound comes from
 // that generous explicit width instead of the real container.
 const MEASURE_MAX_WIDTH = 2000
-const MarqueeText = ({ text, style, containerStyle }: Props) => {
+const MarqueeText = ({ text, style, containerStyle, turn, onOverflowChange, onDone }: Props) => {
   const [containerWidth, setContainerWidth] = useState(0)
   const [textWidth, setTextWidth] = useState(0)
-  const translateX = useSharedValue(0)
 
   const onContainerLayout = useCallback((e: LayoutChangeEvent) => {
     setContainerWidth(e.nativeEvent.layout.width)
@@ -47,28 +41,7 @@ const MarqueeText = ({ text, style, containerStyle }: Props) => {
     setTextWidth(e.nativeEvent.layout.width)
   }, [])
 
-  useEffect(() => {
-    const overflow = textWidth - containerWidth
-    if (overflow > 0 && containerWidth > 0) {
-      const duration = (overflow / SPEED_PX_PER_SEC) * 1000
-      translateX.value = 0
-      translateX.value = withRepeat(
-        withSequence(
-          withDelay(PAUSE_MS, withTiming(-overflow, { duration, easing: Easing.linear })),
-          withDelay(PAUSE_MS, withTiming(0, { duration, easing: Easing.linear })),
-        ),
-        -1,
-      )
-    } else {
-      cancelAnimation(translateX)
-      translateX.value = 0
-    }
-    return () => cancelAnimation(translateX)
-  }, [textWidth, containerWidth, translateX])
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }],
-  }))
+  const animatedStyle = useMarqueeAnimation(textWidth, containerWidth, turn, onOverflowChange, onDone)
 
   return (
     <View style={[{ overflow: 'hidden' }, containerStyle]} onLayout={onContainerLayout}>
