@@ -66,6 +66,9 @@ Rules:
 - Prefer `Alert.alert()` over custom modals for destructive confirmations.
 - Use `ActionSheetIOS.showActionSheetWithOptions` for action sheets on iOS.
 
+## Native-first rule
+If a feature request requires a custom JS component where a native equivalent exists, **stop and say so before writing any code**: "This can't be done natively — it would require a custom [X] that will look off. Native alternative: [Y]." Let the user decide. Never silently build a JS replacement for a native control.
+
 ## Interactive elements
 - Use `<Pressable>` with `hitSlop` for touch targets (minimum 44×44pt per HIG).
 - Add haptic feedback on meaningful interactions: `import * as Haptics from 'expo-haptics'` — use `impactAsync(ImpactFeedbackStyle.Light)` for taps, `notificationAsync` for success/error.
