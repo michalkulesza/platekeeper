@@ -24,14 +24,15 @@ type Props = {
 // doesn't fit its container, instead of wrapping or truncating with an ellipsis.
 //
 // The visible text is given an explicit numeric width (measured via an
-// invisible copy) rather than left to "auto". Position: 'absolute' plus
-// alignSelf: 'flex-start' keeps the measurer out of the parent's stretch
-// layout, but that alone still isn't enough — Yoga's shrink-to-fit sizing
-// for an auto-width node is itself capped at the nearest ancestor's
-// available width during the measure pass, so onLayout would still report
-// (at most) the container's width. Giving the measurer a generous explicit
-// maxWidth (far beyond any real title) raises that cap so it reports the
-// text's true, uncapped single-line content width.
+// invisible copy) rather than left to "auto". A plain `maxWidth` clamp on
+// the measuring Text itself is not enough: Yoga still derives the "available
+// space" it measures an auto-width node against from the real (narrow)
+// ancestor, and a local maxWidth only ever shrinks that bound further, never
+// widens it. To get the text's true, uncapped single-line width, the
+// measurer needs an ancestor whose width is *explicit* (not auto) and large
+// — explicit dimensions are resolved directly, without consulting outer
+// constraints — so the inner Text's own available-space bound comes from
+// that generous explicit width instead of the real container.
 const MEASURE_MAX_WIDTH = 2000
 const MarqueeText = ({ text, style, containerStyle }: Props) => {
   const [containerWidth, setContainerWidth] = useState(0)
@@ -71,16 +72,23 @@ const MarqueeText = ({ text, style, containerStyle }: Props) => {
 
   return (
     <View style={[{ overflow: 'hidden' }, containerStyle]} onLayout={onContainerLayout}>
-      <Text
-        numberOfLines={1}
-        style={[
-          style,
-          { position: 'absolute', opacity: 0, alignSelf: 'flex-start', maxWidth: MEASURE_MAX_WIDTH },
-        ]}
-        onLayout={onTextLayout}
+      <View
+        style={{
+          position: 'absolute',
+          opacity: 0,
+          width: MEASURE_MAX_WIDTH,
+          height: 0,
+          overflow: 'hidden',
+        }}
       >
-        {text}
-      </Text>
+        <Text
+          numberOfLines={1}
+          style={[style, { alignSelf: 'flex-start' }]}
+          onLayout={onTextLayout}
+        >
+          {text}
+        </Text>
+      </View>
       <Reanimated.View style={[{ flexDirection: 'row' }, animatedStyle]}>
         <Text
           numberOfLines={1}
