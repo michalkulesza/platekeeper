@@ -112,12 +112,13 @@ const HouseholdDetailScreen = () => {
           title: '',
           headerRight: () =>
             saving ? (
-              <ActivityIndicator />
+              <ActivityIndicator style={styles.headerSaveBtn} />
             ) : (
               <Pressable
                 onPress={handleSave}
                 disabled={!isDirty}
                 hitSlop={8}
+                style={styles.headerSaveBtn}
                 accessibilityLabel={t('settings.saveChanges')}
                 accessibilityRole="button"
               >
@@ -283,6 +284,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 0 },
     elevation: 4,
   },
+  headerSaveBtn: { paddingHorizontal: 16, paddingVertical: 8 },
   headerSaveText: { color: colors.blue, fontSize: 17, fontWeight: '600' },
   headerSaveTextDisabled: { color: colors.secondaryLabel, opacity: 0.5 },
   memberRow: {
