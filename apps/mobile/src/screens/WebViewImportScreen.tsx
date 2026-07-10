@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 import { ActivityIndicator, PlatformColor, Pressable, StyleSheet, Text, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
@@ -16,6 +16,34 @@ const EXTRACT_SCRIPT = `
 true;
 `
 
+const ExtractButton = ({
+  pageLoaded,
+  extracting,
+  onPress,
+  accessibilityLabel,
+}: {
+  pageLoaded: boolean
+  extracting: boolean
+  onPress: () => void
+  accessibilityLabel: string
+}) => {
+  if (extracting) return <ActivityIndicator size="small" />
+  const iconColor = (
+    pageLoaded ? PlatformColor('systemBlue') : PlatformColor('tertiaryLabel')
+  ) as unknown as string
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={!pageLoaded}
+      hitSlop={8}
+      style={({ pressed }) => [pressed && { opacity: 0.6 }]}
+      accessibilityLabel={accessibilityLabel}
+    >
+      <Feather name="check" size={22} color={iconColor} />
+    </Pressable>
+  )
+}
+
 const WebViewImportScreen = () => {
   const { url } = useLocalSearchParams<{ url?: string }>()
   const navigation = useNavigation()
@@ -25,46 +53,34 @@ const WebViewImportScreen = () => {
   const [pageLoaded, setPageLoaded] = useState(false)
   const [extracting, setExtracting] = useState(false)
 
-  const handleExtract = () => {
+  const handleExtract = useCallback(() => {
     setExtracting(true)
     webViewRef.current?.injectJavaScript(EXTRACT_SCRIPT)
-  }
+  }, [])
 
-  const handleMessage = (event: { nativeEvent: { data: string } }) => {
-    setExtracting(false)
-    const text = event.nativeEvent.data.trim()
-    if (!text) return
-    router.replace({ pathname: '/import-recipe', params: { type: 'text', value: text } })
-  }
+  const handleMessage = useCallback(
+    (event: { nativeEvent: { data: string } }) => {
+      setExtracting(false)
+      const text = event.nativeEvent.data.trim()
+      if (!text) return
+      router.replace({ pathname: '/import-recipe', params: { type: 'text', value: text } })
+    },
+    [router]
+  )
 
   useLayoutEffect(() => {
     navigation.setOptions({
       title: t('addRecipe.webviewTitle'),
       headerRight: () => (
-        <Pressable
+        <ExtractButton
+          pageLoaded={pageLoaded}
+          extracting={extracting}
           onPress={handleExtract}
-          disabled={!pageLoaded || extracting}
-          hitSlop={8}
-          style={({ pressed }) => [pressed && { opacity: 0.6 }]}
           accessibilityLabel={t('addRecipe.useThisPage')}
-        >
-          {extracting ? (
-            <ActivityIndicator size="small" />
-          ) : (
-            <Feather
-              name="check"
-              size={22}
-              color={
-                (pageLoaded
-                  ? PlatformColor('systemBlue')
-                  : PlatformColor('tertiaryLabel')) as unknown as string
-              }
-            />
-          )}
-        </Pressable>
+        />
       ),
     })
-  }, [navigation, t, pageLoaded, extracting])
+  }, [navigation, t, pageLoaded, extracting, handleExtract])
 
   if (!url) return null
 
