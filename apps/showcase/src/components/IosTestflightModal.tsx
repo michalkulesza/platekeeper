@@ -12,6 +12,44 @@ type IosTestflightModalProps = {
   webAppUrl: string
 }
 
+type CopyRowProps = {
+  field: 'email' | 'password'
+  label: string
+  value: string
+  copiedField: CopyField
+  onCopy: (field: 'email' | 'password', value: string) => void
+}
+
+const CopyRow = ({
+  field,
+  label,
+  value,
+  copiedField,
+  onCopy,
+}: CopyRowProps) => {
+  const { t } = useTranslation()
+  const isCopied = copiedField === field
+  const handleClick = () => onCopy(field, value)
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      className="flex items-center justify-between gap-3 rounded-2xl border border-[#EEEEEE] bg-[#FAFAFA] px-4 py-3.5 text-left"
+    >
+      <span className="flex flex-col gap-0.5">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-[#B3B3B3]">
+          {label}
+        </span>
+        <span className="text-[15px] font-bold text-[#111111]">{value}</span>
+      </span>
+      <span className="text-xs font-bold text-[#FF8A3D]">
+        {isCopied ? t('modal.copied') : t('modal.copy')}
+      </span>
+    </button>
+  )
+}
+
 const IosTestflightModal = ({
   open,
   onClose,
@@ -77,41 +115,20 @@ const IosTestflightModal = ({
         </p>
 
         <div className="mb-7 flex flex-col gap-2.5">
-          <button
-            type="button"
-            onClick={() => copyField('email', TESTFLIGHT_EMAIL)}
-            className="flex items-center justify-between gap-3 rounded-2xl border border-[#EEEEEE] bg-[#FAFAFA] px-4 py-3.5 text-left"
-          >
-            <span className="flex flex-col gap-0.5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#B3B3B3]">
-                {t('modal.email')}
-              </span>
-              <span className="text-[15px] font-bold text-[#111111]">
-                {TESTFLIGHT_EMAIL}
-              </span>
-            </span>
-            <span className="text-xs font-bold text-[#FF8A3D]">
-              {copiedField === 'email' ? t('modal.copied') : t('modal.copy')}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => copyField('password', TESTFLIGHT_PASSWORD)}
-            className="flex items-center justify-between gap-3 rounded-2xl border border-[#EEEEEE] bg-[#FAFAFA] px-4 py-3.5 text-left"
-          >
-            <span className="flex flex-col gap-0.5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#B3B3B3]">
-                {t('modal.password')}
-              </span>
-              <span className="text-[15px] font-bold text-[#111111]">
-                {TESTFLIGHT_PASSWORD}
-              </span>
-            </span>
-            <span className="text-xs font-bold text-[#FF8A3D]">
-              {copiedField === 'password' ? t('modal.copied') : t('modal.copy')}
-            </span>
-          </button>
+          <CopyRow
+            field="email"
+            label={t('modal.email')}
+            value={TESTFLIGHT_EMAIL}
+            copiedField={copiedField}
+            onCopy={copyField}
+          />
+          <CopyRow
+            field="password"
+            label={t('modal.password')}
+            value={TESTFLIGHT_PASSWORD}
+            copiedField={copiedField}
+            onCopy={copyField}
+          />
         </div>
 
         <a
