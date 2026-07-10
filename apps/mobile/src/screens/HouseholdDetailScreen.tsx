@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next'
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
 import { useHouseholds } from '@carrot/shared/hooks/useHouseholds'
 import { useMembers } from '@carrot/shared/hooks/useMembers'
+import type { MemberOut } from '@carrot/shared/types'
 import { useAuth } from '../context/AuthContext'
 import { colors } from '../theme/colors'
 
@@ -28,8 +29,67 @@ const PRESET_COLORS = [
   '#06b6d4',
 ]
 
+interface HeaderSaveButtonProps {
+  saving: boolean
+  isDirty: boolean
+  onPress: () => void
+}
+
+const HeaderSaveButton = ({ saving, isDirty, onPress }: HeaderSaveButtonProps) => {
+  const { t } = useTranslation()
+
+  if (saving) {
+    return <ActivityIndicator style={styles.headerSaveBtn} />
+  }
+
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={!isDirty}
+      hitSlop={8}
+      style={styles.headerSaveBtn}
+      accessibilityLabel={t('settings.saveChanges')}
+      accessibilityRole="button"
+    >
+      <Text style={[styles.headerSaveText, !isDirty && styles.headerSaveTextDisabled]}>
+        {t('common.save')}
+      </Text>
+    </Pressable>
+  )
+}
+
+const MemberRow = ({ member }: { member: MemberOut }) => (
+  <View style={styles.memberRow}>
+    <View style={styles.memberAvatar}>
+      <Text style={styles.memberAvatarText}>{(member.nickname || member.email)[0].toUpperCase()}</Text>
+    </View>
+    <Text style={styles.memberName} numberOfLines={1}>
+      {member.nickname || member.email}
+    </Text>
+  </View>
+)
+
+interface MembersListProps {
+  loading: boolean
+  members: MemberOut[] | undefined
+}
+
+const MembersList = ({ loading, members }: MembersListProps) => {
+  if (loading) {
+    return <ActivityIndicator style={{ padding: 12 }} />
+  }
+
+  return (
+    <>
+      {(members ?? []).map((m) => (
+        <MemberRow key={m.user_id.toString()} member={m} />
+      ))}
+    </>
+  )
+}
+
 const HouseholdDetailScreen = () => {
-  const { id: householdId, householdName: initialTitle } = useLocalSearchParams<{ id: string; householdName?: string }>()
+  const { id: householdId } = useLocalSearchParams<{ id: string; householdName?: string }>()
   const router = useRouter()
   const { t } = useTranslation()
   const { user, refreshUser } = useAuth()
@@ -57,6 +117,17 @@ const HouseholdDetailScreen = () => {
 
   const isDirty = name.trim() !== (household?.name ?? '') || color !== (household?.color ?? PRESET_COLORS[0])
 
+  const getPressableStyle = useCallback(
+    (c: string) =>
+      ({ pressed }: { pressed: boolean }) => [
+        styles.colorDot,
+        { backgroundColor: c },
+        color === c && styles.colorDotSelected,
+        pressed && { opacity: 0.7 },
+      ],
+    [color],
+  )
+
   const handleInvite = useCallback(async () => {
     const email = inviteEmail.trim()
     if (!email) return
@@ -72,26 +143,28 @@ const HouseholdDetailScreen = () => {
     }
   }, [householdId, inviteEmail, invite, t])
 
+  const handleLeaveOnPress = useCallback(async () => {
+    try {
+      await leave.mutateAsync(householdId)
+      if (user?.active_household_id === householdId) {
+        await refreshUser()
+      }
+      router.back()
+    } catch (e) {
+      Alert.alert(t('common.ok'), e instanceof Error ? e.message : 'Error')
+    }
+  }, [householdId, leave, user, refreshUser, router, t])
+
   const handleLeave = useCallback(() => {
     Alert.alert(t('settings.leaveHousehold'), t('settings.areYouSure'), [
       { text: t('common.cancel'), style: 'cancel' },
       {
         text: t('settings.leaveHousehold'),
         style: 'destructive',
-        onPress: async () => {
-          try {
-            await leave.mutateAsync(householdId)
-            if (user?.active_household_id === householdId) {
-              await refreshUser()
-            }
-            router.back()
-          } catch (e) {
-            Alert.alert(t('common.ok'), e instanceof Error ? e.message : 'Error')
-          }
-        },
+        onPress: handleLeaveOnPress,
       },
     ])
-  }, [householdId, leave, user, refreshUser, router, t])
+  }, [t, handleLeaveOnPress])
 
   if (!household) {
     return (
@@ -110,23 +183,7 @@ const HouseholdDetailScreen = () => {
       <Stack.Screen
         options={{
           title: '',
-          headerRight: () =>
-            saving ? (
-              <ActivityIndicator style={styles.headerSaveBtn} />
-            ) : (
-              <Pressable
-                onPress={handleSave}
-                disabled={!isDirty}
-                hitSlop={8}
-                style={styles.headerSaveBtn}
-                accessibilityLabel={t('settings.saveChanges')}
-                accessibilityRole="button"
-              >
-                <Text style={[styles.headerSaveText, !isDirty && styles.headerSaveTextDisabled]}>
-                  {t('common.save')}
-                </Text>
-              </Pressable>
-            ),
+          headerRight: () => <HeaderSaveButton saving={saving} isDirty={isDirty} onPress={handleSave} />,
         }}
       />
       {/* Name */}
@@ -148,12 +205,7 @@ const HouseholdDetailScreen = () => {
           <Pressable
             key={c}
             onPress={() => setColor(c)}
-            style={({ pressed }) => [
-              styles.colorDot,
-              { backgroundColor: c },
-              color === c && styles.colorDotSelected,
-              pressed && { opacity: 0.7 },
-            ]}
+            style={getPressableStyle(c)}
             accessibilityLabel={c}
             accessibilityRole="radio"
             accessibilityState={{ checked: color === c }}
@@ -164,22 +216,7 @@ const HouseholdDetailScreen = () => {
       {/* Members */}
       <Text style={styles.sectionHeader}>{t('settings.members')}</Text>
       <View style={styles.card}>
-        {membersLoading ? (
-          <ActivityIndicator style={{ padding: 12 }} />
-        ) : (
-          (members ?? []).map((m) => (
-            <View key={m.user_id.toString()} style={styles.memberRow}>
-              <View style={styles.memberAvatar}>
-                <Text style={styles.memberAvatarText}>
-                  {(m.nickname || m.email)[0].toUpperCase()}
-                </Text>
-              </View>
-              <Text style={styles.memberName} numberOfLines={1}>
-                {m.nickname || m.email}
-              </Text>
-            </View>
-          ))
-        )}
+        <MembersList loading={membersLoading} members={members} />
       </View>
 
       {/* Invite */}

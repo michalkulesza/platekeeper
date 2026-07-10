@@ -24,14 +24,17 @@ export const uploadThumbnailImage = (
     type: asset.mimeType ?? 'image/jpeg',
     name: 'thumbnail.jpg',
   } as unknown as Blob)
+
   const token = getToken()
   const url = `${API_BASE}/api/images/thumbnail?recipe_id=${encodeURIComponent(recipeId)}`
+
   // fetch + Hermes FormData rejects the {uri,type,name} blob shape;
   // XHR's native RCTNetworking layer handles it correctly.
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest()
     xhr.open('POST', url)
     if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) onProgress?.(e.loaded / e.total)
     }
@@ -43,6 +46,7 @@ export const uploadThumbnailImage = (
       }
     }
     xhr.onerror = () => reject(new Error('Upload failed'))
+
     xhr.send(formData)
   })
 }
