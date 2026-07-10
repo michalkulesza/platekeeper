@@ -76,7 +76,7 @@ interface MembersListProps {
 
 const MembersList = ({ loading, members }: MembersListProps) => {
   if (loading) {
-    return <ActivityIndicator style={{ padding: 12 }} />
+    return <ActivityIndicator style={styles.membersLoading} />
   }
 
   return (
@@ -137,7 +137,7 @@ const HouseholdDetailScreen = () => {
       setInviteEmail('')
       Alert.alert(t('common.ok'), t('settings.invitationSent'))
     } catch (e) {
-      Alert.alert(t('common.ok'), e instanceof Error ? e.message : 'Error')
+      Alert.alert(t('common.ok'), e instanceof Error ? e.message : t('settings.invitationFailed'))
     } finally {
       setInviting(false)
     }
@@ -151,7 +151,7 @@ const HouseholdDetailScreen = () => {
       }
       router.back()
     } catch (e) {
-      Alert.alert(t('common.ok'), e instanceof Error ? e.message : 'Error')
+      Alert.alert(t('common.ok'), e instanceof Error ? e.message : t('settings.leaveFailed'))
     }
   }, [householdId, leave, user, refreshUser, router, t])
 
@@ -165,6 +165,11 @@ const HouseholdDetailScreen = () => {
       },
     ])
   }, [t, handleLeaveOnPress])
+
+  const getLeaveRowStyle = useCallback(
+    ({ pressed }: { pressed: boolean }) => [styles.leaveRow, pressed && styles.leaveRowPressed],
+    [],
+  )
 
   if (!household) {
     return (
@@ -186,7 +191,6 @@ const HouseholdDetailScreen = () => {
           headerRight: () => <HeaderSaveButton saving={saving} isDirty={isDirty} onPress={handleSave} />,
         }}
       />
-      {/* Name */}
       <Text style={styles.sectionHeader}>{t('settings.nameLabel')}</Text>
       <View style={styles.card}>
         <TextInput
@@ -198,7 +202,6 @@ const HouseholdDetailScreen = () => {
         />
       </View>
 
-      {/* Color */}
       <Text style={styles.sectionHeader}>{t('settings.colorLabel')}</Text>
       <View style={[styles.card, styles.colorRow]}>
         {PRESET_COLORS.map((c) => (
@@ -213,13 +216,11 @@ const HouseholdDetailScreen = () => {
         ))}
       </View>
 
-      {/* Members */}
       <Text style={styles.sectionHeader}>{t('settings.members')}</Text>
       <View style={styles.card}>
         <MembersList loading={membersLoading} members={members} />
       </View>
 
-      {/* Invite */}
       <Text style={styles.sectionHeader}>{t('settings.inviteByEmail')}</Text>
       <View style={styles.card}>
         <View style={styles.inviteRow}>
@@ -254,10 +255,9 @@ const HouseholdDetailScreen = () => {
         </View>
       </View>
 
-      {/* Leave */}
       <View style={[styles.card, styles.leaveSection]}>
         <Pressable
-          style={({ pressed }) => [styles.leaveRow, pressed && { backgroundColor: colors.secondaryBackground }]}
+          style={getLeaveRowStyle}
           onPress={handleLeave}
           accessibilityLabel={t('settings.leaveHousehold')}
           accessibilityRole="button"
@@ -324,6 +324,7 @@ const styles = StyleSheet.create({
   headerSaveBtn: { paddingHorizontal: 16, paddingVertical: 8 },
   headerSaveText: { color: colors.blue, fontSize: 17, fontWeight: '600' },
   headerSaveTextDisabled: { color: colors.secondaryLabel, opacity: 0.5 },
+  membersLoading: { padding: 12 },
   memberRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -368,6 +369,7 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     alignItems: 'center',
   },
+  leaveRowPressed: { backgroundColor: colors.secondaryBackground },
   leaveBtnText: { color: colors.red, fontSize: 16, fontWeight: '400' },
 })
 
