@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
 import { colors } from '../theme/colors'
 
@@ -15,6 +15,94 @@ interface NutritionBoxGridProps {
   disclaimerText: string
 }
 
+interface EditableNutritionBoxProps {
+  item: NutritionBoxGridItem
+  onChangeValue: (value: string) => void
+}
+
+const EditableNutritionBox = ({ item, onChangeValue }: EditableNutritionBoxProps) => (
+  <View style={styles.box}>
+    <TextInput
+      style={styles.numberInput}
+      value={item.value}
+      onChangeText={onChangeValue}
+      keyboardType="number-pad"
+      placeholder="—"
+      placeholderTextColor={colors.placeholderText}
+      accessibilityLabel={item.accessibilityLabel}
+    />
+    <Text style={styles.label}>{item.label}</Text>
+  </View>
+)
+
+interface NutritionBoxButtonProps {
+  item: NutritionBoxGridItem
+  displayValue: string
+  onPress: () => void
+}
+
+const NutritionBoxButton = ({ item, displayValue, onPress }: NutritionBoxButtonProps) => {
+  const getPressableStyle = useCallback(
+    ({ pressed }: { pressed: boolean }) => [styles.box, pressed && styles.boxPressed],
+    [],
+  )
+
+  return (
+    <Pressable style={getPressableStyle} onPress={onPress} accessibilityLabel={item.accessibilityLabel}>
+      <Text style={styles.number}>{displayValue}</Text>
+      <Text style={styles.label}>{item.label}</Text>
+    </Pressable>
+  )
+}
+
+interface NutritionDisclaimerPopoverProps {
+  text: string
+  onDismiss: () => void
+}
+
+const NutritionDisclaimerPopover = ({ text, onDismiss }: NutritionDisclaimerPopoverProps) => (
+  <>
+    <Pressable style={styles.backdrop} onPress={onDismiss} accessibilityLabel={text} />
+    <View style={styles.popover}>
+      <Text style={styles.popoverText}>{text}</Text>
+    </View>
+  </>
+)
+
+interface NutritionBoxProps {
+  item: NutritionBoxGridItem
+  editing: boolean
+  isOpen: boolean
+  disclaimerText: string
+  onChangeValue: (value: string) => void
+  onToggleOpen: () => void
+  onClose: () => void
+}
+
+const NutritionBox = ({
+  item,
+  editing,
+  isOpen,
+  disclaimerText,
+  onChangeValue,
+  onToggleOpen,
+  onClose,
+}: NutritionBoxProps) => {
+  const displayValue = item.value !== '' ? item.value : '—'
+
+  return (
+    <View style={styles.boxWrapper}>
+      {editing ? (
+        <EditableNutritionBox item={item} onChangeValue={onChangeValue} />
+      ) : (
+        <NutritionBoxButton item={item} displayValue={displayValue} onPress={onToggleOpen} />
+      )}
+
+      {isOpen && <NutritionDisclaimerPopover text={disclaimerText} onDismiss={onClose} />}
+    </View>
+  )
+}
+
 const NutritionBoxGrid = ({
   items,
   editing,
@@ -27,44 +115,16 @@ const NutritionBoxGrid = ({
     <View style={styles.wrapper}>
       <View style={styles.row}>
         {items.map((item, i) => (
-          <View key={item.label} style={styles.boxWrapper}>
-            {editing ? (
-              <View style={styles.box}>
-                <TextInput
-                  style={styles.numberInput}
-                  value={item.value}
-                  onChangeText={(v) => onChangeValue?.(i, v)}
-                  keyboardType="number-pad"
-                  placeholder="—"
-                  placeholderTextColor={colors.placeholderText}
-                  accessibilityLabel={item.accessibilityLabel}
-                />
-                <Text style={styles.label}>{item.label}</Text>
-              </View>
-            ) : (
-              <Pressable
-                style={({ pressed }) => [styles.box, pressed && { opacity: 0.7 }]}
-                onPress={() => setOpenIndex((prev) => (prev === i ? null : i))}
-                accessibilityLabel={item.accessibilityLabel}
-              >
-                <Text style={styles.number}>{item.value !== '' ? item.value : '—'}</Text>
-                <Text style={styles.label}>{item.label}</Text>
-              </Pressable>
-            )}
-
-            {openIndex === i && (
-              <>
-                <Pressable
-                  style={styles.backdrop}
-                  onPress={() => setOpenIndex(null)}
-                  accessibilityLabel={disclaimerText}
-                />
-                <View style={styles.popover}>
-                  <Text style={styles.popoverText}>{disclaimerText}</Text>
-                </View>
-              </>
-            )}
-          </View>
+          <NutritionBox
+            key={item.label}
+            item={item}
+            editing={editing}
+            isOpen={openIndex === i}
+            disclaimerText={disclaimerText}
+            onChangeValue={(value) => onChangeValue?.(i, value)}
+            onToggleOpen={() => setOpenIndex((prev) => (prev === i ? null : i))}
+            onClose={() => setOpenIndex(null)}
+          />
         ))}
       </View>
     </View>
@@ -72,7 +132,7 @@ const NutritionBoxGrid = ({
 }
 
 const styles = StyleSheet.create({
-  wrapper: { marginBottom: 10 },
+  wrapper: { marginBottom: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   boxWrapper: { position: 'relative', flex: 1 },
   box: {
@@ -82,6 +142,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     alignItems: 'center',
   },
+  boxPressed: { opacity: 0.7 },
   number: { fontSize: 17, lineHeight: 22, fontWeight: '600', color: colors.label },
   numberInput: {
     fontSize: 17,
@@ -92,7 +153,7 @@ const styles = StyleSheet.create({
     minWidth: 40,
     padding: 0,
   },
-  label: { fontSize: 13, lineHeight: 18, color: colors.secondaryLabel, marginTop: 2 },
+  label: { fontSize: 13, lineHeight: 18, color: colors.secondaryLabel, marginTop: 4 },
   backdrop: {
     position: 'absolute',
     top: -1000,
@@ -105,7 +166,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: '100%',
     left: 0,
-    marginTop: 6,
+    marginTop: 8,
     backgroundColor: colors.tertiaryBackground,
     borderRadius: 10,
     padding: 12,

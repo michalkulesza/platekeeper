@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
   Alert,
   FlatList,
@@ -18,12 +18,9 @@ import type { StructuredIngredient } from '@carrot/shared/utils/ingredientUtils'
 import { tTag } from '@carrot/shared/utils/tagUtils'
 import { colors } from '../theme/colors'
 
-// Shared editing controls used by both the import flow and in-place recipe
-// editing, so the two look and behave identically.
+// Shared editing controls used by both the import flow and in-place recipe editing.
 
 export const UNIT_OPTIONS: string[] = ['', ...UNITS]
-
-// ── UnitPickerModal ──────────────────────────────────────────────────────────
 
 export const UnitPickerModal = ({
   visible,
@@ -37,6 +34,47 @@ export const UnitPickerModal = ({
   onClose: () => void
 }) => {
   const { t } = useTranslation()
+
+  const getUnitOptionStyle = useCallback(
+    (item: string) =>
+      ({ pressed }: { pressed: boolean }) => [
+        styles.unitOption,
+        item === selected && styles.unitOptionSel,
+        pressed && styles.pressedLight,
+      ],
+    [selected],
+  )
+
+  const handleSelect = useCallback(
+    (item: string) => {
+      onSelect(item)
+      onClose()
+    },
+    [onSelect, onClose],
+  )
+
+  const renderUnitOption = useCallback(
+    ({ item }: { item: string }) => {
+      const isSelected = item === selected
+      const unitLabel = item ? t(`units.${item}`) : '—'
+      const unitDisplayText = item ? `${item}  ·  ${unitLabel}` : '—'
+
+      return (
+        <Pressable
+          style={getUnitOptionStyle(item)}
+          onPress={() => handleSelect(item)}
+          accessibilityLabel={unitLabel}
+          accessibilityState={{ selected: isSelected }}
+        >
+          <Text style={[styles.unitOptionText, isSelected && styles.unitOptionTextSel]}>
+            {unitDisplayText}
+          </Text>
+        </Pressable>
+      )
+    },
+    [selected, getUnitOptionStyle, handleSelect, t],
+  )
+
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.modalOverlay} onPress={onClose} />
@@ -45,26 +83,13 @@ export const UnitPickerModal = ({
         <FlatList
           data={UNIT_OPTIONS}
           keyExtractor={(item) => item || '__none__'}
-          renderItem={({ item }) => (
-            <Pressable
-              style={({ pressed }) => [styles.unitOption, item === selected && styles.unitOptionSel, pressed && { opacity: 0.7 }]}
-              onPress={() => { onSelect(item); onClose() }}
-              accessibilityLabel={item ? t(`units.${item}`) : '—'}
-              accessibilityState={{ selected: item === selected }}
-            >
-              <Text style={[styles.unitOptionText, item === selected && styles.unitOptionTextSel]}>
-                {item ? `${item}  ·  ${t(`units.${item}`)}` : '—'}
-              </Text>
-            </Pressable>
-          )}
-          contentContainerStyle={{ paddingBottom: 32 }}
+          renderItem={renderUnitOption}
+          contentContainerStyle={styles.unitListContent}
         />
       </View>
     </Modal>
   )
 }
-
-// ── TagPickerModal ─────────────────────────────────────────────────────────────
 
 export const TagPickerModal = ({
   visible,
@@ -92,21 +117,46 @@ export const TagPickerModal = ({
     return allTags.filter((tag) => !q || tag.name.toLowerCase().includes(q))
   }, [allTags, query])
 
-  const exactMatch = allTags.some((tag) => tag.name.toLowerCase() === query.trim().toLowerCase())
-  const canCreate = query.trim().length > 0 && !exactMatch
+  const trimmedQuery = query.trim()
+  const exactMatch = allTags.some((tag) => tag.name.toLowerCase() === trimmedQuery.toLowerCase())
+  const canCreate = trimmedQuery.length > 0 && !exactMatch
 
-  const handleCreate = async () => {
-    const name = query.trim()
-    if (!name) return
+  const handleCreate = useCallback(async () => {
+    if (!trimmedQuery) return
+
     setCreating(true)
     try {
-      const tag = await onCreate(name)
+      const tag = await onCreate(trimmedQuery)
       onAdd(tag)
       setQuery('')
     } finally {
       setCreating(false)
     }
-  }
+  }, [trimmedQuery, onCreate, onAdd])
+
+  const handleTagRowPress = useCallback(
+    (tag: Tag) => {
+      if (selectedIds.has(tag.id)) onRemove(tag.id)
+      else onAdd(tag)
+    },
+    [selectedIds, onAdd, onRemove],
+  )
+
+  const getCloseButtonStyle = useCallback(
+    ({ pressed }: { pressed: boolean }) => [pressed && styles.pressedLight],
+    [],
+  )
+  const getCreateRowStyle = useCallback(
+    ({ pressed }: { pressed: boolean }) => [styles.tagCreateRow, pressed && styles.pressedLight],
+    [],
+  )
+  const getTagListRowStyle = useCallback(
+    ({ pressed }: { pressed: boolean }) => [styles.tagListRow, pressed && styles.pressedLight],
+    [],
+  )
+
+  const createTagLabel = t('tags.createTag', { name: trimmedQuery })
+  const createTagText = creating ? t('tags.creating') : createTagLabel
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -115,7 +165,12 @@ export const TagPickerModal = ({
           <View style={styles.sheetHandle} />
           <View style={styles.tagModalHeader}>
             <Text style={styles.tagModalTitle}>{t('tags.addTag')}</Text>
-            <Pressable style={({ pressed }) => [pressed && { opacity: 0.7 }]} onPress={onClose} accessibilityLabel={t('common.close')}>
+            <Pressable
+              style={getCloseButtonStyle}
+              onPress={onClose}
+              hitSlop={12}
+              accessibilityLabel={t('common.close')}
+            >
               <Text style={styles.tagModalClose}>✕</Text>
             </Pressable>
           </View>
@@ -125,33 +180,35 @@ export const TagPickerModal = ({
             value={query}
             onChangeText={setQuery}
             autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="default"
+            returnKeyType="search"
+            textContentType="none"
             accessibilityLabel={t('tags.searchOrCreate')}
           />
           <ScrollView style={styles.tagScrollList} keyboardShouldPersistTaps="handled">
             {canCreate && (
               <Pressable
-                style={({ pressed }) => [styles.tagCreateRow, pressed && { opacity: 0.7 }]}
+                style={getCreateRowStyle}
                 onPress={handleCreate}
                 disabled={creating}
-                accessibilityLabel={t('tags.createTag', { name: query.trim() })}
+                accessibilityLabel={createTagLabel}
               >
-                <Text style={styles.tagCreateText}>
-                  {creating ? t('tags.creating') : t('tags.createTag', { name: query.trim() })}
-                </Text>
+                <Text style={styles.tagCreateText}>{createTagText}</Text>
               </Pressable>
             )}
             {filtered.map((tag) => {
-              const isSel = selectedIds.has(tag.id)
+              const isSelected = selectedIds.has(tag.id)
               return (
                 <Pressable
                   key={tag.id}
-                  style={({ pressed }) => [styles.tagListRow, pressed && { opacity: 0.7 }]}
-                  onPress={() => (isSel ? onRemove(tag.id) : onAdd(tag))}
+                  style={getTagListRowStyle}
+                  onPress={() => handleTagRowPress(tag)}
                   accessibilityLabel={tag.name}
-                  accessibilityState={{ selected: isSel }}
+                  accessibilityState={{ selected: isSelected }}
                 >
                   <Text style={styles.tagListText}>{tTag(tag.name, t)}</Text>
-                  {isSel && <Text style={styles.tagCheck}>✓</Text>}
+                  {isSelected && <Text style={styles.tagCheck}>✓</Text>}
                 </Pressable>
               )
             })}
@@ -164,8 +221,6 @@ export const TagPickerModal = ({
     </Modal>
   )
 }
-
-// ── IngredientEditor ───────────────────────────────────────────────────────────
 
 export const IngredientEditor = ({
   value,
@@ -196,32 +251,55 @@ export const IngredientEditor = ({
       })
     : false
 
-  const handleAllergenPress = () => {
+  const handleAllergenPress = useCallback(() => {
     if (!flag?.allergen) return
+
     const title = `${t('recipes.contains')}: ${flag.allergen}`
+
     if (flag.substitute_applied && flag.original_display) {
-      Alert.alert(title, `${t('recipes.originally')} ${flag.original_display}, ${t('recipes.replacedWith')} ${flag.substitute} ${t('recipes.dueTo')} ${flag.allergen}.`, [
+      const message = `${t('recipes.originally')} ${flag.original_display}, ${t('recipes.replacedWith')} ${flag.substitute} ${t('recipes.dueTo')} ${flag.allergen}.`
+      Alert.alert(title, message, [
         { text: t('recipes.restoreOriginal'), onPress: onRestore },
         { text: t('common.cancel'), style: 'cancel' },
       ])
     } else if (flag.substitute) {
-      Alert.alert(title, `${t('recipes.suggestedSubstitute')} ${flag.substitute}`, [
+      const message = `${t('recipes.suggestedSubstitute')} ${flag.substitute}`
+      Alert.alert(title, message, [
         { text: t('recipes.replace'), onPress: onReplace },
         { text: t('recipes.keepOriginal'), style: 'cancel' },
       ])
     } else {
       Alert.alert(title, t('recipes.noSubstituteAvailable'))
     }
-  }
+  }, [flag, onRestore, onReplace, t])
+
+  const getRemoveButtonStyle = useCallback(
+    ({ pressed }: { pressed: boolean }) => [styles.ingRemoveBtn, pressed && styles.pressedMedium],
+    [],
+  )
+  const getUnitButtonStyle = useCallback(
+    ({ pressed }: { pressed: boolean }) => [styles.ingUnitBtn, pressed && styles.pressedLight],
+    [],
+  )
+  const getAllergenBadgeStyle = useCallback(
+    ({ pressed }: { pressed: boolean }) => [styles.allergenBadge, pressed && styles.pressedLight],
+    [],
+  )
+
+  const handleQtyChange = useCallback((qty: string) => onChange({ ...value, qty }), [value, onChange])
+  const handleNameChange = useCallback((name: string) => onChange({ ...value, name }), [value, onChange])
+
+  const unitLabel = value.unit ? t(`units.${value.unit}`) : t('units.unitLabel')
+  const allergenAccessibilityLabel = flag?.allergen ? `${t('recipes.contains')} ${flag.allergen}` : ''
 
   return (
     <View style={styles.ingEditor}>
       <View style={styles.ingRow}>
         {onRemove && (
           <Pressable
-            style={({ pressed }) => [styles.ingRemoveBtn, pressed && { opacity: 0.6 }]}
+            style={getRemoveButtonStyle}
             onPress={onRemove}
-            hitSlop={8}
+            hitSlop={11}
             accessibilityLabel={t('addRecipe.removeIngredient')}
           >
             <Text style={styles.ingRemoveText}>−</Text>
@@ -230,15 +308,20 @@ export const IngredientEditor = ({
         <TextInput
           style={styles.ingQty}
           value={value.qty}
-          onChangeText={(v) => onChange({ ...value, qty: v })}
+          onChangeText={handleQtyChange}
           placeholder={t('units.qtyLabel')}
           keyboardType="decimal-pad"
+          returnKeyType="done"
+          autoCapitalize="none"
+          autoCorrect={false}
+          textContentType="none"
           accessibilityLabel={t('units.qtyLabel')}
         />
         <Pressable
-          style={({ pressed }) => [styles.ingUnitBtn, pressed && { opacity: 0.7 }]}
+          style={getUnitButtonStyle}
           onPress={onUnitPress}
-          accessibilityLabel={value.unit ? t(`units.${value.unit}`) : t('units.unitLabel')}
+          hitSlop={10}
+          accessibilityLabel={unitLabel}
         >
           <Text style={[styles.ingUnitText, !value.unit && styles.ingPlaceholder]}>
             {value.unit || '—'}
@@ -247,14 +330,20 @@ export const IngredientEditor = ({
         <TextInput
           style={styles.ingName}
           value={value.name}
-          onChangeText={(v) => onChange({ ...value, name: v })}
-          accessibilityLabel="ingredient name"
+          onChangeText={handleNameChange}
+          keyboardType="default"
+          returnKeyType="done"
+          autoCapitalize="words"
+          autoCorrect={false}
+          textContentType="none"
+          accessibilityLabel={t('addRecipe.ingredientName')}
         />
         {isAllergenActive && (
           <Pressable
-            style={({ pressed }) => [styles.allergenBadge, pressed && { opacity: 0.7 }]}
+            style={getAllergenBadgeStyle}
             onPress={handleAllergenPress}
-            accessibilityLabel={`${t('recipes.contains')} ${flag!.allergen}`}
+            hitSlop={10}
+            accessibilityLabel={allergenAccessibilityLabel}
           >
             <Text style={styles.allergenText}>⚠ {flag!.allergen}</Text>
           </Pressable>
@@ -265,7 +354,9 @@ export const IngredientEditor = ({
 }
 
 const styles = StyleSheet.create({
-  // Tag picker modal
+  pressedLight: { opacity: 0.7 },
+  pressedMedium: { opacity: 0.6 },
+
   tagModalWrap: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   tagModal: {
     backgroundColor: PlatformColor('systemBackground') as unknown as string,
@@ -276,7 +367,7 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   tagModalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8 },
-  tagModalTitle: { fontSize: 16, fontWeight: '700', color: PlatformColor('label') as unknown as string },
+  tagModalTitle: { fontSize: 17, lineHeight: 22, fontWeight: '600', color: PlatformColor('label') as unknown as string },
   tagModalClose: { fontSize: 17, color: PlatformColor('secondaryLabel') as unknown as string, padding: 4 },
   tagSearch: {
     marginHorizontal: 16,
@@ -309,9 +400,8 @@ const styles = StyleSheet.create({
   },
   tagListText: { fontSize: 16, color: PlatformColor('secondaryLabel') as unknown as string },
   tagCheck: { fontSize: 16, color: colors.brand },
-  tagEmpty: { padding: 16, fontSize: 13, color: PlatformColor('tertiaryLabel') as unknown as string, textAlign: 'center' },
+  tagEmpty: { padding: 16, fontSize: 13, lineHeight: 18, color: PlatformColor('tertiaryLabel') as unknown as string, textAlign: 'center' },
 
-  // Unit picker sheet
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' },
   unitSheet: {
     backgroundColor: PlatformColor('systemBackground') as unknown as string,
@@ -320,6 +410,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     maxHeight: '60%',
   },
+  unitListContent: { paddingBottom: 32 },
   sheetHandle: {
     width: 36,
     height: 4,
@@ -338,7 +429,6 @@ const styles = StyleSheet.create({
   unitOptionText: { fontSize: 16, color: PlatformColor('secondaryLabel') as unknown as string },
   unitOptionTextSel: { color: colors.brand, fontWeight: '600' },
 
-  // Ingredient editor
   ingEditor: {
     paddingVertical: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -372,7 +462,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     minWidth: 36,
   },
-  ingUnitText: { fontSize: 13, color: colors.brand, fontWeight: '500' },
+  ingUnitText: { fontSize: 13, lineHeight: 18, color: colors.brand, fontWeight: '600' },
   ingPlaceholder: { color: PlatformColor('tertiaryLabel') as unknown as string },
   ingName: {
     flex: 1,
@@ -391,5 +481,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
     paddingVertical: 4,
   },
-  allergenText: { fontSize: 10, color: '#92400e', fontWeight: '600' },
+  allergenText: { fontSize: 11, lineHeight: 13, color: '#92400e', fontWeight: '600' },
 })

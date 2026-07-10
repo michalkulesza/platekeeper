@@ -12,16 +12,6 @@ type Props = {
   onDone: () => void
 }
 
-// Single-line row of arbitrary children (e.g. tag pills) that scrolls back
-// and forth for one pause-scroll-pause-scroll-back cycle whenever `turn`
-// changes, instead of wrapping. Meant to be driven by MarqueeSyncProvider
-// (via turn/onOverflowChange/onDone) so it takes turns with sibling
-// marquees instead of scrolling simultaneously.
-//
-// Mirrors MarqueeText's measurement approach: an invisible absolutely-
-// positioned copy of the row reports the true intrinsic width (Yoga would
-// otherwise clamp an in-flow row to the overflow:hidden container's width),
-// which is then used to size and animate the visible copy.
 const MarqueeRow = ({ children, containerStyle, gap = 0, turn, onOverflowChange, onDone }: Props) => {
   const [containerWidth, setContainerWidth] = useState(0)
   const [contentWidth, setContentWidth] = useState(0)
@@ -36,21 +26,18 @@ const MarqueeRow = ({ children, containerStyle, gap = 0, turn, onOverflowChange,
 
   const animatedStyle = useMarqueeAnimation(contentWidth, containerWidth, turn, onOverflowChange, onDone)
 
+  const measuredWidthStyle = contentWidth > 0 ? { width: contentWidth } : null
+
   return (
     <View style={[{ overflow: 'hidden' }, containerStyle]} onLayout={onContainerLayout}>
+      {/* Invisible copy reports intrinsic width, since Yoga would otherwise clamp an in-flow row to the overflow:hidden container's width. */}
       <View
         style={{ position: 'absolute', opacity: 0, flexDirection: 'row', gap }}
         onLayout={onContentLayout}
       >
         {children}
       </View>
-      <Reanimated.View
-        style={[
-          { flexDirection: 'row', gap },
-          animatedStyle,
-          contentWidth > 0 ? { width: contentWidth } : null,
-        ]}
-      >
+      <Reanimated.View style={[{ flexDirection: 'row', gap }, animatedStyle, measuredWidthStyle]}>
         {children}
       </Reanimated.View>
     </View>

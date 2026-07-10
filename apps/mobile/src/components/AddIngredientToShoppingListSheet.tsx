@@ -1,9 +1,10 @@
-import { forwardRef, useCallback, useImperativeHandle, useState } from 'react'
+import { forwardRef, useCallback, useImperativeHandle, useMemo, useState } from 'react'
 import {
   KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
+  PressableStateCallbackType,
   StyleSheet,
   Text,
   TextInput,
@@ -22,8 +23,7 @@ interface AddIngredientToShoppingListSheetProps {
   onConfirm: (text: string) => void
 }
 
-// Centered iOS alert-style popup that lets the user review/edit an
-// ingredient's text before it is added to the shopping list.
+// Renders as a centered alert-style popup, not a bottom sheet, despite the component's name.
 const AddIngredientToShoppingListSheet = forwardRef<
   AddIngredientToShoppingListSheetHandle,
   AddIngredientToShoppingListSheetProps
@@ -40,17 +40,33 @@ const AddIngredientToShoppingListSheet = forwardRef<
     dismiss: () => setVisible(false),
   }))
 
+  const trimmedText = useMemo(() => text.trim(), [text])
+  const isAddDisabled = trimmedText.length === 0
+
   const handleCancel = useCallback(() => {
     setVisible(false)
   }, [])
 
   const handleAdd = useCallback(() => {
-    const trimmed = text.trim()
-    if (!trimmed) return
-    onConfirm(trimmed)
+    if (!trimmedText) return
+    onConfirm(trimmedText)
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
     setVisible(false)
-  }, [text, onConfirm])
+  }, [trimmedText, onConfirm])
+
+  const getCancelButtonStyle = useCallback(
+    ({ pressed }: PressableStateCallbackType) => [
+      styles.button,
+      styles.buttonLeft,
+      pressed && styles.buttonPressed,
+    ],
+    [],
+  )
+
+  const getAddButtonStyle = useCallback(
+    ({ pressed }: PressableStateCallbackType) => [styles.button, pressed && styles.buttonPressed],
+    [],
+  )
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={handleCancel}>
@@ -75,12 +91,14 @@ const AddIngredientToShoppingListSheet = forwardRef<
                 multiline
                 textAlignVertical="top"
                 returnKeyType="done"
+                keyboardType="default"
+                textContentType="none"
               />
             </View>
             <View style={styles.buttonRow}>
               <Pressable
                 onPress={handleCancel}
-                style={({ pressed }) => [styles.button, styles.buttonLeft, pressed && styles.buttonPressed]}
+                style={getCancelButtonStyle}
                 accessibilityLabel={t('common.cancel')}
                 accessibilityRole="button"
               >
@@ -88,12 +106,12 @@ const AddIngredientToShoppingListSheet = forwardRef<
               </Pressable>
               <Pressable
                 onPress={handleAdd}
-                disabled={!text.trim()}
-                style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+                disabled={isAddDisabled}
+                style={getAddButtonStyle}
                 accessibilityLabel={t('common.add')}
                 accessibilityRole="button"
               >
-                <Text style={[styles.addText, !text.trim() && styles.addTextDisabled]}>
+                <Text style={[styles.addText, isAddDisabled && styles.addTextDisabled]}>
                   {t('common.add')}
                 </Text>
               </Pressable>

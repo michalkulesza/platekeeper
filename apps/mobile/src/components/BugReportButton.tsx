@@ -15,18 +15,25 @@ const BugReportButton = () => {
   const handlePress = useCallback(() => {
     if (isNavigatingRef.current) return
     isNavigatingRef.current = true
+
     startBugReportScreenshot()
     router.push({ pathname: '/bug-report', params: { route: pathname } })
+
     setTimeout(() => {
       isNavigatingRef.current = false
     }, 500)
   }, [router, pathname])
 
+  const getPressableStyle = useCallback(
+    ({ pressed }: { pressed: boolean }) => [styles.btn, pressed && styles.btnPressed],
+    [],
+  )
+
   return (
     <Pressable
       onPress={handlePress}
       hitSlop={8}
-      style={({ pressed }) => [styles.btn, pressed && { opacity: 0.7 }]}
+      style={getPressableStyle}
       accessibilityLabel={t('bugReport.title')}
       accessibilityRole="button"
     >
@@ -37,6 +44,7 @@ const BugReportButton = () => {
 
 const styles = StyleSheet.create({
   btn: { padding: 4 },
+  btnPressed: { opacity: 0.7 },
 })
 
 export default BugReportButton

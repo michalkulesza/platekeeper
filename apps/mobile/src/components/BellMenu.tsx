@@ -1,19 +1,100 @@
 import { useCallback, useMemo } from 'react'
 import { Alert, StyleSheet, Text, View } from 'react-native'
-import { MenuView } from '@react-native-menu/menu'
+import { MenuView, type MenuAction } from '@react-native-menu/menu'
 import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import { Feather } from '@expo/vector-icons'
 import { useRouter, usePathname } from 'expo-router'
+import type { InvitationOut, HouseholdLeaveNotificationOut } from '@carrot/shared/types'
 import { colors } from '../theme/colors'
 import {
   useTimers,
   getRemainingSeconds,
   formatCountdown,
+  type TimerEntry,
 } from '../context/TimerContext'
-import { useNotificationHistory } from '../context/NotificationHistoryContext'
+import { useNotificationHistory, type NotificationItem } from '../context/NotificationHistoryContext'
 import { useHousehold } from '../context/HouseholdContext'
 import { useAuth } from '../context/AuthContext'
 import { useApiClient } from '@carrot/shared/api/context'
+
+const buildTimerAction = (timer: TimerEntry, pathname: string, t: TFunction): MenuAction => {
+  const remaining = getRemainingSeconds(timer)
+  const isRunning = timer.status === 'running'
+  const subtitle = isRunning
+    ? formatCountdown(remaining)
+    : `${t('timers.timerPaused')} · ${formatCountdown(remaining)}`
+  const showGotoRecipe = pathname !== `/recipe/${timer.recipeId}`
+
+  const subactions: MenuAction[] = [
+    isRunning
+      ? { id: `timer-pause-${timer.id}`, title: t('common.pause'), image: 'pause.circle' }
+      : { id: `timer-resume-${timer.id}`, title: t('common.resume'), image: 'play.circle' },
+    ...(showGotoRecipe
+      ? [{ id: `timer-goto-${timer.id}`, title: t('timers.goToRecipe'), image: 'arrow.right.circle' }]
+      : []),
+    {
+      id: `timer-cancel-${timer.id}`,
+      title: t('common.cancel'),
+      image: 'xmark.circle',
+      attributes: { destructive: true },
+    },
+  ]
+
+  return {
+    id: `timer-${timer.id}`,
+    title: `⏱ ${timer.recipeTitle}`,
+    subtitle,
+    subactions,
+  }
+}
+
+const buildInvitationAction = (inv: InvitationOut, t: TFunction): MenuAction => ({
+  id: `inv-${inv.id}`,
+  title: `🏠 ${t('bell.invitationTitle', { name: inv.household_name })}`,
+  subtitle: t('bell.from', { name: inv.invited_by_nickname || inv.invited_by_email }),
+  subactions: [
+    { id: `inv-accept-${inv.id}`, title: t('common.accept'), image: 'checkmark.circle' },
+    {
+      id: `inv-decline-${inv.id}`,
+      title: t('common.decline'),
+      image: 'xmark.circle',
+      attributes: { destructive: true },
+    },
+  ],
+})
+
+const buildLeaveAction = (n: HouseholdLeaveNotificationOut, t: TFunction): MenuAction => ({
+  id: `leave-dismiss-${n.id}`,
+  title: `👋 ${t('bell.memberLeft', { name: n.left_user_nickname || n.left_user_email, household: n.household_name })}`,
+})
+
+const buildNotifAction = (notif: NotificationItem): MenuAction | null => {
+  switch (notif.type) {
+    case 'recipe_imported':
+      return { id: `recipe-imported-${notif.id}`, title: `✅ ${notif.title}`, subtitle: notif.body }
+    case 'recipe_failed':
+      return {
+        id: `recipe-failed-${notif.id}`,
+        title: `❌ ${notif.title}`,
+        subtitle: notif.body,
+        attributes: { destructive: true },
+      }
+    default:
+      return null
+  }
+}
+
+const buildImportRecipeRoute = (kind: string, input: Record<string, string>): string => {
+  switch (kind) {
+    case 'url':
+      return `/import-recipe?type=url&value=${encodeURIComponent(input.url)}`
+    case 'text':
+      return `/import-recipe?type=text&value=${encodeURIComponent(input.text)}`
+    default:
+      return '/import-recipe'
+  }
+}
 
 const BellMenu = () => {
   const { t } = useTranslation()
@@ -26,9 +107,9 @@ const BellMenu = () => {
   const api = useApiClient()
 
   const timerList = useMemo(() => [...timers.values()], [timers])
+
   // recipe_importing entries exist only so app/_layout.tsx's poller knows which jobs to
-  // check — intentionally not surfaced here; only the eventual imported/failed result
-  // should notify the user.
+  // check — not surfaced here; only the eventual imported/failed result should notify the user.
   const visibleNotifCount = useMemo(
     () => notifHistory.filter((n) => n.type !== 'recipe_importing').length,
     [notifHistory],
@@ -40,82 +121,21 @@ const BellMenu = () => {
       return [{ id: 'empty', title: t('bell.noNotifications'), attributes: { disabled: true } }]
     }
 
-    const items = []
+    const items: MenuAction[] = []
 
-    for (const timer of timerList) {
-      const remaining = getRemainingSeconds(timer)
-      const isRunning = timer.status === 'running'
-      items.push({
-        id: `timer-${timer.id}`,
-        title: `⏱ ${timer.recipeTitle}`,
-        subtitle: isRunning
-          ? formatCountdown(remaining)
-          : `${t('timers.timerPaused')} · ${formatCountdown(remaining)}`,
-        subactions: [
-          isRunning
-            ? { id: `timer-pause-${timer.id}`, title: t('common.pause'), image: 'pause.circle' }
-            : { id: `timer-resume-${timer.id}`, title: t('common.resume'), image: 'play.circle' },
-          ...(pathname === `/recipe/${timer.recipeId}` ? [] : [{ id: `timer-goto-${timer.id}`, title: t('timers.goToRecipe'), image: 'arrow.right.circle' }]),
-          {
-            id: `timer-cancel-${timer.id}`,
-            title: t('common.cancel'),
-            image: 'xmark.circle',
-            attributes: { destructive: true },
-          },
-        ],
-      })
-    }
-
-    for (const inv of invitations) {
-      items.push({
-        id: `inv-${inv.id}`,
-        title: `🏠 ${t('bell.invitationTitle', { name: inv.household_name })}`,
-        subtitle: t('bell.from', { name: inv.invited_by_nickname || inv.invited_by_email }),
-        subactions: [
-          { id: `inv-accept-${inv.id}`, title: t('common.accept'), image: 'checkmark.circle' },
-          {
-            id: `inv-decline-${inv.id}`,
-            title: t('common.decline'),
-            image: 'xmark.circle',
-            attributes: { destructive: true },
-          },
-        ],
-      })
-    }
-
-    for (const n of leaveNotifications) {
-      items.push({
-        id: `leave-dismiss-${n.id}`,
-        title: `👋 ${t('bell.memberLeft', { name: n.left_user_nickname || n.left_user_email, household: n.household_name })}`,
-      })
-    }
-
+    for (const timer of timerList) items.push(buildTimerAction(timer, pathname, t))
+    for (const inv of invitations) items.push(buildInvitationAction(inv, t))
+    for (const n of leaveNotifications) items.push(buildLeaveAction(n, t))
     for (const notif of notifHistory) {
-      switch (notif.type) {
-        case 'recipe_imported':
-          items.push({
-            id: `recipe-imported-${notif.id}`,
-            title: `✅ ${notif.title}`,
-            subtitle: notif.body,
-          })
-          break
-        case 'recipe_failed':
-          items.push({
-            id: `recipe-failed-${notif.id}`,
-            title: `❌ ${notif.title}`,
-            subtitle: notif.body,
-            attributes: { destructive: true },
-          })
-          break
-      }
+      const action = buildNotifAction(notif)
+      if (action) items.push(action)
     }
 
     if (visibleNotifCount > 0) {
       items.push({
-        id: 'clear-history',
         // No `image` here (unlike subactions) — a native icon on this row alone makes iOS
-        // reserve a left icon column for every sibling row in the menu, pushing all the
-        // other titles rightward.
+        // reserve a left icon column for every sibling row in the menu.
+        id: 'clear-history',
         title: t('common.clearAll'),
         attributes: { destructive: true },
       })
@@ -150,13 +170,14 @@ const BellMenu = () => {
         case 'inv-accept':
           try {
             await api.acceptInvitation(payload)
-            // Accepting switches the user's active household server-side, so the
-            // local user object must be refreshed or the UI keeps showing stale state.
+            // Accepting switches the user's active household server-side, so the local
+            // user object must be refreshed or the UI keeps showing stale state.
             await refreshUser()
             refetchInvitations()
             refetchHouseholds()
           } catch (e) {
-            Alert.alert(t('common.ok'), e instanceof Error ? e.message : 'Error')
+            const errorMessage = e instanceof Error ? e.message : t('bell.acceptInvitationFailed')
+            Alert.alert(t('common.ok'), errorMessage)
           }
           break
         case 'inv-decline':
@@ -179,17 +200,7 @@ const BellMenu = () => {
         case 'recipe-failed': {
           const notif = notifHistory.find((n) => n.id === payload)
           if (notif?.job_kind && notif?.job_input) {
-            const { job_kind: kind, job_input: inp } = notif
-            switch (kind) {
-              case 'url':
-                router.push(`/import-recipe?type=url&value=${encodeURIComponent(inp.url!)}`)
-                break
-              case 'text':
-                router.push(`/import-recipe?type=text&value=${encodeURIComponent(inp.text!)}`)
-                break
-              default:
-                router.push('/import-recipe')
-            }
+            router.push(buildImportRecipeRoute(notif.job_kind, notif.job_input))
           }
           dismissNotif(payload)
           break
@@ -203,11 +214,7 @@ const BellMenu = () => {
   )
 
   return (
-    <MenuView
-      title={t('bell.notifications')}
-      actions={actions}
-      onPressAction={handleAction}
-    >
+    <MenuView title={t('bell.notifications')} actions={actions} onPressAction={handleAction}>
       <View style={styles.bellBtn}>
         <Feather name="bell" size={22} color={colors.secondaryLabel} />
         {totalCount > 0 && (
@@ -232,7 +239,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.red,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 3,
+    paddingHorizontal: 4,
   },
   badgeText: { color: colors.background, fontSize: 11, fontWeight: '700' },
 })

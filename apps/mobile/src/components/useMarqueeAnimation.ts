@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import {
   cancelAnimation,
   Easing,
@@ -13,10 +13,7 @@ import {
 const PAUSE_MS = 1200
 const SPEED_PX_PER_SEC = 28
 
-// Drives one pause-scroll-pause-scroll-back cycle of a marquee's translateX
-// whenever `turn` changes to a non-null value, then reports completion via
-// onDone so a MarqueeSyncProvider can hand the turn to the next participant
-// instead of every marquee scrolling simultaneously and independently.
+// Reports completion via onDone so MarqueeSyncProvider can hand the turn to the next participant instead of every marquee scrolling at once.
 export const useMarqueeAnimation = (
   contentWidth: number,
   containerWidth: number,
@@ -30,15 +27,14 @@ export const useMarqueeAnimation = (
   const onDoneRef = useRef(onDone)
   onDoneRef.current = onDone
 
-  useEffect(() => {
-    const overflow = contentWidth - containerWidth
-    onOverflowChangeRef.current(overflow > 0 && containerWidth > 0)
-  }, [contentWidth, containerWidth])
+  const overflow = useMemo(() => contentWidth - containerWidth, [contentWidth, containerWidth])
+  const overflows = useMemo(() => overflow > 0 && containerWidth > 0, [overflow, containerWidth])
 
   useEffect(() => {
-    const overflow = contentWidth - containerWidth
-    const overflows = overflow > 0 && containerWidth > 0
+    onOverflowChangeRef.current(overflows)
+  }, [overflows])
 
+  useEffect(() => {
     if (turn === null || !overflows) {
       cancelAnimation(translateX)
       translateX.value = 0
@@ -46,19 +42,20 @@ export const useMarqueeAnimation = (
     }
 
     translateX.value = 0
+
     const duration = (overflow / SPEED_PX_PER_SEC) * 1000
+    const handleReturnComplete = (finished?: boolean) => {
+      if (finished) runOnJS(onDoneRef.current)()
+    }
+
     translateX.value = withSequence(
       withDelay(PAUSE_MS, withTiming(-overflow, { duration, easing: Easing.linear })),
-      withDelay(
-        PAUSE_MS,
-        withTiming(0, { duration, easing: Easing.linear }, (finished) => {
-          if (finished) runOnJS(onDoneRef.current)()
-        }),
-      ),
+      withDelay(PAUSE_MS, withTiming(0, { duration, easing: Easing.linear }, handleReturnComplete)),
     )
+
     return () => cancelAnimation(translateX)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contentWidth, containerWidth, turn])
+  }, [overflow, overflows, turn])
 
   return useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],

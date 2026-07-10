@@ -41,6 +41,64 @@ const chunk = <T,>(arr: T[], size: number): T[][] => {
   return rows
 }
 
+interface DayCellProps {
+  date: Date | null
+  isToday: boolean
+  isJustAssigned: boolean
+  isAlreadyAssigned: boolean
+  disabled: boolean
+  locale: string
+  onPress: (date: Date) => void
+}
+
+const DayCell = ({ date, isToday, isJustAssigned, isAlreadyAssigned, disabled, locale, onPress }: DayCellProps) => {
+  const getDayCellStyle = useCallback(
+    ({ pressed }: { pressed: boolean }) => [styles.dayCell, pressed && { opacity: 0.6 }],
+    [],
+  )
+
+  const handlePress = useCallback(() => {
+    if (date) onPress(date)
+  }, [date, onPress])
+
+  if (!date) return <View style={styles.dayCell} />
+
+  const accessibilityLabel = `${date.getDate()} ${formatMonthYear(date, locale)}`
+
+  return (
+    <Pressable
+      onPress={handlePress}
+      disabled={disabled}
+      style={getDayCellStyle}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole="button"
+    >
+      <View
+        style={[
+          styles.dayCircle,
+          isToday && styles.dayCircleToday,
+          isAlreadyAssigned && styles.dayCircleAlreadyAssigned,
+          isJustAssigned && styles.dayCircleAssigned,
+        ]}
+      >
+        {isJustAssigned ? (
+          <Feather name="check" size={16} color="#ffffff" />
+        ) : (
+          <Text
+            style={[
+              styles.dayNum,
+              isToday && styles.dayNumToday,
+              isAlreadyAssigned && styles.dayNumAlreadyAssigned,
+            ]}
+          >
+            {date.getDate()}
+          </Text>
+        )}
+      </View>
+    </Pressable>
+  )
+}
+
 const AddToMealPlanSheet = forwardRef<AddToMealPlanSheetHandle, AddToMealPlanSheetProps>(
   ({ recipeId }, ref) => {
     const { t, i18n } = useTranslation()
@@ -79,6 +137,11 @@ const AddToMealPlanSheet = forwardRef<AddToMealPlanSheetHandle, AddToMealPlanShe
       [],
     )
 
+    const getMonthNavButtonStyle = useCallback(
+      ({ pressed }: { pressed: boolean }) => [styles.monthNavBtn, pressed && { opacity: 0.6 }],
+      [],
+    )
+
     const handlePrevMonth = useCallback(() => {
       setVisibleMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))
     }, [])
@@ -91,6 +154,7 @@ const AddToMealPlanSheet = forwardRef<AddToMealPlanSheetHandle, AddToMealPlanShe
       (date: Date) => {
         const isoDate = toISODate(date)
         setJustAssigned(isoDate)
+
         setEntry.mutate(
           { date: isoDate, recipeId },
           {
@@ -135,7 +199,7 @@ const AddToMealPlanSheet = forwardRef<AddToMealPlanSheetHandle, AddToMealPlanShe
             <Pressable
               onPress={handlePrevMonth}
               hitSlop={12}
-              style={({ pressed }) => [styles.monthNavBtn, pressed && { opacity: 0.6 }]}
+              style={getMonthNavButtonStyle}
               accessibilityLabel={t('mealPlan.prevMonth')}
               accessibilityRole="button"
             >
@@ -145,7 +209,7 @@ const AddToMealPlanSheet = forwardRef<AddToMealPlanSheetHandle, AddToMealPlanShe
             <Pressable
               onPress={handleNextMonth}
               hitSlop={12}
-              style={({ pressed }) => [styles.monthNavBtn, pressed && { opacity: 0.6 }]}
+              style={getMonthNavButtonStyle}
               accessibilityLabel={t('mealPlan.nextMonth')}
               accessibilityRole="button"
             >
@@ -163,46 +227,20 @@ const AddToMealPlanSheet = forwardRef<AddToMealPlanSheetHandle, AddToMealPlanShe
             {rows.map((row, rowIndex) => (
               <View key={rowIndex} style={styles.gridRow}>
                 {row.map((date, i) => {
-                  if (!date) return <View key={i} style={styles.dayCell} />
-                  const isoDate = toISODate(date)
-                  const isToday = isoDate === todayIso
-                  const isJustAssigned = justAssigned === isoDate
-                  const isAlreadyAssigned = !isJustAssigned && assignedDates.has(isoDate)
+                  const isoDate = date ? toISODate(date) : null
+                  const isJustAssigned = isoDate !== null && justAssigned === isoDate
+                  const isAlreadyAssigned = isoDate !== null && !isJustAssigned && assignedDates.has(isoDate)
                   return (
-                    <Pressable
+                    <DayCell
                       key={i}
-                      onPress={() => handleSelectDate(date)}
+                      date={date}
+                      isToday={isoDate === todayIso}
+                      isJustAssigned={isJustAssigned}
+                      isAlreadyAssigned={isAlreadyAssigned}
                       disabled={setEntry.isPending}
-                      style={({ pressed }) => [
-                        styles.dayCell,
-                        pressed && { opacity: 0.6 },
-                      ]}
-                      accessibilityLabel={`${date.getDate()} ${formatMonthYear(date, i18n.language)}`}
-                      accessibilityRole="button"
-                    >
-                      <View
-                        style={[
-                          styles.dayCircle,
-                          isToday && styles.dayCircleToday,
-                          isAlreadyAssigned && styles.dayCircleAlreadyAssigned,
-                          isJustAssigned && styles.dayCircleAssigned,
-                        ]}
-                      >
-                        {isJustAssigned ? (
-                          <Feather name="check" size={16} color="#ffffff" />
-                        ) : (
-                          <Text
-                            style={[
-                              styles.dayNum,
-                              isToday && styles.dayNumToday,
-                              isAlreadyAssigned && styles.dayNumAlreadyAssigned,
-                            ]}
-                          >
-                            {date.getDate()}
-                          </Text>
-                        )}
-                      </View>
-                    </Pressable>
+                      locale={i18n.language}
+                      onPress={handleSelectDate}
+                    />
                   )
                 })}
               </View>
