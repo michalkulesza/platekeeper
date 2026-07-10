@@ -5,13 +5,11 @@ import {
   Alert,
   FlatList,
   ListRenderItemInfo,
-  PlatformColor,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from 'react-native'
-import { Image } from 'expo-image'
 import Reanimated, {
   Easing,
   FadeInDown,
@@ -21,7 +19,7 @@ import Reanimated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated'
-import { MenuView } from '@react-native-menu/menu'
+import type { NativeActionEvent } from '@react-native-menu/menu'
 import { Swipeable } from 'react-native-gesture-handler'
 import { useTranslation } from 'react-i18next'
 import { useNavigation, useRouter } from 'expo-router'
@@ -33,80 +31,28 @@ import { useApiClient } from '@carrot/shared/api/context'
 import { useQueryClient } from '@tanstack/react-query'
 import type { RecipeOut, Tag } from '@carrot/shared/types'
 import { tTag } from '@carrot/shared/utils/tagUtils'
-import { Feather } from '@expo/vector-icons'
-import BellMenu from '../components/BellMenu'
-import BugReportButton from '../components/BugReportButton'
-import GlassViewSafe from '../components/GlassViewSafe'
-import MarqueeText from '../components/MarqueeText'
-import MarqueeRow from '../components/MarqueeRow'
-import { MarqueeSyncProvider, MarqueeSyncSlots } from '../components/MarqueeSync'
-import { colors } from '../theme/colors'
-import { proxyThumbnailUrl, PLACEHOLDER_URL } from '../api/thumbnailUrl'
-import { useNotificationHistory, type NotificationItem } from '../context/NotificationHistoryContext'
-import { useScreenLoading } from '../hooks/useScreenLoading'
-import { useHousehold } from '../context/HouseholdContext'
-
-const PERSONAL_MENU_ID = '__personal__'
-const MANAGE_TIP_MENU_ID = '__manage_tip__'
-
-// The search bar's expanded header height can only be learned from a real focus event
-// (see comment near searchBarHeightRef below) — it's a fixed native constant for this
-// screen's header configuration, so once measured on this device it's persisted to disk
-// and never needs to be (re-)learned again, only on the very first search tap ever.
-const SEARCH_BAR_HEIGHT_DELTA_STORAGE_KEY = 'recipes-search-bar-height-delta'
-let learnedSearchBarHeightDelta: number | null = null
-
-const ThumbnailImage = ({ url, style }: { url: string; style: object }) => {
-  const [errored, setErrored] = useState(false)
-  const fallbackUri = PLACEHOLDER_URL || undefined
-  if (errored && fallbackUri) {
-    return <Image source={{ uri: fallbackUri }} style={style} contentFit="cover" />
-  }
-  return (
-    <Image
-      source={{ uri: proxyThumbnailUrl(url)! }}
-      style={style}
-      contentFit="cover"
-      cachePolicy="memory-disk"
-      recyclingKey={url}
-      onError={() => setErrored(true)}
-    />
-  )
-}
-
-type SortMode = 'newest' | 'oldest' | 'title_asc' | 'title_desc' | 'edited_newest' | 'edited_oldest'
-
-const SORT_OPTIONS: { key: SortMode; labelKey: string }[] = [
-  { key: 'newest', labelKey: 'recipes.sortNewest' },
-  { key: 'oldest', labelKey: 'recipes.sortOldest' },
-  { key: 'edited_newest', labelKey: 'recipes.sortEditedNewest' },
-  { key: 'edited_oldest', labelKey: 'recipes.sortEditedOldest' },
-  { key: 'title_asc', labelKey: 'recipes.sortTitleAZ' },
-  { key: 'title_desc', labelKey: 'recipes.sortTitleZA' },
-]
-
-const PendingJobCard = ({ notif }: { notif: NotificationItem }) => {
-  const { t } = useTranslation()
-  const sourceKey = `recipes.extractingFrom_${notif.job_kind ?? 'image'}` as const
-  const startedAt = useMemo(() => {
-    const d = new Date(notif.timestamp)
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  }, [notif.timestamp])
-  return (
-    <View style={styles.pendingCard}>
-      <View style={styles.pendingImageWrap}>
-        <Feather name="clock" size={28} color={PlatformColor('secondaryLabel') as unknown as string} />
-      </View>
-      <View style={styles.pendingBody}>
-        <Text style={styles.pendingTitle}>{t('recipes.extractingRecipe')}</Text>
-        <Text style={styles.pendingMeta}>{t(sourceKey)}  ·  {startedAt}</Text>
-      </View>
-      <View style={styles.pendingSpinnerWrap}>
-        <ActivityIndicator size="small" color={colors.brand} />
-      </View>
-    </View>
-  )
-}
+import GlassViewSafe from '../../components/GlassViewSafe'
+import MarqueeText from '../../components/MarqueeText'
+import MarqueeRow from '../../components/MarqueeRow'
+import { MarqueeSyncProvider, MarqueeSyncSlots } from '../../components/MarqueeSync'
+import { colors } from '../../theme/colors'
+import { useNotificationHistory } from '../../context/NotificationHistoryContext'
+import { useScreenLoading } from '../../hooks/useScreenLoading'
+import { useHousehold } from '../../context/HouseholdContext'
+import {
+  MANAGE_TIP_MENU_ID,
+  PERSONAL_MENU_ID,
+  SEARCH_BAR_HEIGHT_DELTA_STORAGE_KEY,
+  SORT_OPTIONS,
+  learnedSearchBarHeightDelta,
+  setLearnedSearchBarHeightDelta,
+  type SortMode,
+} from './helpers'
+import { styles } from './styles'
+import ThumbnailImage from './ThumbnailImage'
+import PendingJobCard from './PendingJobCard'
+import HeaderTitle from './HeaderTitle'
+import HeaderRight from './HeaderRight'
 
 const RecipesScreen = () => {
   const navigation = useNavigation()
@@ -128,7 +74,7 @@ const RecipesScreen = () => {
       const parsed = Number(val)
       if (Number.isFinite(parsed)) {
         searchBarHeightRef.current = parsed
-        learnedSearchBarHeightDelta = parsed
+        setLearnedSearchBarHeightDelta(parsed)
       }
     })
   }, [])
@@ -159,6 +105,19 @@ const RecipesScreen = () => {
     recipes.forEach((r) => seenIdsRef.current.add(r.id))
   }
 
+  const handleConfirmDelete = useCallback(
+    async (recipe: RecipeOut) => {
+      try {
+        await api.deleteRecipe(recipe.id)
+        qc.setQueryData<RecipeOut[]>(['recipes'], (old) => old?.filter((r) => r.id !== recipe.id) ?? [])
+        await qc.invalidateQueries({ queryKey: ['recipes'] })
+      } catch {
+        Alert.alert(t('recipes.failedToDelete'))
+      }
+    },
+    [api, qc, t],
+  )
+
   const handleDelete = useCallback(
     (recipe: RecipeOut) => {
       Alert.alert(
@@ -169,51 +128,45 @@ const RecipesScreen = () => {
           {
             text: t('common.delete'),
             style: 'destructive',
-            onPress: async () => {
-              try {
-                await api.deleteRecipe(recipe.id)
-                qc.setQueryData<RecipeOut[]>(['recipes'], (old) =>
-                  old?.filter((r) => r.id !== recipe.id) ?? [],
-                )
-                await qc.invalidateQueries({ queryKey: ['recipes'] })
-              } catch {
-                Alert.alert(t('recipes.failedToDelete'))
-              }
-            },
+            onPress: () => handleConfirmDelete(recipe),
           },
         ],
       )
     },
-    [api, qc, t],
+    [handleConfirmDelete, t],
   )
 
   const renderSwipeActions = useCallback(
-    (item: RecipeOut) => (
-      <View style={styles.swipeActions}>
-        <Pressable
-          style={({ pressed }) => [styles.swipeEdit, pressed && { opacity: 0.7 }]}
-          onPress={() => {
-            swipeableRefs.current.get(item.id)?.close()
-            router.push({ pathname: '/recipe/[id]', params: { id: item.id, edit: '1' } })
-          }}
-          accessibilityLabel={t('common.edit')}
-          accessibilityRole="button"
-        >
-          <Text style={styles.swipeActionText}>{t('common.edit')}</Text>
-        </Pressable>
-        <Pressable
-          style={({ pressed }) => [styles.swipeDelete, pressed && { opacity: 0.7 }]}
-          onPress={() => {
-            swipeableRefs.current.get(item.id)?.close()
-            handleDelete(item)
-          }}
-          accessibilityLabel={t('common.delete')}
-          accessibilityRole="button"
-        >
-          <Text style={styles.swipeActionText}>{t('common.delete')}</Text>
-        </Pressable>
-      </View>
-    ),
+    (item: RecipeOut) => {
+      const handleEditPress = () => {
+        swipeableRefs.current.get(item.id)?.close()
+        router.push({ pathname: '/recipe/[id]', params: { id: item.id, edit: '1' } })
+      }
+      const handleDeletePress = () => {
+        swipeableRefs.current.get(item.id)?.close()
+        handleDelete(item)
+      }
+      return (
+        <View style={styles.swipeActions}>
+          <Pressable
+            style={({ pressed }) => [styles.swipeEdit, pressed && { opacity: 0.7 }]}
+            onPress={handleEditPress}
+            accessibilityLabel={t('common.edit')}
+            accessibilityRole="button"
+          >
+            <Text style={styles.swipeActionText}>{t('common.edit')}</Text>
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [styles.swipeDelete, pressed && { opacity: 0.7 }]}
+            onPress={handleDeletePress}
+            accessibilityLabel={t('common.delete')}
+            accessibilityRole="button"
+          >
+            <Text style={styles.swipeActionText}>{t('common.delete')}</Text>
+          </Pressable>
+        </View>
+      )
+    },
     [handleDelete, router, t],
   )
 
@@ -226,7 +179,7 @@ const RecipesScreen = () => {
   , [sort, t])
 
   const handleFilterAction = useCallback(
-    ({ nativeEvent }: { nativeEvent: { event: string } }) => {
+    ({ nativeEvent }: NativeActionEvent) => {
       const sortOption = SORT_OPTIONS.find((o) => o.key === nativeEvent.event)
       if (sortOption) setSort(sortOption.key)
     },
@@ -265,7 +218,7 @@ const RecipesScreen = () => {
   )
 
   const handleHouseholdAction = useCallback(
-    ({ nativeEvent }: { nativeEvent: { event: string } }) => {
+    ({ nativeEvent }: NativeActionEvent) => {
       if (nativeEvent.event === MANAGE_TIP_MENU_ID) return
       const id = nativeEvent.event === PERSONAL_MENU_ID ? null : nativeEvent.event
       if (id !== activeHouseholdId) {
@@ -312,7 +265,7 @@ const RecipesScreen = () => {
       const delta = headerHeight - collapsedHeaderHeightRef.current
       if (delta !== searchBarHeightRef.current) {
         searchBarHeightRef.current = delta
-        learnedSearchBarHeightDelta = delta
+        setLearnedSearchBarHeightDelta(delta)
         void AsyncStorage.setItem(SEARCH_BAR_HEIGHT_DELTA_STORAGE_KEY, String(delta))
       }
     } else {
@@ -350,65 +303,34 @@ const RecipesScreen = () => {
   }, [animateHeaderHeight, tagBarVisibleSV])
 
   useLayoutEffect(() => {
+    const headerSearchBarOptions = {
+      placeholder: t('recipes.searchPlaceholder'),
+      onChangeText: handleSearchChangeText,
+      onCancelButtonPress: handleSearchCancel,
+      onFocus: handleSearchFocus,
+      onBlur: handleSearchBlur,
+      autoCapitalize: 'none' as const,
+    }
     navigation.setOptions({
       title: t('nav.recipes'),
       headerTitle: () => (
-        <View style={styles.headerTitleWrap}>
-          <Text style={styles.headerTitleText} numberOfLines={1}>
-            {t('nav.recipes')}
-          </Text>
-          <MenuView
-            title={t('households.switchContext')}
-            actions={householdMenuActions}
-            onPressAction={handleHouseholdAction}
-          >
-            <View style={styles.householdSwitcher}>
-              <View
-                style={[
-                  styles.householdDot,
-                  activeHousehold?.color
-                    ? { backgroundColor: activeHousehold.color }
-                    : styles.householdDotEmpty,
-                ]}
-              />
-              <Text style={styles.householdSwitcherText} numberOfLines={1}>
-                {activeHousehold ? activeHousehold.name : t('households.personal')}
-              </Text>
-              <Feather name="chevron-down" size={13} color={colors.secondaryLabel} />
-            </View>
-          </MenuView>
-        </View>
+        <HeaderTitle
+          title={t('nav.recipes')}
+          householdMenuActions={householdMenuActions}
+          onHouseholdAction={handleHouseholdAction}
+          activeHousehold={activeHousehold}
+          personalLabel={t('households.personal')}
+          switchContextLabel={t('households.switchContext')}
+        />
       ),
-      headerSearchBarOptions: {
-        placeholder: t('recipes.searchPlaceholder'),
-        onChangeText: handleSearchChangeText,
-        onCancelButtonPress: handleSearchCancel,
-        onFocus: handleSearchFocus,
-        onBlur: handleSearchBlur,
-        autoCapitalize: 'none',
-      },
+      headerSearchBarOptions,
       headerRight: () => (
-        <View style={styles.headerBtns}>
-          <Pressable
-            onPress={() => router.push('/import-recipe')}
-            style={({ pressed }) => [styles.headerBtn, styles.addBtn, pressed && { opacity: 0.7 }]}
-            accessibilityLabel={t('nav.addRecipe')}
-            accessibilityRole="button"
-          >
-            <Feather name="plus" size={20} color="white" />
-          </Pressable>
-          <MenuView
-            title={t('recipes.sortBy')}
-            actions={filterMenuActions}
-            onPressAction={handleFilterAction}
-          >
-            <View style={styles.headerBtn}>
-              <Feather name="sliders" size={22} color={colors.secondaryLabel} />
-            </View>
-          </MenuView>
-          <BugReportButton />
-          <BellMenu />
-        </View>
+        <HeaderRight
+          addRecipeLabel={t('nav.addRecipe')}
+          sortByLabel={t('recipes.sortBy')}
+          filterMenuActions={filterMenuActions}
+          onFilterAction={handleFilterAction}
+        />
       ),
     })
   }, [
@@ -423,7 +345,6 @@ const RecipesScreen = () => {
     handleSearchFocus,
     handleSearchBlur,
     t,
-    router,
   ])
 
   const recipesWithOverrides = useMemo(
@@ -741,160 +662,5 @@ const RecipesScreen = () => {
     </View>
   )
 }
-
-const styles = StyleSheet.create({
-  headerTitleWrap: { flexDirection: 'column', alignItems: 'flex-start' },
-  headerTitleText: {
-    fontSize: 17,
-    lineHeight: 22,
-    fontWeight: '600',
-    color: colors.label,
-  },
-  householdSwitcher: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 1 },
-  householdDot: { width: 8, height: 8, borderRadius: 4 },
-  householdDotEmpty: {
-    borderWidth: 1.5,
-    borderColor: colors.secondaryLabel,
-  },
-  householdSwitcherText: {
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: '400',
-    color: colors.secondaryLabel,
-  },
-  headerBtns: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  headerBtn: { paddingHorizontal: 4, paddingVertical: 4 },
-  addBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.brand,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerAddText: {
-    fontSize: 26,
-    color: colors.brand,
-    lineHeight: 30,
-    fontWeight: '400',
-  },
-  screen: { flex: 1, backgroundColor: colors.secondaryBackground },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  errorText: { color: colors.red, fontSize: 16, textAlign: 'center' },
-  tagBar: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 0,
-    paddingBottom: 16,
-  },
-  tagBarDivider: {
-    width: StyleSheet.hairlineWidth,
-    height: 20,
-    backgroundColor: colors.opaqueSeparator,
-    marginHorizontal: 8,
-  },
-  tagScrollArea: { flex: 1 },
-  tagListContent: { gap: 8, paddingRight: 16 },
-  chip: {
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    overflow: 'hidden',
-  },
-  chipText: { fontSize: 13, color: colors.secondaryLabel },
-  chipTextSelected: { color: '#ffffff', fontWeight: '600' },
-  card: {
-    flexDirection: 'row',
-    backgroundColor: colors.background,
-    borderRadius: 10,
-    marginHorizontal: 16,
-    marginTop: 8,
-  },
-  cardImage: {
-    width: 100,
-    height: 100,
-    borderTopLeftRadius: 10,
-    borderBottomLeftRadius: 10,
-  },
-  cardImagePlaceholder: {
-    width: 100,
-    height: 100,
-    backgroundColor: colors.opaqueSeparator,
-    borderTopLeftRadius: 10,
-    borderBottomLeftRadius: 10,
-  },
-  cardBody: { flex: 1, padding: 12, justifyContent: 'center' },
-  cardTitle: { fontSize: 14, lineHeight: 18, fontWeight: '600', color: colors.label },
-  cardTitleMarquee: { marginBottom: 4 },
-  cardTags: { fontSize: 12, color: colors.brand, marginBottom: 2, marginTop: 1 },
-  cardTagsEmpty: { color: colors.tertiaryLabel },
-  cardTagRow: { marginBottom: 2, marginTop: 1 },
-  cardTagPill: {
-    backgroundColor: colors.brandLight,
-    borderRadius: 8,
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-  },
-  cardTagPillText: { fontSize: 12, lineHeight: 16, color: colors.brand, fontWeight: '500' },
-  cardMeta: { fontSize: 12, color: colors.tertiaryLabel },
-  empty: { padding: 40, alignItems: 'center' },
-  emptyText: {
-    fontSize: 16,
-    color: colors.secondaryLabel,
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  clearFilter: { fontSize: 16, color: colors.blue, fontWeight: '500' },
-  favBtn: {
-    width: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  favStar: { fontSize: 20, color: colors.opaqueSeparator },
-  favStarActive: { color: '#f59e0b' },
-  favChip: { marginLeft: 16 },
-  swipeContainer: { marginHorizontal: 16, marginTop: 8 },
-  cardInSwipeable: { marginHorizontal: 0, marginTop: 0 },
-  swipeActions: { flexDirection: 'row' },
-  swipeEdit: {
-    backgroundColor: colors.brand,
-    width: 80,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  swipeDelete: {
-    backgroundColor: colors.red,
-    width: 80,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderTopRightRadius: 10,
-    borderBottomRightRadius: 10,
-  },
-  swipeActionText: { color: colors.background, fontSize: 13, fontWeight: '600' },
-  pendingCard: {
-    flexDirection: 'row',
-    backgroundColor: colors.background,
-    borderRadius: 10,
-    marginHorizontal: 16,
-    marginTop: 8,
-    opacity: 0.85,
-  },
-  pendingImageWrap: {
-    width: 100,
-    height: 100,
-    borderTopLeftRadius: 10,
-    borderBottomLeftRadius: 10,
-    backgroundColor: colors.opaqueSeparator,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pendingBody: { flex: 1, padding: 12, justifyContent: 'center' },
-  pendingTitle: { fontSize: 14, lineHeight: 18, fontWeight: '600', color: colors.label, marginBottom: 4 },
-  pendingMeta: { fontSize: 12, color: colors.tertiaryLabel },
-  pendingSpinnerWrap: { width: 40, alignItems: 'center', justifyContent: 'center' },
-})
 
 export default RecipesScreen
