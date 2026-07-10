@@ -8,6 +8,31 @@
 
 # Code conventions
 
+## Cleanup
+- Whenever touching a file for any reason, remove unused code you notice along the way (unused imports, variables, functions, types, dead branches) even if unrelated to the task at hand — don't leave it for later.
+
+## Comments
+- Default to zero comments. Only write one when the WHY is genuinely non-obvious (a hidden constraint, a race condition, a platform quirk, a workaround for a specific bug) — never to restate what the code already says (variable/function names should carry that). If a well-named identifier or the surrounding code already makes it clear, delete the comment rather than keep it "for clarity."
+- Don't use decorative ASCII-divider section-header comments (e.g. `// ── Local types ────...`) that just restate the name of what follows. The code below already says what it is; delete the banner instead of maintaining it.
+- Keep even justified comments as short as possible — one line beats a 3-4 line paragraph. Trim to the single sentence that carries the non-obvious part; drop restated context.
+
+## Readability
+- Extract non-trivial inline expressions (ternaries, casts, template literals inside object literals/JSX/function args) into a named `const` above the usage, especially when the expression involves a type assertion (`as X`) or a condition. A named variable documents intent and is easier to scan than logic embedded inline.
+- Extract multi-line inline callbacks (e.g. `onPress: async () => { ... }` nested inside `Alert.alert`/config objects/JSX props) into a separate named handler (e.g. `handleXOnPress`) defined with `useCallback` alongside sibling handlers, then reference it by name at the call site. Keeps the outer structure (the alert/config/JSX) readable as a flat list instead of a nested block of logic.
+- Extract multi-line inline JSX (e.g. a ternary returning different elements assigned to a prop like `headerRight: () => (...)`, or a loading/empty-state ternary inline in the render tree) into a separate named component defined above the screen component, taking the minimal props it needs. Inside the extracted component, prefer an early `if (loading) return <Spinner />` over keeping the ternary — it reads as a guard clause rather than a branch to parse. Call it at the usage site as `<ComponentName {...props} />`. Keeps the parent JSX flat and gives the extracted UI a name that documents its purpose.
+- Extract inline function-as-prop values (e.g. RN's `style={({ pressed }) => [...]}` on `Pressable`) into a named `get*Style`-style helper (`useCallback`, deps on whatever state it reads) defined in the component body, then pass it by reference/call at the usage site (`style={getPressableStyle(c)}`). Same rationale as other extractions: name the logic instead of inlining it.
+- Inside function bodies, separate distinct steps with a blank line: setup/construction of one value, then the next, then control flow that consumes them (e.g. a `return new Promise(...)` or other block). Don't let unrelated statements run together into one dense paragraph of code — group by what each statement is doing, and blank-line between groups.
+- Extract an inline object literal built up to pass to an API/mutation call (e.g. a large `{...}` built inline inside `api.saveX({...})`) into a named `buildXPayload(...)` function in the relevant `helpers.ts`, taking the source data and returning the request-shaped object. The call site becomes `api.saveX(buildXPayload(data))` — one line instead of a 20+ line inline literal.
+- Extract a multi-line inline object literal passed directly to an imperative API call (e.g. `navigation.setOptions({...})`) into a named const (e.g. `editableHeaderOptions`) defined immediately above the call — one per branch when the value differs by condition. Keeps branching logic scannable as a short if/else of one-line calls instead of nested option blocks.
+
+## File organization
+- Keep screen/component files under ~500 lines. When a file grows past that, split it into a folder: `ScreenName.tsx` becomes `ScreenName/index.tsx` (still the default export, still imported the same way via the folder path).
+- Pure, non-component helper functions and their supporting types go in `ScreenName/helpers.ts` (e.g. data transforms like `toEditable`, small pure functions, local-only interfaces/types).
+- Each standalone sub-component that was previously a top-level `const` in the file gets its own file directly under the folder: `ScreenName/ComponentName.tsx`. Only promote a component to its own subfolder (`ScreenName/ComponentName/index.tsx`) if it in turn has further sub-components worth separating out — don't create a subfolder for a single component.
+- A shared `StyleSheet.create({...})` used across multiple extracted components goes in `ScreenName/styles.ts`, exported as `styles`, and imported wherever needed. Don't fragment one StyleSheet into several — even a component that uses only a few keys should import the shared `styles` object rather than getting its own partial copy.
+- Don't over-fragment: trivial inline pieces, one-off event handlers, and simple JSX blocks stay in the file that uses them. The goal is readability (nothing near 2000 lines), not maximal file-per-function splitting.
+- This is a mechanical split, not a rewrite — preserve behavior exactly, don't refactor logic while moving it. Verify with `tsc --noEmit` after moving.
+
 ## Data fetching
 - Use React Query (`useQuery` / `useMutation`) for all data fetching and mutations — no raw `useState` + `useEffect` fetch patterns.
 
