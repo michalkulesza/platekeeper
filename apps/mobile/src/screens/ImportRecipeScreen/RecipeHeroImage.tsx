@@ -1,6 +1,7 @@
-import { ActivityIndicator, Image, PlatformColor, Pressable, Text, View } from 'react-native'
+import { ActivityIndicator, PlatformColor, Pressable, Text, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Feather } from '@expo/vector-icons'
+import NetworkImage from '../../components/NetworkImage'
 import { proxyThumbnailUrl } from '../../api/thumbnailUrl'
 import { styles } from './styles'
 
@@ -24,11 +25,10 @@ const RecipeHeroImage = ({
   if (thumbnailUrl) {
     return (
       <View>
-        <Image
-          source={{ uri: proxyThumbnailUrl(thumbnailUrl)! }}
+        <NetworkImage
+          uri={proxyThumbnailUrl(thumbnailUrl)!}
           style={styles.previewHeroImage}
           accessibilityLabel={title}
-          resizeMode="cover"
         />
         {editing && (
           <Pressable

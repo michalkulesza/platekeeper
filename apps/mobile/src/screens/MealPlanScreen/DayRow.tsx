@@ -1,8 +1,9 @@
 import { memo, useCallback } from 'react'
-import { Image, Pressable, Text, View } from 'react-native'
+import { Pressable, Text, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import type { MealPlanEntry } from '@carrot/shared/types'
 import { formatWeekdayShort } from '@carrot/shared/utils/dateUtils'
+import NetworkImage from '../../components/NetworkImage'
 import { proxyThumbnailUrl } from '../../api/thumbnailUrl'
 import { styles } from './styles'
 
@@ -50,7 +51,7 @@ const DayRow = memo(({ date, entry, isToday, onPress }: DayRowProps) => {
       </View>
       {entry && (
         thumbUri ? (
-          <Image source={{ uri: thumbUri }} style={styles.dayRowThumb} resizeMode="cover" />
+          <NetworkImage uri={thumbUri} style={styles.dayRowThumb} recyclingKey={thumbUri} />
         ) : (
           <View style={styles.dayRowThumbPlaceholder} />
         )

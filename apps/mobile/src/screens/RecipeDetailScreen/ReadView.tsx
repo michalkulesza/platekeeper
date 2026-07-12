@@ -1,6 +1,6 @@
 import type { RefObject } from 'react'
 import { ActivityIndicator, Linking, Pressable, ScrollView, Switch, Text, View } from 'react-native'
-import { Image } from 'expo-image'
+import NetworkImage from '../../components/NetworkImage'
 import { useTranslation } from 'react-i18next'
 import { Feather, Ionicons } from '@expo/vector-icons'
 import type { EdgeInsets } from 'react-native-safe-area-context'
@@ -67,22 +67,15 @@ const ReadView = ({
         contentInsetAdjustmentBehavior="never"
       >
         {hasImage && !heroImageErrored ? (
-          <Image
-            source={{ uri: proxyThumbnailUrl(recipe.thumbnail_url!)! }}
+          <NetworkImage
+            uri={proxyThumbnailUrl(recipe.thumbnail_url!)!}
             style={styles.heroImage}
             accessibilityLabel={recipe.title}
-            contentFit="cover"
-            cachePolicy="memory-disk"
             recyclingKey={recipe.thumbnail_url}
             onError={() => setHeroImageErrored(true)}
           />
         ) : hasImage && heroImageErrored && PLACEHOLDER_URL ? (
-          <Image
-            source={{ uri: PLACEHOLDER_URL }}
-            style={styles.heroImage}
-            accessibilityLabel={recipe.title}
-            contentFit="cover"
-          />
+          <NetworkImage uri={PLACEHOLDER_URL} style={styles.heroImage} accessibilityLabel={recipe.title} />
         ) : (
           <View style={{ height: insets.top + 56 }} />
         )}

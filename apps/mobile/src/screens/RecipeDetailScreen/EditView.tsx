@@ -1,5 +1,5 @@
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
-import { Image } from 'expo-image'
+import NetworkImage from '../../components/NetworkImage'
 import { useTranslation } from 'react-i18next'
 import { Feather } from '@expo/vector-icons'
 import type { EdgeInsets } from 'react-native-safe-area-context'
@@ -95,12 +95,10 @@ const EditView = ({
       >
         {draft.thumbnail_url && !thumbErrored ? (
           <View>
-            <Image
-              source={{ uri: proxyThumbnailUrl(draft.thumbnail_url)! }}
+            <NetworkImage
+              uri={proxyThumbnailUrl(draft.thumbnail_url)!}
               style={styles.heroImage}
               accessibilityLabel={draft.title}
-              contentFit="cover"
-              cachePolicy="memory-disk"
               recyclingKey={draft.thumbnail_url}
               onError={() => setThumbErrored(true)}
             />

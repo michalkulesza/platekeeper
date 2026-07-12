@@ -2,6 +2,7 @@ import type { ChangeEvent, RefObject } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RecipeOut, Tag } from '@carrot/shared/types'
 import { proxyUrl, PLACEHOLDER_URL } from '../../utils/imageUtils'
+import NetworkImage from '../NetworkImage'
 import TagRow from '../TagRow'
 import { getHeaderBg, type EditState, type Mode } from './helpers'
 import EditLine from './EditLine'
@@ -72,15 +73,17 @@ const RecipeHeroSection = ({
 
       {proxied ? (
         <div className="relative w-full h-64 shrink-0">
-          <img
-            src={proxied}
-            alt={r.title}
-            className="absolute inset-0 w-full h-full object-cover"
-            onError={(e) => {
-              if (PLACEHOLDER_URL)
-                (e.target as HTMLImageElement).src = PLACEHOLDER_URL
-            }}
-          />
+          <div className="absolute inset-0">
+            <NetworkImage
+              src={proxied}
+              alt={r.title}
+              className="w-full h-full"
+              onError={(e) => {
+                if (PLACEHOLDER_URL)
+                  (e.target as HTMLImageElement).src = PLACEHOLDER_URL
+              }}
+            />
+          </div>
           <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
 
           {mode === 'view' && (

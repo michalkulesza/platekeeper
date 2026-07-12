@@ -35,6 +35,7 @@ import {
 } from '../../api/client'
 import { useHousehold } from '../../context/HouseholdContext'
 import { proxyUrl } from '../../utils/imageUtils'
+import NetworkImage from '../NetworkImage'
 import EditableRecipeView from './EditableRecipeView'
 import RecipeImportSkeleton from './RecipeImportSkeleton'
 import {
@@ -324,9 +325,10 @@ const AddRecipeModal = ({
                           >
                             <div className="flex items-center gap-2 min-w-0">
                               {r.thumbnail_url && (
-                                <img
+                                <NetworkImage
                                   src={proxyUrl(r.thumbnail_url)!}
-                                  className="w-8 h-8 rounded object-cover shrink-0"
+                                  alt=""
+                                  className="w-8 h-8 rounded shrink-0"
                                 />
                               )}
                               <span className="truncate font-medium">

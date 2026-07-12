@@ -1,8 +1,9 @@
 import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react'
-import { Image, ListRenderItemInfo, PlatformColor, Pressable, Text, View } from 'react-native'
+import { ListRenderItemInfo, PlatformColor, Pressable, Text, View } from 'react-native'
 import { BottomSheetModal, BottomSheetFlatList, BottomSheetTextInput, BottomSheetBackdrop, type BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { useTranslation } from 'react-i18next'
 import type { RecipeOut } from '@carrot/shared/types'
+import NetworkImage from '../../components/NetworkImage'
 import { proxyThumbnailUrl } from '../../api/thumbnailUrl'
 import { styles } from './styles'
 
@@ -91,7 +92,7 @@ const RecipePicker = forwardRef<RecipePickerHandle, RecipePickerProps>(({
           accessibilityRole="button"
         >
           {thumbUri ? (
-            <Image source={{ uri: thumbUri }} style={styles.pickerItemThumb} resizeMode="cover" />
+            <NetworkImage uri={thumbUri} style={styles.pickerItemThumb} recyclingKey={thumbUri} />
           ) : (
             <View style={styles.pickerItemThumbPlaceholder} />
           )}

@@ -1,5 +1,6 @@
 import type { RecipeOut } from '@carrot/shared/types'
 import { proxyUrl } from '../../utils/imageUtils'
+import NetworkImage from '../../components/NetworkImage'
 
 interface SearchResultItemProps {
   recipe: RecipeOut
@@ -21,10 +22,10 @@ const SearchResultItem = ({
       className="flex items-center gap-3 px-4 py-3 w-full text-left hover:bg-zinc-50 transition-colors border-b border-zinc-100 last:border-b-0"
     >
       {thumb ? (
-        <img
+        <NetworkImage
           src={thumb}
           alt=""
-          className="w-10 h-10 rounded-lg object-cover shrink-0"
+          className="w-10 h-10 rounded-lg shrink-0"
         />
       ) : (
         <div className="w-10 h-10 rounded-lg bg-zinc-100 shrink-0" />

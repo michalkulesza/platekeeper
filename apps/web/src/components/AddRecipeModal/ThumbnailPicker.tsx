@@ -1,7 +1,8 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { uploadThumbnail } from '../../api/client'
 import { proxyUrl } from '../../utils/imageUtils'
+import NetworkImage from '../NetworkImage'
 
 interface ThumbnailPickerProps {
   recipeId: string
@@ -16,6 +17,7 @@ const ThumbnailPicker = ({
 }: ThumbnailPickerProps) => {
   const { t } = useTranslation()
   const [imgUploading, setImgUploading] = useState(false)
+  const [errored, setErrored] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileChange = useCallback(
@@ -38,6 +40,8 @@ const ThumbnailPicker = ({
 
   const handlePickClick = useCallback(() => fileInputRef.current?.click(), [])
 
+  useEffect(() => setErrored(false), [thumbnailUrl])
+
   const proxied = proxyUrl(thumbnailUrl)
 
   return (
@@ -56,14 +60,12 @@ const ThumbnailPicker = ({
         className="relative w-16 h-16 rounded-lg shrink-0 overflow-hidden bg-zinc-100 group cursor-pointer disabled:opacity-60"
         aria-label={t('common.changePhoto')}
       >
-        {proxied ? (
-          <img
+        {proxied && !errored ? (
+          <NetworkImage
             src={proxied}
             alt="thumbnail"
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              ;(e.target as HTMLImageElement).style.display = 'none'
-            }}
+            className="w-full h-full"
+            onError={() => setErrored(true)}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-zinc-300 text-2xl">
