@@ -38,11 +38,13 @@ const ViewHeaderRight = ({
   addMode,
   onToggleAddMode,
   onOpenMealPlanSheet,
+  onOpenRecipeActions,
   onEdit,
 }: {
   addMode: boolean
   onToggleAddMode: () => void
   onOpenMealPlanSheet: () => void
+  onOpenRecipeActions: () => void
   onEdit: () => void
 }) => {
   const { t } = useTranslation()
@@ -66,6 +68,15 @@ const ViewHeaderRight = ({
         <Feather name="calendar" size={20} color={colors.secondaryLabel} />
       </Pressable>
       <Pressable
+        onPress={onOpenRecipeActions}
+        style={({ pressed }) => [styles.headerBtn, pressed && { opacity: 0.7 }]}
+        accessibilityLabel={t('recipes.recipeActions')}
+        accessibilityRole="button"
+        hitSlop={8}
+      >
+        <Feather name="share" size={20} color={colors.secondaryLabel} />
+      </Pressable>
+      <Pressable
         onPress={onEdit}
         style={({ pressed }) => [styles.headerBtn, pressed && { opacity: 0.7 }]}
         accessibilityLabel={t('common.edit')}
@@ -87,6 +98,7 @@ export const useRecipeDetailHeader = ({
   handleEdit,
   handleCancelEdit,
   handleOpenMealPlanSheet,
+  handleOpenRecipeActions,
 }: {
   navigation: RecipeDetailNavigation
   editing: boolean
@@ -95,6 +107,7 @@ export const useRecipeDetailHeader = ({
   handleEdit: () => void
   handleCancelEdit: () => void
   handleOpenMealPlanSheet: () => void
+  handleOpenRecipeActions: () => void
 }) => {
   useLayoutEffect(() => {
     if (editing) {
@@ -118,10 +131,20 @@ export const useRecipeDetailHeader = ({
             addMode={addMode}
             onToggleAddMode={onToggleAddMode}
             onOpenMealPlanSheet={handleOpenMealPlanSheet}
+            onOpenRecipeActions={handleOpenRecipeActions}
             onEdit={handleEdit}
           />
         ),
       })
     }
-  }, [navigation, editing, handleEdit, handleCancelEdit, handleOpenMealPlanSheet, addMode, onToggleAddMode])
+  }, [
+    navigation,
+    editing,
+    handleEdit,
+    handleCancelEdit,
+    handleOpenMealPlanSheet,
+    handleOpenRecipeActions,
+    addMode,
+    onToggleAddMode,
+  ])
 }
