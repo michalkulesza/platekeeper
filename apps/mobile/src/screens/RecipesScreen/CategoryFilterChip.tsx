@@ -1,32 +1,25 @@
-import { useCallback, useRef } from 'react'
-import { Dimensions, Pressable, StyleSheet, Text, type View as RNView } from 'react-native'
+import { useCallback, useMemo } from 'react'
+import { Pressable, StyleSheet, Text } from 'react-native'
+import { MenuView } from '@react-native-menu/menu'
+import type { MenuAction, NativeActionEvent } from '@react-native-menu/menu'
 import { useTranslation } from 'react-i18next'
 import type { Tag, TagCategory } from '@carrot/shared/types'
 import { tTag } from '@carrot/shared/utils/tagUtils'
 import GlassViewSafe from '../../components/GlassViewSafe'
 import { colors } from '../../theme/colors'
 
-export const POPOVER_WIDTH = 180
-const POPOVER_MARGIN = 12
-
-export interface PopoverPosition {
-  top: number
-  left: number
-}
-
 const CategoryFilterChip = ({
   category,
   tags,
   selectedTagIds,
-  onOpen,
+  onToggle,
 }: {
   category: TagCategory
   tags: Tag[]
   selectedTagIds: Set<string>
-  onOpen: (category: TagCategory, position: PopoverPosition) => void
+  onToggle: (tagId: string) => void
 }) => {
   const { t } = useTranslation()
-  const anchorRef = useRef<RNView>(null)
 
   const selectedTags = tags.filter((tag) => selectedTagIds.has(tag.id))
   const isActive = selectedTags.length > 0
@@ -36,32 +29,39 @@ const CategoryFilterChip = ({
       : tTag(selectedTags[0].name, t)
     : t(`tags.category.${category}`)
 
-  const handlePress = useCallback(() => {
-    anchorRef.current?.measureInWindow((x, y, width, height) => {
-      const screenWidth = Dimensions.get('window').width
-      const left = Math.min(x, screenWidth - POPOVER_WIDTH - POPOVER_MARGIN)
-      onOpen(category, { top: y + height + 4, left: Math.max(left, POPOVER_MARGIN) })
-    })
-  }, [category, onOpen])
+  const actions = useMemo<MenuAction[]>(
+    () =>
+      tags.map((tag) => ({
+        id: tag.id,
+        title: tTag(tag.name, t),
+        state: (selectedTagIds.has(tag.id) ? 'on' : 'off') as 'on' | 'off',
+      })),
+    [tags, selectedTagIds, t],
+  )
+
+  const handlePressAction = useCallback(
+    ({ nativeEvent }: NativeActionEvent) => onToggle(nativeEvent.event),
+    [onToggle],
+  )
 
   return (
-    <Pressable
-      ref={anchorRef}
-      onPress={handlePress}
-      style={({ pressed }) => [styles.chip, pressed && { opacity: 0.7 }]}
-      accessibilityLabel={t(`tags.category.${category}`)}
-      accessibilityRole="button"
-      accessibilityState={{ selected: isActive }}
-    >
-      <GlassViewSafe
-        style={StyleSheet.absoluteFill}
-        glassEffectStyle={isActive ? 'clear' : 'regular'}
-        tintColor={isActive ? colors.blue : colors.gray5}
-      />
-      <Text style={[styles.chipText, isActive && styles.chipTextSelected]} numberOfLines={1}>
-        {label} ▾
-      </Text>
-    </Pressable>
+    <MenuView title={t(`tags.category.${category}`)} actions={actions} onPressAction={handlePressAction}>
+      <Pressable
+        style={({ pressed }) => [styles.chip, pressed && { opacity: 0.7 }]}
+        accessibilityLabel={t(`tags.category.${category}`)}
+        accessibilityRole="button"
+        accessibilityState={{ selected: isActive }}
+      >
+        <GlassViewSafe
+          style={StyleSheet.absoluteFill}
+          glassEffectStyle={isActive ? 'clear' : 'regular'}
+          tintColor={isActive ? colors.blue : colors.gray5}
+        />
+        <Text style={[styles.chipText, isActive && styles.chipTextSelected]} numberOfLines={1}>
+          {label} ▾
+        </Text>
+      </Pressable>
+    </MenuView>
   )
 }
 
