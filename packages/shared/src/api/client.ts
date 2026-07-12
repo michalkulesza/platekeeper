@@ -118,8 +118,9 @@ export const createApiClient = (config: ApiClientConfig) => {
     return res.json() as Promise<RecipeOut[]>
   }
 
-  const linkRecipeToHousehold = async (id: string): Promise<RecipeOut> => {
-    const res = await apiFetch(`/api/recipes/${id}/link-to-household`, { method: 'POST' })
+  const linkRecipeToHousehold = async (id: string, householdId?: string): Promise<RecipeOut> => {
+    const query = householdId ? `?target_household_id=${encodeURIComponent(householdId)}` : ''
+    const res = await apiFetch(`/api/recipes/${id}/link-to-household${query}`, { method: 'POST' })
     await throwOnError(res, 'Failed to link recipe')
     return res.json() as Promise<RecipeOut>
   }

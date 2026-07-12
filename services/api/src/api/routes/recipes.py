@@ -10,7 +10,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.config import settings
 from api.database import get_async_session
-from api.models import Recipe, RecipeOrderRequest, RecipeOut, RecipeSaveRequest, Tag, user_recipe_favourites_table
+from api.models import (
+    HouseholdMember,
+    Recipe,
+    RecipeOrderRequest,
+    RecipeOut,
+    RecipeSaveRequest,
+    Tag,
+    user_recipe_favourites_table,
+)
 from api.routes.context import get_active_household_id
 from api.users import User, current_active_user
 
@@ -365,12 +373,23 @@ async def remove_tag_from_recipe(
 @router.post("/{recipe_id}/link-to-household", response_model=RecipeOut)
 async def link_recipe_to_household(
     recipe_id: uuid.UUID,
+    target_household_id: uuid.UUID | None = None,
     user: User = Depends(current_active_user),
     session: AsyncSession = Depends(get_async_session),
-    household_id: uuid.UUID | None = Depends(get_active_household_id),
+    active_household_id: uuid.UUID | None = Depends(get_active_household_id),
 ) -> RecipeOut:
+    household_id = target_household_id or active_household_id
     if household_id is None:
         raise HTTPException(status_code=400, detail="Not in a household context")
+    if target_household_id is not None:
+        membership = await session.execute(
+            select(HouseholdMember).where(
+                HouseholdMember.household_id == target_household_id,
+                HouseholdMember.user_id == user.id,
+            )
+        )
+        if membership.scalar_one_or_none() is None:
+            raise HTTPException(status_code=403, detail="Not a member of that household")
     result = await session.execute(
         select(Recipe).where(
             Recipe.id == recipe_id,

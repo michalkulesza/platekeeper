@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
-import { ActionSheetIOS, ActivityIndicator, Alert, Text, View } from 'react-native'
+import { ActivityIndicator, Alert, Text, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import * as Haptics from 'expo-haptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -9,12 +9,13 @@ import { useRecipes } from '@carrot/shared/hooks/useRecipes'
 import { useShoppingList } from '@carrot/shared/hooks/useShoppingList'
 import type { RecipeOut } from '@carrot/shared/types'
 import { useDebugMode } from '../../context/DebugModeContext'
+import { useHousehold } from '../../context/HouseholdContext'
 import type { AddToMealPlanSheetHandle } from '../../components/AddToMealPlanSheet'
 import type { AddIngredientToShoppingListSheetHandle } from '../../components/AddIngredientToShoppingListSheet'
 import { styles } from './styles'
 import { useDisplayPrefs } from './useDisplayPrefs'
 import { useEditDraft } from './useEditDraft'
-import { useRecipeDetailHeader } from './useRecipeDetailHeader'
+import { useRecipeDetailHeader, SEND_TO_HOUSEHOLD_PREFIX } from './useRecipeDetailHeader'
 import EditView from './EditView'
 import ReadView from './ReadView'
 
@@ -25,6 +26,7 @@ const RecipeDetailScreen = () => {
   const api = useApiClient()
   const { recipes, isLoading, error, toggleFavourite, linkToHousehold } = useRecipes()
   const { addItems } = useShoppingList()
+  const { households } = useHousehold()
   const [heroImageErrored, setHeroImageErrored] = useState(false)
   const [addMode, setAddMode] = useState(false)
   const [sessionAdded, setSessionAdded] = useState<Set<string>>(new Set())
@@ -56,19 +58,20 @@ const RecipeDetailScreen = () => {
     toggleFavourite.mutate(recipe.id)
   }, [recipe, toggleFavourite])
 
-  const handleOpenRecipeActions = useCallback(() => {
-    if (!recipe) return
-    ActionSheetIOS.showActionSheetWithOptions(
-      { options: [t('recipes.sendToHousehold'), t('common.cancel')], cancelButtonIndex: 1 },
-      (index) => {
-        if (index !== 0) return
-        linkToHousehold.mutate(recipe.id, {
+  const handlePressRecipeAction = useCallback(
+    ({ nativeEvent }: { nativeEvent: { event: string } }) => {
+      if (!recipe || !nativeEvent.event.startsWith(SEND_TO_HOUSEHOLD_PREFIX)) return
+      const householdId = nativeEvent.event.slice(SEND_TO_HOUSEHOLD_PREFIX.length)
+      linkToHousehold.mutate(
+        { id: recipe.id, householdId },
+        {
           onSuccess: () => Alert.alert(t('addRecipe.recipeAddedToHousehold')),
           onError: () => Alert.alert(t('common.ok'), t('addRecipe.failedToAdd')),
-        })
-      },
-    )
-  }, [recipe, linkToHousehold, t])
+        },
+      )
+    },
+    [recipe, linkToHousehold, t],
+  )
 
   const handleAddIngredient = useCallback((key: string, text: string) => {
     pendingIngredientKeyRef.current = key
@@ -103,7 +106,8 @@ const RecipeDetailScreen = () => {
     handleEdit: editDraft.handleEdit,
     handleCancelEdit: editDraft.handleCancelEdit,
     handleOpenMealPlanSheet,
-    handleOpenRecipeActions,
+    households,
+    handlePressRecipeAction,
   })
 
   if (isLoading) {

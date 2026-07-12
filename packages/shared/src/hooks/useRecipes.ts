@@ -43,7 +43,8 @@ export const useRecipes = () => {
   })
 
   const linkToHousehold = useMutation({
-    mutationFn: api.linkRecipeToHousehold,
+    mutationFn: ({ id, householdId }: { id: string; householdId?: string }) =>
+      api.linkRecipeToHousehold(id, householdId),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['recipes'] }),
   })
 

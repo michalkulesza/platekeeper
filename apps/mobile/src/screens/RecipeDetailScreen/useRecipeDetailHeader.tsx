@@ -1,11 +1,15 @@
-import { useLayoutEffect } from 'react'
+import { useLayoutEffect, useMemo } from 'react'
 import { PlatformColor, Pressable, Text, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Feather, Ionicons } from '@expo/vector-icons'
+import { MenuView, type MenuAction } from '@react-native-menu/menu'
 import type { NavigationProp, NavigationState } from '@react-navigation/native'
+import type { HouseholdOut } from '@carrot/shared/types'
 import BugReportButton from '../../components/BugReportButton'
 import { colors } from '../../theme/colors'
 import { styles } from './styles'
+
+export const SEND_TO_HOUSEHOLD_PREFIX = 'send-to-household-'
 
 type RecipeDetailNavigation = Omit<NavigationProp<ReactNavigation.RootParamList>, 'getState'> & {
   getState(): NavigationState | undefined
@@ -36,16 +40,25 @@ const ViewHeaderRight = ({
   addMode,
   onToggleAddMode,
   onOpenMealPlanSheet,
-  onOpenRecipeActions,
+  households,
+  onPressRecipeAction,
   onEdit,
 }: {
   addMode: boolean
   onToggleAddMode: () => void
   onOpenMealPlanSheet: () => void
-  onOpenRecipeActions: () => void
+  households: HouseholdOut[]
+  onPressRecipeAction: ({ nativeEvent }: { nativeEvent: { event: string } }) => void
   onEdit: () => void
 }) => {
   const { t } = useTranslation()
+  const recipeActions = useMemo<MenuAction[]>(
+    () =>
+      households.length > 0
+        ? households.map((h) => ({ id: `${SEND_TO_HOUSEHOLD_PREFIX}${h.id}`, title: h.name }))
+        : [{ id: 'no-households', title: t('recipes.noHouseholds'), attributes: { disabled: true } }],
+    [households, t],
+  )
   return (
     <View style={styles.headerBtns}>
       <Pressable
@@ -65,15 +78,16 @@ const ViewHeaderRight = ({
       >
         <Feather name="calendar" size={20} color={colors.secondaryLabel} />
       </Pressable>
-      <Pressable
-        onPress={onOpenRecipeActions}
-        style={({ pressed }) => [styles.headerBtn, pressed && { opacity: 0.7 }]}
-        accessibilityLabel={t('recipes.recipeActions')}
-        accessibilityRole="button"
-        hitSlop={8}
-      >
-        <Feather name="share" size={20} color={colors.secondaryLabel} />
-      </Pressable>
+      <MenuView title={t('recipes.recipeActions')} actions={recipeActions} onPressAction={onPressRecipeAction}>
+        <Pressable
+          style={({ pressed }) => [styles.headerBtn, pressed && { opacity: 0.7 }]}
+          accessibilityLabel={t('recipes.recipeActions')}
+          accessibilityRole="button"
+          hitSlop={8}
+        >
+          <Feather name="share" size={20} color={colors.secondaryLabel} />
+        </Pressable>
+      </MenuView>
       <Pressable
         onPress={onEdit}
         style={({ pressed }) => [styles.headerBtn, pressed && { opacity: 0.7 }]}
@@ -95,7 +109,8 @@ export const useRecipeDetailHeader = ({
   handleEdit,
   handleCancelEdit,
   handleOpenMealPlanSheet,
-  handleOpenRecipeActions,
+  households,
+  handlePressRecipeAction,
 }: {
   navigation: RecipeDetailNavigation
   editing: boolean
@@ -104,7 +119,8 @@ export const useRecipeDetailHeader = ({
   handleEdit: () => void
   handleCancelEdit: () => void
   handleOpenMealPlanSheet: () => void
-  handleOpenRecipeActions: () => void
+  households: HouseholdOut[]
+  handlePressRecipeAction: ({ nativeEvent }: { nativeEvent: { event: string } }) => void
 }) => {
   useLayoutEffect(() => {
     if (editing) {
@@ -128,7 +144,8 @@ export const useRecipeDetailHeader = ({
             addMode={addMode}
             onToggleAddMode={onToggleAddMode}
             onOpenMealPlanSheet={handleOpenMealPlanSheet}
-            onOpenRecipeActions={handleOpenRecipeActions}
+            households={households}
+            onPressRecipeAction={handlePressRecipeAction}
             onEdit={handleEdit}
           />
         ),
@@ -140,7 +157,8 @@ export const useRecipeDetailHeader = ({
     handleEdit,
     handleCancelEdit,
     handleOpenMealPlanSheet,
-    handleOpenRecipeActions,
+    households,
+    handlePressRecipeAction,
     addMode,
     onToggleAddMode,
   ])
