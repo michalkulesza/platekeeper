@@ -16,7 +16,7 @@ import NutritionBoxGrid from '../../components/NutritionBoxGrid'
 import { colors } from '../../theme/colors'
 import { proxyThumbnailUrl, PLACEHOLDER_URL } from '../../api/thumbnailUrl'
 import { styles } from './styles'
-import { extractDisplayUrl, FONT_SIZES, LINE_HEIGHTS } from './helpers'
+import { FONT_SIZES, LINE_HEIGHTS } from './helpers'
 import ComponentSection from './ComponentSection'
 import NotesSection from './NotesSection'
 import TagsSection from './TagsSection'
@@ -110,7 +110,21 @@ const ReadView = ({
                 color={recipe.is_favourite ? '#f59e0b' : colors.opaqueSeparator}
               />
             </Pressable>
-            <Text style={styles.title}>{recipe.title}</Text>
+            {recipe.source_url ? (
+              <Pressable
+                onPress={() => void Linking.openURL(recipe.source_url!)}
+                style={({ pressed }) => [styles.titleLinkWrap, pressed && { opacity: 0.7 }]}
+                accessibilityLabel={recipe.title}
+                accessibilityRole="link"
+              >
+                <Text style={styles.title}>
+                  {recipe.title}{' '}
+                  <Feather name="link" size={20} color={colors.label} />
+                </Text>
+              </Pressable>
+            ) : (
+              <Text style={styles.title}>{recipe.title}</Text>
+            )}
           </View>
 
           <NotesSection recipe={recipe} fontSizeIndex={fontSizeIndex} />
@@ -132,20 +146,6 @@ const ReadView = ({
             ]}
             disclaimerText={t('recipes.nutritionEstimateDisclaimer')}
           />
-
-          {recipe.source_url ? (
-            <Pressable
-              onPress={() => void Linking.openURL(recipe.source_url!)}
-              style={({ pressed }) => [styles.sourceRow, pressed && { opacity: 0.7 }]}
-              accessibilityLabel={t('recipes.source')}
-              accessibilityRole="link"
-            >
-              <Feather name="link" size={13} color={colors.blue} style={styles.sourceIcon} />
-              <Text style={styles.sourceText} numberOfLines={1}>
-                {extractDisplayUrl(recipe.source_url)}
-              </Text>
-            </Pressable>
-          ) : null}
 
           {debugMode && recipe.debug_model ? (
             <View style={styles.debugBox}>
