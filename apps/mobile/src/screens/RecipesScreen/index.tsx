@@ -30,11 +30,12 @@ import { useRecipes } from '@carrot/shared/hooks/useRecipes'
 import { useTags } from '@carrot/shared/hooks/useTags'
 import { useApiClient } from '@carrot/shared/api/context'
 import { useQueryClient } from '@tanstack/react-query'
-import type { RecipeOut, Tag } from '@carrot/shared/types'
+import type { RecipeOut, Tag, TagCategory } from '@carrot/shared/types'
 import { tTag } from '@carrot/shared/utils/tagUtils'
 import Avatar from '../../components/Avatar'
 import { TAG_CATEGORIES, groupTagsByCategory, matchesTagFilters } from '@carrot/shared/utils/tagFilters'
-import CategoryFilterChip from './CategoryFilterChip'
+import CategoryFilterChip, { type PopoverPosition } from './CategoryFilterChip'
+import CategoryFilterPopover from './CategoryFilterPopover'
 import GlassViewSafe from '../../components/GlassViewSafe'
 import MarqueeText from '../../components/MarqueeText'
 import MarqueeRow from '../../components/MarqueeRow'
@@ -98,6 +99,8 @@ const RecipesScreen = () => {
   const [isSearching, setIsSearching] = useState(false)
   const [selectedTagIds, setSelectedTagIds] = useState<Set<string>>(new Set())
   const [filterFavourites, setFilterFavourites] = useState(false)
+  const [openCategory, setOpenCategory] = useState<TagCategory | null>(null)
+  const [categoryPopoverPosition, setCategoryPopoverPosition] = useState<PopoverPosition | null>(null)
   const [favouriteOverrides, setFavouriteOverrides] = useState<Map<string, boolean>>(new Map())
   const [sort, setSort] = useState<SortMode>('newest')
   const swipeableRefs = useRef<Map<string, Swipeable>>(new Map())
@@ -399,6 +402,16 @@ const RecipesScreen = () => {
     })
   }, [])
 
+  const handleOpenCategory = useCallback((category: TagCategory, position: PopoverPosition) => {
+    setOpenCategory(category)
+    setCategoryPopoverPosition(position)
+  }, [])
+
+  const handleCloseCategoryPopover = useCallback(() => {
+    setOpenCategory(null)
+    setCategoryPopoverPosition(null)
+  }, [])
+
   const handleToggleFavourite = useCallback(
     async (recipe: RecipeOut) => {
       const current = favouriteOverrides.has(recipe.id)
@@ -673,13 +686,20 @@ const RecipesScreen = () => {
               category={category}
               tags={groupedFilterTags[category]}
               selectedTagIds={selectedTagIds}
-              onToggle={toggleTagId}
+              onOpen={handleOpenCategory}
             />
           ))}
           {groupedFilterTags.other.length > 0 && <View style={styles.tagBarDivider} />}
           {groupedFilterTags.other.map(renderTag)}
         </ScrollView>
       </Reanimated.View>
+      <CategoryFilterPopover
+        position={categoryPopoverPosition}
+        tags={openCategory ? groupedFilterTags[openCategory] : []}
+        selectedTagIds={selectedTagIds}
+        onToggle={toggleTagId}
+        onClose={handleCloseCategoryPopover}
+      />
     </View>
   )
 }
