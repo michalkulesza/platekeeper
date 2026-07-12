@@ -5,7 +5,7 @@ import * as ImagePicker from 'expo-image-picker'
 import type { TFunction } from 'i18next'
 import { useQueryClient } from '@tanstack/react-query'
 import type { ApiClient } from '@carrot/shared/api/client'
-import type { RecipeOut, Tag } from '@carrot/shared/types'
+import type { RecipeOut } from '@carrot/shared/types'
 import { serializeIngredient, type StructuredIngredient } from '@carrot/shared/utils/ingredientUtils'
 import { uploadThumbnailImage } from '../../api/uploadThumbnail'
 import { buildDraft, type EditComponent, type EditDraft } from './helpers'
@@ -16,35 +16,28 @@ export const useEditDraft = ({
   autoEditParam,
   api,
   t,
-  createTag,
 }: {
   recipe: RecipeOut | undefined
   recipeId: string
   autoEditParam: string | undefined
   api: ApiClient
   t: TFunction
-  createTag: (name: string) => Promise<Tag>
 }) => {
   const qc = useQueryClient()
 
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState<EditDraft | null>(null)
-  const [selectedTags, setSelectedTags] = useState<Tag[]>([])
   const [saving, setSaving] = useState(false)
   const [unitPickerTarget, setUnitPickerTarget] = useState<{ ci: number; ii: number } | null>(null)
-  const [showTagPicker, setShowTagPicker] = useState(false)
   const [uploadingThumb, setUploadingThumb] = useState(false)
   const [thumbErrored, setThumbErrored] = useState(false)
   const savedDraftRef = useRef<EditDraft | null>(null)
-  const savedTagsRef = useRef<Tag[]>([])
 
   const handleEdit = useCallback(() => {
     if (!recipe) return
     const initial = buildDraft(recipe)
     setDraft(initial)
     savedDraftRef.current = initial
-    setSelectedTags(recipe.tags)
-    savedTagsRef.current = recipe.tags
     setThumbErrored(false)
     setEditing(true)
   }, [recipe])
@@ -57,13 +50,10 @@ export const useEditDraft = ({
     }
   }, [autoEditParam, recipe, handleEdit])
 
-  const isEditDirty = useCallback(() => {
-    const isStateDirty = JSON.stringify(draft) !== JSON.stringify(savedDraftRef.current)
-    const isTagsDirty =
-      selectedTags.map((tag) => tag.id).sort().join(',') !==
-      savedTagsRef.current.map((tag) => tag.id).sort().join(',')
-    return isStateDirty || isTagsDirty
-  }, [draft, selectedTags])
+  const isEditDirty = useCallback(
+    () => JSON.stringify(draft) !== JSON.stringify(savedDraftRef.current),
+    [draft],
+  )
 
   const handleCancelEdit = useCallback(() => {
     if (!isEditDirty()) {
@@ -155,13 +145,6 @@ export const useEditDraft = ({
     setDraft((prev) => prev && { ...prev, [key]: value })
   }, [])
 
-  const handleTagAdd = useCallback((tag: Tag) => setSelectedTags((prev) => [...prev, tag]), [])
-  const handleTagRemove = useCallback((id: string) => setSelectedTags((prev) => prev.filter((tag) => tag.id !== id)), [])
-  const handleTagCreate = useCallback(
-    async (name: string): Promise<Tag> => createTag(name),
-    [createTag],
-  )
-
   const handlePickThumbnail = useCallback(async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
@@ -197,7 +180,7 @@ export const useEditDraft = ({
         carbs_per_serving: draft.carbs !== '' ? Number(draft.carbs) : null,
         thumbnail_url: draft.thumbnail_url || null,
         source_url: recipe.source_url ?? null,
-        notes: draft.notes || null,
+        notes: recipe.notes ?? null,
         creator_handle: recipe.creator_handle ?? null,
         components: draft.components.map((c) => ({
           name: c.name ?? '',
@@ -207,7 +190,7 @@ export const useEditDraft = ({
           ingredient_flags: [],
           step_ingredient_refs: null,
         })),
-        tag_ids: selectedTags.map((tag) => tag.id),
+        tag_ids: recipe.tags.map((tag) => tag.id),
       })
       qc.setQueryData<RecipeOut[]>(['recipes'], (prev) =>
         prev ? prev.map((r) => (r.id === updated.id ? updated : r)) : prev,
@@ -218,18 +201,15 @@ export const useEditDraft = ({
     } finally {
       setSaving(false)
     }
-  }, [draft, recipe, api, recipeId, selectedTags, qc, t])
+  }, [draft, recipe, api, recipeId, qc, t])
 
   return {
     editing,
     draft,
     setDraft,
-    selectedTags,
     saving,
     unitPickerTarget,
     setUnitPickerTarget,
-    showTagPicker,
-    setShowTagPicker,
     uploadingThumb,
     thumbErrored,
     setThumbErrored,
@@ -245,9 +225,6 @@ export const useEditDraft = ({
     setStep,
     addStep,
     removeStep,
-    handleTagAdd,
-    handleTagRemove,
-    handleTagCreate,
     handlePickThumbnail,
     handleSaveEdit,
   }
