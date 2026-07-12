@@ -75,7 +75,6 @@ const EditView = ({
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={insets.top + 56}
     >
       <ScrollView
         style={styles.scroll}
