@@ -17,6 +17,7 @@ import {
   createTag,
   deleteRecipe,
   removeTagFromRecipe,
+  toggleFavourite,
   updateRecipe,
   uploadThumbnail,
 } from '../../api/client'
@@ -78,6 +79,7 @@ const RecipeDetailModal = ({
   const [imgUploading, setImgUploading] = useState(false)
   const [localNotes, setLocalNotes] = useState(recipe?.notes ?? '')
   const [notesSaving, setNotesSaving] = useState(false)
+  const [fontSizeIndex, setFontSizeIndex] = useState(2)
   const savedNotesRef = useRef(recipe?.notes ?? '')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -289,6 +291,15 @@ const RecipeDetailModal = ({
     }
   }
 
+  const handleToggleFavourite = async () => {
+    try {
+      const result = await toggleFavourite(r.id)
+      onUpdated?.({ ...r, is_favourite: result.is_favourite })
+    } catch {
+      toast.danger(t('recipes.failedToSave'), { timeout: 3000 })
+    }
+  }
+
   const handleAddIngredient = (ci: number, ii: number) => {
     const comp = (r.components as SaveComponent[])[ci]
     const text = formatForShoppingList(comp.ingredients[ii])
@@ -355,9 +366,16 @@ const RecipeDetailModal = ({
                   fileInputRef={fileInputRef}
                   onThumbnailFile={handleThumbnailFile}
                   imgUploading={imgUploading}
+                  addMode={addMode}
+                  onToggleAddMode={() => setAddMode((v) => !v)}
+                  onOpenMealPlan={() => setMealPlanOpen(true)}
+                  onToggleFavourite={handleToggleFavourite}
                   onEdit={() => setMode('editing')}
                   onDelete={() => setMode('confirming')}
                 />
+              </ModalHeader>
+
+              <ModalBody className="!px-0 !pb-5 !pt-0">
                 <RecipeMetaBar
                   recipe={r}
                   draft={draft}
@@ -366,62 +384,63 @@ const RecipeDetailModal = ({
                     setDraft((d) => d && { ...d, [field]: value })
                   }
                   debugMode={debugMode}
-                  addMode={addMode}
-                  onToggleAddMode={() => setAddMode((v) => !v)}
-                  onOpenMealPlan={() => setMealPlanOpen(true)}
                   wakeLockActive={wakeLock.active}
                   onToggleWakeLock={wakeLock.toggle}
+                  fontSizeIndex={fontSizeIndex}
+                  onFontSizeChange={setFontSizeIndex}
                   onCancelMode={cancelMode}
                 />
-              </ModalHeader>
 
-              <ModalBody className="!px-5 !pb-5 !pt-0">
-                {error && (
-                  <div className="bg-danger-50 text-danger rounded-lg p-3 text-sm mb-3">
-                    {error}
-                  </div>
-                )}
+                <div className="px-5">
+                  {error && (
+                    <div className="bg-danger-50 text-danger rounded-lg p-3 text-sm mb-3">
+                      {error}
+                    </div>
+                  )}
 
-                {mode === 'editing'
-                  ? components.map((comp, ci) => (
-                      <EditComponent
-                        key={ci}
-                        comp={comp}
-                        single={single}
-                        onIngredientChange={(ii, val) =>
-                          setIngredient(ci, ii, val)
-                        }
-                        onStepChange={(si, val) => setStep(ci, si, val)}
-                      />
-                    ))
-                  : components.map((comp, ci) => (
-                      <ViewComponent
-                        key={ci}
-                        comp={comp}
-                        single={single}
-                        activeAllergens={activeAllergens}
-                        onReplaceIngredient={(ii) =>
-                          handleReplaceIngredient(ci, ii)
-                        }
-                        onRestoreIngredient={(ii) =>
-                          handleRestoreIngredient(ci, ii)
-                        }
-                        recipeId={r.id}
-                        recipeTitle={r.title}
-                        componentIndex={ci}
-                        addMode={addMode}
-                        sessionAdded={sessionAdded}
-                        onAddIngredient={(ii) => handleAddIngredient(ci, ii)}
-                        onAddAllIngredients={() => handleAddAllIngredients(ci)}
-                      />
-                    ))}
+                  <RecipeNotesSection
+                    value={localNotes}
+                    onChange={setLocalNotes}
+                    onBlur={handleNotesSave}
+                    saving={notesSaving}
+                    fontSizeIndex={fontSizeIndex}
+                  />
 
-                <RecipeNotesSection
-                  value={localNotes}
-                  onChange={setLocalNotes}
-                  onBlur={handleNotesSave}
-                  saving={notesSaving}
-                />
+                  {mode === 'editing'
+                    ? components.map((comp, ci) => (
+                        <EditComponent
+                          key={ci}
+                          comp={comp}
+                          single={single}
+                          onIngredientChange={(ii, val) =>
+                            setIngredient(ci, ii, val)
+                          }
+                          onStepChange={(si, val) => setStep(ci, si, val)}
+                        />
+                      ))
+                    : components.map((comp, ci) => (
+                        <ViewComponent
+                          key={ci}
+                          comp={comp}
+                          single={single}
+                          activeAllergens={activeAllergens}
+                          onReplaceIngredient={(ii) =>
+                            handleReplaceIngredient(ci, ii)
+                          }
+                          onRestoreIngredient={(ii) =>
+                            handleRestoreIngredient(ci, ii)
+                          }
+                          recipeId={r.id}
+                          recipeTitle={r.title}
+                          componentIndex={ci}
+                          addMode={addMode}
+                          sessionAdded={sessionAdded}
+                          onAddIngredient={(ii) => handleAddIngredient(ci, ii)}
+                          onAddAllIngredients={() => handleAddAllIngredients(ci)}
+                          fontSizeIndex={fontSizeIndex}
+                        />
+                      ))}
+                </div>
               </ModalBody>
 
               <ModalFooter className="flex-col gap-2 items-stretch px-5 pb-5 pt-3">

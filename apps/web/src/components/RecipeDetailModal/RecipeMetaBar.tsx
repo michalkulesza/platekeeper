@@ -1,6 +1,5 @@
-import { Calendar, ShoppingCart, Sun } from 'react-feather'
+import { Type } from 'react-feather'
 import { useTranslation } from 'react-i18next'
-import { Button } from '@heroui/react'
 import type { RecipeOut } from '@carrot/shared/types'
 import HouseholdAvatarIndicators from '../HouseholdAvatarIndicators'
 import NutritionBoxGrid from '../NutritionBoxGrid'
@@ -21,13 +20,14 @@ interface RecipeMetaBarProps {
   mode: Mode
   onNutritionChange: (field: NutritionField, value: string) => void
   debugMode: boolean
-  addMode: boolean
-  onToggleAddMode: () => void
-  onOpenMealPlan: () => void
   wakeLockActive: boolean
   onToggleWakeLock: () => void
+  fontSizeIndex: number
+  onFontSizeChange: (index: number) => void
   onCancelMode: () => void
 }
+
+const TEXT_SIZES = [14, 16, 17, 20, 22] as const
 
 const RecipeMetaBar = ({
   recipe,
@@ -35,11 +35,10 @@ const RecipeMetaBar = ({
   mode,
   onNutritionChange,
   debugMode,
-  addMode,
-  onToggleAddMode,
-  onOpenMealPlan,
   wakeLockActive,
   onToggleWakeLock,
+  fontSizeIndex,
+  onFontSizeChange,
   onCancelMode,
 }: RecipeMetaBarProps) => {
   const { t } = useTranslation()
@@ -81,15 +80,8 @@ const RecipeMetaBar = ({
     onNutritionChange(NUTRITION_FIELDS[index], value)
   }
 
-  const wakeLockTitle = wakeLockActive
-    ? t('recipes.screenAlwaysOnDisable')
-    : t('recipes.keepScreenOnWhileReading')
-  const wakeLockButtonClass = wakeLockActive
-    ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
-    : ''
-
   return (
-    <div className={`px-5 pt-5 pb-3 flex flex-col gap-2 ${headerBg}`}>
+    <div className={`px-5 pt-5 pb-0 flex flex-col gap-2 ${headerBg}`}>
       <NutritionBoxGrid
         editing={editing}
         items={nutritionItems}
@@ -116,32 +108,43 @@ const RecipeMetaBar = ({
       )}
 
       {mode === 'view' && (
-        <div className="flex gap-2 pt-0.5 items-center">
-          <Button
-            size="sm"
-            variant={addMode ? 'primary' : 'secondary'}
-            onPress={onToggleAddMode}
-          >
-            <ShoppingCart className="w-3.5 h-3.5" />
-            {t('shoppingList.addToList')}
-          </Button>
-          <Button size="sm" variant="secondary" onPress={onOpenMealPlan}>
-            <Calendar className="w-3.5 h-3.5" />
-            {t('mealPlan.addToMealPlan')}
-          </Button>
+        <div className="border-y border-zinc-200 divide-y divide-zinc-200">
           {'wakeLock' in navigator && (
-            <span className="ml-auto" title={wakeLockTitle}>
-              <Button
-                size="sm"
-                variant="secondary"
-                className={wakeLockButtonClass}
-                onPress={onToggleWakeLock}
-              >
-                <Sun className="w-3.5 h-3.5" />
-                {wakeLockActive ? t('recipes.screenOn') : t('recipes.keepOn')}
-              </Button>
-            </span>
+            <div className="flex items-center justify-between py-2.5">
+              <span className="text-sm text-zinc-700">
+                {t('settings.cookingMode')}
+              </span>
+              <label className="relative inline-flex cursor-pointer items-center">
+                <input
+                  type="checkbox"
+                  checked={wakeLockActive}
+                  onChange={onToggleWakeLock}
+                  className="peer sr-only"
+                  aria-label={t('settings.cookingMode')}
+                />
+                <span className="h-6 w-11 rounded-full bg-zinc-200 transition-colors peer-checked:bg-primary peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow-sm after:transition-transform peer-checked:after:translate-x-5" />
+              </label>
+            </div>
           )}
+          <label className="flex items-center justify-between gap-4 py-2.5">
+            <span className="text-sm text-zinc-700">
+              {t('settings.textSize')}
+            </span>
+            <div className="flex items-center gap-2 text-zinc-500">
+              <Type className="h-3.5 w-3.5" aria-hidden="true" />
+              <input
+                type="range"
+                min="0"
+                max={TEXT_SIZES.length - 1}
+                step="1"
+                value={fontSizeIndex}
+                onChange={(e) => onFontSizeChange(Number(e.target.value))}
+                aria-label={t('settings.textSize')}
+                className="w-28 accent-primary"
+              />
+              <Type className="h-5 w-5" aria-hidden="true" />
+            </div>
+          </label>
         </div>
       )}
       {mode === 'editing' && (

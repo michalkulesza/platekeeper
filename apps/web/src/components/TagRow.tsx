@@ -12,6 +12,7 @@ interface TagRowProps {
   onRemove: (tagId: string) => void
   onCreateTag?: (name: string) => Promise<Tag>
   editable?: boolean
+  addable?: boolean
 }
 
 interface TagPillProps {
@@ -144,6 +145,7 @@ const TagRow = ({
   onRemove,
   onCreateTag,
   editable = true,
+  addable = editable,
 }: TagRowProps) => {
   const { t } = useTranslation()
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -244,7 +246,7 @@ const TagRow = ({
         />
       ))}
 
-      {editable && (
+      {addable && (
         <div className="relative">
           <button
             type="button"

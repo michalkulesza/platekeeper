@@ -22,16 +22,16 @@ const NutritionBoxEditable = ({
   item,
   onChangeValue,
 }: NutritionBoxEditableProps) => (
-  <div className="flex flex-col items-center justify-center border border-zinc-200 rounded-lg px-2 py-3 min-w-0">
+  <div className="flex flex-col items-center justify-center rounded-[10px] bg-zinc-100 px-2 py-2 min-w-0">
     <input
       type="number"
       value={item.value}
       onChange={(e) => onChangeValue(e.target.value)}
       placeholder="—"
       aria-label={item.accessibilityLabel}
-      className="w-full bg-transparent text-zinc-900 font-semibold text-sm text-center focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+      className="w-full bg-transparent text-zinc-900 font-semibold text-base text-center focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
     />
-    <span className="text-[11px] text-zinc-500 truncate max-w-full">
+    <span className="mt-1 text-xs text-zinc-500 truncate max-w-full">
       {item.label}
     </span>
   </div>
@@ -50,12 +50,12 @@ const NutritionBoxDisplay = ({ item, onToggle }: NutritionBoxDisplayProps) => {
       type="button"
       onClick={onToggle}
       aria-label={item.accessibilityLabel}
-      className="w-full flex flex-col items-center justify-center border border-zinc-200 rounded-lg px-2 py-3 min-w-0 hover:bg-zinc-50 transition-colors"
+      className="w-full flex flex-col items-center justify-center rounded-[10px] bg-zinc-100 px-2 py-2 min-w-0 hover:bg-zinc-200 transition-colors"
     >
-      <span className="text-sm font-semibold text-zinc-900">
+      <span className="text-base font-semibold text-zinc-900">
         {displayValue}
       </span>
-      <span className="text-[11px] text-zinc-500 truncate max-w-full">
+      <span className="mt-1 text-xs text-zinc-500 truncate max-w-full">
         {item.label}
       </span>
     </button>

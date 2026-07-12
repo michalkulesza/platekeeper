@@ -18,7 +18,16 @@ interface ViewComponentProps {
   sessionAdded?: Set<string>
   onAddIngredient?: (ii: number) => void
   onAddAllIngredients?: () => void
+  fontSizeIndex: number
 }
+
+const TEXT_SIZE_CLASSES = [
+  'text-sm',
+  'text-base',
+  'text-[17px]',
+  'text-xl',
+  'text-2xl',
+] as const
 
 const ViewComponent = ({
   comp,
@@ -33,6 +42,7 @@ const ViewComponent = ({
   sessionAdded,
   onAddIngredient,
   onAddAllIngredients,
+  fontSizeIndex,
 }: ViewComponentProps) => {
   const { t } = useTranslation()
 
@@ -81,7 +91,10 @@ const ViewComponent = ({
                 : t('shoppingList.addToList')
 
               return (
-                <li key={i} className="flex items-start gap-2 text-sm">
+                <li
+                  key={i}
+                  className={`flex items-start gap-2 ${TEXT_SIZE_CLASSES[fontSizeIndex]}`}
+                >
                   <span className="text-zinc-300 mt-1 shrink-0">·</span>
                   <span className="flex-1">{displayIngredient(ing, t)}</span>
                   {flag && (
@@ -149,7 +162,7 @@ const ViewComponent = ({
                 <li
                   key={i}
                   id={`timer-step-${componentIndex}-${i}`}
-                  className="flex items-start gap-2 text-sm transition-colors duration-300"
+                  className={`flex items-start gap-2 ${TEXT_SIZE_CLASSES[fontSizeIndex]} transition-colors duration-300`}
                 >
                   <span className="text-zinc-400 font-medium shrink-0">
                     {i + 1}.
