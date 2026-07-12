@@ -66,7 +66,8 @@ const RecipeDetailScreen = () => {
         { id: recipe.id, householdId },
         {
           onSuccess: () => Alert.alert(t('addRecipe.recipeAddedToHousehold')),
-          onError: () => Alert.alert(t('common.ok'), t('addRecipe.failedToAdd')),
+          onError: (err) =>
+            Alert.alert(t('common.ok'), err instanceof Error ? err.message : t('addRecipe.failedToAdd')),
         },
       )
     },

@@ -391,15 +391,13 @@ async def link_recipe_to_household(
         if membership.scalar_one_or_none() is None:
             raise HTTPException(status_code=403, detail="Not a member of that household")
     result = await session.execute(
-        select(Recipe).where(
-            Recipe.id == recipe_id,
-            Recipe.user_id == user.id,
-            Recipe.household_id.is_(None),
-        )
+        select(Recipe).where(Recipe.id == recipe_id, Recipe.user_id == user.id)
     )
     recipe = result.scalar_one_or_none()
     if recipe is None:
-        raise HTTPException(status_code=404, detail="Personal recipe not found")
+        raise HTTPException(status_code=404, detail="Recipe not found")
+    if recipe.household_id is not None:
+        raise HTTPException(status_code=400, detail="Recipe already belongs to a household")
     recipe.household_id = household_id
     recipe.shared_to_personal = True
     await session.commit()
