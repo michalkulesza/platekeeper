@@ -53,10 +53,15 @@ const ViewHeaderRight = ({
 }) => {
   const { t } = useTranslation()
   const recipeActions = useMemo<MenuAction[]>(
-    () =>
+    () => [
       households.length > 0
-        ? households.map((h) => ({ id: `${SEND_TO_HOUSEHOLD_PREFIX}${h.id}`, title: h.name }))
-        : [{ id: 'no-households', title: t('recipes.noHouseholds'), attributes: { disabled: true } }],
+        ? {
+            id: 'send-to-household',
+            title: t('recipes.sendToHousehold'),
+            subactions: households.map((h) => ({ id: `${SEND_TO_HOUSEHOLD_PREFIX}${h.id}`, title: h.name })),
+          }
+        : { id: 'send-to-household', title: t('recipes.sendToHousehold'), attributes: { disabled: true } },
+    ],
     [households, t],
   )
   return (
