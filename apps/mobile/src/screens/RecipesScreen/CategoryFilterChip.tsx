@@ -1,11 +1,18 @@
-import { useCallback, useState } from 'react'
-import { FlatList, ListRenderItemInfo, Modal, Pressable, StyleSheet, Text, View } from 'react-native'
+import { useCallback, useRef, useState } from 'react'
+import { Dimensions, Modal, PlatformColor, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { PlatformColor } from 'react-native'
 import type { Tag, TagCategory } from '@carrot/shared/types'
 import { tTag } from '@carrot/shared/utils/tagUtils'
 import GlassViewSafe from '../../components/GlassViewSafe'
 import { colors } from '../../theme/colors'
+
+const POPOVER_WIDTH = 180
+const POPOVER_MARGIN = 12
+
+interface PopoverPosition {
+  top: number
+  left: number
+}
 
 const CategoryFilterChip = ({
   category,
@@ -19,7 +26,8 @@ const CategoryFilterChip = ({
   onToggle: (tagId: string) => void
 }) => {
   const { t } = useTranslation()
-  const [modalVisible, setModalVisible] = useState(false)
+  const anchorRef = useRef<View>(null)
+  const [popoverPosition, setPopoverPosition] = useState<PopoverPosition | null>(null)
 
   const selectedTags = tags.filter((tag) => selectedTagIds.has(tag.id))
   const isActive = selectedTags.length > 0
@@ -29,52 +37,62 @@ const CategoryFilterChip = ({
       : tTag(selectedTags[0].name, t)
     : t(`tags.category.${category}`)
 
-  const handleOpen = useCallback(() => setModalVisible(true), [])
-  const handleClose = useCallback(() => setModalVisible(false), [])
+  const handleOpen = useCallback(() => {
+    anchorRef.current?.measureInWindow((x, y, width, height) => {
+      const screenWidth = Dimensions.get('window').width
+      const left = Math.min(x, screenWidth - POPOVER_WIDTH - POPOVER_MARGIN)
+      setPopoverPosition({ top: y + height + 4, left: Math.max(left, POPOVER_MARGIN) })
+    })
+  }, [])
 
-  const renderRow = useCallback(
-    ({ item }: ListRenderItemInfo<Tag>) => {
-      const isSelected = selectedTagIds.has(item.id)
-      return (
-        <Pressable
-          style={styles.row}
-          onPress={() => onToggle(item.id)}
-          accessibilityLabel={item.name}
-          accessibilityState={{ selected: isSelected }}
-        >
-          <Text style={styles.rowText}>{tTag(item.name, t)}</Text>
-          {isSelected && <Text style={styles.rowCheck}>✓</Text>}
-        </Pressable>
-      )
-    },
-    [selectedTagIds, onToggle, t],
-  )
+  const handleClose = useCallback(() => setPopoverPosition(null), [])
 
   return (
     <>
-      <Pressable
-        onPress={handleOpen}
-        style={({ pressed }) => [styles.chip, pressed && { opacity: 0.7 }]}
-        accessibilityLabel={t(`tags.category.${category}`)}
-        accessibilityRole="button"
-        accessibilityState={{ selected: isActive }}
-      >
-        <GlassViewSafe
-          style={StyleSheet.absoluteFill}
-          glassEffectStyle={isActive ? 'clear' : 'regular'}
-          tintColor={isActive ? colors.blue : colors.gray5}
-        />
-        <Text style={[styles.chipText, isActive && styles.chipTextSelected]} numberOfLines={1}>
-          {label} ▾
-        </Text>
-      </Pressable>
-      <Modal visible={modalVisible} transparent animationType="slide" onRequestClose={handleClose}>
+      <View ref={anchorRef} collapsable={false}>
+        <Pressable
+          onPress={handleOpen}
+          style={({ pressed }) => [styles.chip, pressed && { opacity: 0.7 }]}
+          accessibilityLabel={t(`tags.category.${category}`)}
+          accessibilityRole="button"
+          accessibilityState={{ selected: isActive }}
+        >
+          <GlassViewSafe
+            style={StyleSheet.absoluteFill}
+            glassEffectStyle={isActive ? 'clear' : 'regular'}
+            tintColor={isActive ? colors.blue : colors.gray5}
+          />
+          <Text style={[styles.chipText, isActive && styles.chipTextSelected]} numberOfLines={1}>
+            {label} ▾
+          </Text>
+        </Pressable>
+      </View>
+      <Modal visible={popoverPosition !== null} transparent animationType="fade" onRequestClose={handleClose}>
         <Pressable style={styles.overlay} onPress={handleClose} />
-        <View style={styles.sheet}>
-          <View style={styles.sheetHandle} />
-          <Text style={styles.sheetTitle}>{t(`tags.category.${category}`)}</Text>
-          <FlatList data={tags} keyExtractor={(item) => item.id} renderItem={renderRow} />
-        </View>
+        {popoverPosition && (
+          <View style={[styles.popover, { top: popoverPosition.top, left: popoverPosition.left }]}>
+            <ScrollView bounces={false} style={styles.popoverScroll}>
+              {tags.map((tag) => {
+                const isSelected = selectedTagIds.has(tag.id)
+                return (
+                  <Pressable
+                    key={tag.id}
+                    style={styles.row}
+                    onPress={() => onToggle(tag.id)}
+                    accessibilityLabel={tag.name}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isSelected }}
+                  >
+                    <Text style={styles.rowText} numberOfLines={1}>
+                      {tTag(tag.name, t)}
+                    </Text>
+                    {isSelected && <Text style={styles.rowCheck}>✓</Text>}
+                  </Pressable>
+                )
+              })}
+            </ScrollView>
+          </View>
+        )}
       </Modal>
     </>
   )
@@ -94,40 +112,30 @@ const styles = StyleSheet.create({
   },
   chipText: { fontSize: 13, color: colors.secondaryLabel },
   chipTextSelected: { color: '#ffffff', fontWeight: '600' },
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
-  sheet: {
+  overlay: { flex: 1 },
+  popover: {
+    position: 'absolute',
+    width: POPOVER_WIDTH,
+    maxHeight: 260,
     backgroundColor: PlatformColor('systemBackground') as unknown as string,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    paddingTop: 8,
-    maxHeight: '60%',
-    paddingBottom: 24,
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
   },
-  sheetHandle: {
-    width: 36,
-    height: 4,
-    backgroundColor: PlatformColor('opaqueSeparator') as unknown as string,
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 8,
-  },
-  sheetTitle: {
-    fontSize: 17,
-    lineHeight: 22,
-    fontWeight: '600',
-    color: PlatformColor('label') as unknown as string,
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-  },
+  popoverScroll: { flexGrow: 0 },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderColor: PlatformColor('separator') as unknown as string,
   },
-  rowText: { fontSize: 16, color: PlatformColor('secondaryLabel') as unknown as string },
-  rowCheck: { fontSize: 16, color: colors.brand },
+  rowText: { fontSize: 15, color: PlatformColor('label') as unknown as string, flexShrink: 1 },
+  rowCheck: { fontSize: 15, color: colors.brand, marginLeft: 8 },
 })
