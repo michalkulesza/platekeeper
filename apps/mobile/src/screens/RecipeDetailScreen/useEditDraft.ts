@@ -74,7 +74,15 @@ export const useEditDraft = ({
     setDraft((prev) => prev && {
       ...prev,
       components: prev.components.map((c, i) =>
-        i === ci ? { ...c, ingredients: c.ingredients.map((ing, j) => (j === ii ? val : ing)) } : c,
+        i === ci
+          ? {
+              ...c,
+              ingredients: c.ingredients.map((ing, j) => (j === ii ? val : ing)),
+              shopping_list_ingredients: c.shopping_list_ingredients?.map(
+                (value, j) => j === ii ? serializeIngredient(val) : value,
+              ) ?? null,
+            }
+          : c,
       ),
     })
   }, [])
@@ -83,7 +91,15 @@ export const useEditDraft = ({
     setDraft((prev) => prev && {
       ...prev,
       components: prev.components.map((c, i) =>
-        i === ci ? { ...c, ingredients: [...c.ingredients, { qty: '', unit: '', name: '' }] } : c,
+        i === ci
+          ? {
+              ...c,
+              ingredients: [...c.ingredients, { qty: '', unit: '', name: '' }],
+              shopping_list_ingredients: c.shopping_list_ingredients
+                ? [...c.shopping_list_ingredients, '']
+                : null,
+            }
+          : c,
       ),
     })
   }, [])
@@ -95,7 +111,13 @@ export const useEditDraft = ({
       return {
         ...prev,
         components: prev.components.map((c, i) =>
-          i === ci ? { ...c, ingredients: c.ingredients.filter((_, j) => j !== ii) } : c,
+          i === ci
+            ? {
+                ...c,
+                ingredients: c.ingredients.filter((_, j) => j !== ii),
+                shopping_list_ingredients: c.shopping_list_ingredients?.filter((_, j) => j !== ii) ?? null,
+              }
+            : c,
         ),
       }
     })
@@ -186,6 +208,9 @@ export const useEditDraft = ({
           name: c.name ?? '',
           yield_note: c.yield_note ?? '',
           ingredients: c.ingredients.filter((ing) => ing.name).map(serializeIngredient),
+          shopping_list_ingredients: c.shopping_list_ingredients
+            ?.filter((_, index) => Boolean(c.ingredients[index]?.name))
+            ?? null,
           steps: c.steps.filter(Boolean),
           ingredient_flags: [],
           step_ingredient_refs: null,

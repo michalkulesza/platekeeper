@@ -23,6 +23,7 @@ export interface Ingredient {
   qty: string | null
   unit: Unit | null
   name: string
+  shopping_list_value?: string | null
   allergen?: string | null
   substitute?: string | null
 }
@@ -132,6 +133,7 @@ export interface SaveComponent {
   name: string
   yield_note: string
   ingredients: string[]
+  shopping_list_ingredients?: string[] | null
   steps: string[]
   metric_ingredients?: string[] | null
   imperial_ingredients?: string[] | null

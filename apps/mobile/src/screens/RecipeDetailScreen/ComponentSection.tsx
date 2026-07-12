@@ -69,7 +69,7 @@ const ComponentSection = ({
       const key = `${index}-${i}`
       if (!sessionAdded?.has(key)) {
         keys.push(key)
-        texts.push(formatForList(ing))
+        texts.push(component.shopping_list_ingredients?.[i] || formatForList(ing))
       }
     })
     if (texts.length > 0) onAddAll?.(keys, texts)
@@ -108,7 +108,10 @@ const ComponentSection = ({
               ingredient={ing}
               addMode={addMode}
               isAdded={sessionAdded?.has(`${index}-${i}`) ?? false}
-              onAdd={() => onAdd?.(`${index}-${i}`, formatForList(ing))}
+              onAdd={() => onAdd?.(
+                `${index}-${i}`,
+                component.shopping_list_ingredients?.[i] || formatForList(ing),
+              )}
               fontSize={fontSize}
               lineHeight={lineHeight}
             />

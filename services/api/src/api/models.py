@@ -212,6 +212,7 @@ class Ingredient(BaseModel):
     qty: str | None = None
     unit: UnitEnum | None = None
     name: str
+    shopping_list_value: str | None = None
     allergen: str | None = None
     substitute: str | None = None
 
@@ -311,6 +312,7 @@ class SaveComponent(BaseModel):
     name: str
     yield_note: str
     ingredients: list[str]
+    shopping_list_ingredients: list[str] | None = None
     steps: list[str]
     metric_ingredients: list[str] | None = None
     imperial_ingredients: list[str] | None = None

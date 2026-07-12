@@ -304,7 +304,7 @@ const RecipeDetailModal = ({
 
   const handleAddIngredient = (ci: number, ii: number) => {
     const comp = (r.components as SaveComponent[])[ci]
-    const text = formatForShoppingList(comp.ingredients[ii])
+    const text = comp.shopping_list_ingredients?.[ii] || formatForShoppingList(comp.ingredients[ii])
     addShoppingListItems.mutate([text])
     setSessionAdded((prev) => new Set(prev).add(`${ci}-${ii}`))
   }
@@ -317,7 +317,7 @@ const RecipeDetailModal = ({
       const key = `${ci}-${ii}`
       if (!sessionAdded.has(key)) {
         keys.push(key)
-        texts.push(formatForShoppingList(ing))
+        texts.push(comp.shopping_list_ingredients?.[ii] || formatForShoppingList(ing))
       }
     })
     if (texts.length === 0) return

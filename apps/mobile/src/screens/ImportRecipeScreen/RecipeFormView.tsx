@@ -98,7 +98,13 @@ const RecipeFormView = ({
     onChange({
       ...recipe,
       components: recipe.components.map((c, ci2) =>
-        ci2 !== ci ? c : { ...c, ingredients: c.ingredients.map((ing, ii2) => (ii2 === ii ? val : ing)) },
+        ci2 !== ci ? c : {
+          ...c,
+          ingredients: c.ingredients.map((ing, ii2) => (ii2 === ii ? val : ing)),
+          shopping_list_ingredients: c.shopping_list_ingredients?.map(
+            (value, ii2) => ii2 === ii ? serializeIngredient(val) : value,
+          ) ?? null,
+        },
       ),
     })
   }, [recipe, onChange])
@@ -110,6 +116,9 @@ const RecipeFormView = ({
         ci2 !== ci ? c : {
           ...c,
           ingredients: [...c.ingredients, { qty: '', unit: '', name: '' }],
+          shopping_list_ingredients: c.shopping_list_ingredients
+            ? [...c.shopping_list_ingredients, '']
+            : null,
           ingredient_flags: [...c.ingredient_flags, null],
         },
       ),
@@ -125,6 +134,7 @@ const RecipeFormView = ({
         ci2 !== ci ? c : {
           ...c,
           ingredients: c.ingredients.filter((_, idx) => idx !== ii),
+          shopping_list_ingredients: c.shopping_list_ingredients?.filter((_, idx) => idx !== ii) ?? null,
           ingredient_flags: c.ingredient_flags.filter((_, idx) => idx !== ii),
         },
       ),

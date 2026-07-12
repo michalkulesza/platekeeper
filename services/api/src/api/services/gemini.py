@@ -103,6 +103,14 @@ Examples:
   "salt to taste" → qty=null, unit=null, name="salt, to taste"
   "1 oz butter" → qty="28", unit="g", name="butter"
 
+For every ingredient, also return shopping_list_value: the concise text that
+should be added to a shopping list. Preserve the ingredient and its needed
+amount, but round UP indivisible items to a practical whole purchase quantity
+(e.g. "0.5 onion" → "1 onion", "1.5 avocados" → "2 avocados"). Do not round
+weights, volumes, or other divisible measurements (e.g. "125 g butter" stays
+"125 g butter"). Include preparation notes only when they are important for
+what to buy. If no quantity is given, return the ingredient name.
+
 For every component, return BOTH unit variants in parallel arrays:
 - metric_ingredients and metric_steps: use grams/kilograms/millilitres/litres
   and Celsius. Convert every cup measurement to an ingredient-specific whole
@@ -299,6 +307,44 @@ class _IngredientFlag(BaseModel):
 
 class _AllergenAnalysisResult(BaseModel):
     results: list[_IngredientFlag]
+
+
+class _ShoppingListValuesResult(BaseModel):
+    values: list[str]
+
+
+async def recommend_shopping_list_values(
+    ingredients: list[str],
+    model: str = _DEFAULT_MODEL,
+) -> list[str]:
+    """Return a practical shopping-list value for every ingredient, in order."""
+    if not ingredients:
+        return []
+
+    numbered = "\n".join(f"{i + 1}. {ingredient}" for i, ingredient in enumerate(ingredients))
+    instruction = """\
+You prepare recipe ingredients for a shopping list. Return one concise value for
+each input ingredient in exactly the same order and language. Preserve the
+ingredient and needed amount. Round UP indivisible food items to a practical
+whole purchase quantity (for example, \"0.5 sweet onion\" becomes \"1 sweet
+onion\" and \"1.5 avocados\" becomes \"2 avocados\"). Do not round weights,
+volumes, or other divisible measurements (for example, \"125 g butter\" stays
+\"125 g butter\"). Keep preparation notes only when important for buying.
+"""
+    client = _build_client()
+    response = await _with_retry(lambda: client.models.generate_content(
+        model=model,
+        contents=numbered,
+        config=types.GenerateContentConfig(
+            system_instruction=instruction,
+            response_mime_type="application/json",
+            response_schema=_ShoppingListValuesResult,
+        ),
+    ))
+    result = _ShoppingListValuesResult.model_validate(json.loads(response.text))
+    if len(result.values) != len(ingredients):
+        raise RuntimeError("Gemini returned the wrong number of shopping-list values")
+    return result.values
 
 
 async def analyze_allergens(

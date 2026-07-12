@@ -58,6 +58,9 @@ const EditableRecipeView = ({
             ingredients: c.ingredients.map((ing, ii2) =>
               ii2 === ii ? val : ing
             ),
+            shopping_list_ingredients: c.shopping_list_ingredients?.map(
+              (value, ii2) => ii2 === ii ? serializeIngredient(val) : value,
+            ) ?? null,
           }
     )
     onChange({ ...recipe, components })

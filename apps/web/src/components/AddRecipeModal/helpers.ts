@@ -23,6 +23,7 @@ export interface EditableComponent {
   name: string
   yield_note: string
   ingredients: StructuredIngredient[]
+  shopping_list_ingredients: string[] | null
   steps: string[]
   metric_ingredients: string[] | null
   imperial_ingredients: string[] | null
@@ -147,6 +148,15 @@ export const toEditable = (
             name: nameToUse,
           }
         }),
+        shopping_list_ingredients: c.ingredients.map((ing) => {
+          const useSub = autoSubstitute && !!ing.allergen && !!ing.substitute
+          const nameToUse = useSub ? ing.substitute! : ing.name
+          return ing.shopping_list_value || serializeIngredient({
+            qty: ing.qty ?? '',
+            unit: ing.unit ?? '',
+            name: nameToUse,
+          })
+        }),
         steps: c.steps,
         metric_ingredients: c.metric_ingredients,
         imperial_ingredients: c.imperial_ingredients,
@@ -185,6 +195,7 @@ export const buildSaveRecipePayload = (
     name: c.name,
     yield_note: c.yield_note,
     ingredients: c.ingredients.map(serializeIngredient),
+    shopping_list_ingredients: c.shopping_list_ingredients,
     steps: c.steps,
     metric_ingredients: c.metric_ingredients,
     imperial_ingredients: c.imperial_ingredients,

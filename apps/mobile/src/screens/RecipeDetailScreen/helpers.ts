@@ -16,6 +16,7 @@ export interface EditComponent {
   name: string
   yield_note: string
   ingredients: StructuredIngredient[]
+  shopping_list_ingredients: string[] | null
   steps: string[]
 }
 
@@ -44,6 +45,7 @@ export const buildDraft = (recipe: RecipeOut): EditDraft => ({
     ingredients: (c.ingredients as Array<string | StructuredIngredient>).map((raw) =>
       typeof raw === 'string' ? parseIngredient(raw) : raw,
     ),
+    shopping_list_ingredients: c.shopping_list_ingredients ?? null,
     steps: c.steps,
   })),
 })
