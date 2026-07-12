@@ -1,7 +1,10 @@
 import type { RefObject } from 'react'
 import { ActivityIndicator, Linking, Pressable, ScrollView, Switch, Text, View } from 'react-native'
+import Avatar from '../../components/Avatar'
 import NetworkImage from '../../components/NetworkImage'
 import { useTranslation } from 'react-i18next'
+import { useHousehold } from '../../context/HouseholdContext'
+import { useAuth } from '../../context/AuthContext'
 import { Feather, Ionicons } from '@expo/vector-icons'
 import type { EdgeInsets } from 'react-native-safe-area-context'
 import type { RecipeOut } from '@carrot/shared/types'
@@ -57,7 +60,14 @@ const ReadView = ({
   addIngredientSheetRef: RefObject<AddIngredientToShoppingListSheetHandle | null>
 }) => {
   const { t } = useTranslation()
+  const { households } = useHousehold()
+  const { user } = useAuth()
   const hasImage = !!recipe.thumbnail_url
+  const personalName = user?.nickname || user?.email || t('households.personal')
+  const recipeHousehold = recipe.household_id ? households.find((h) => h.id === recipe.household_id) : undefined
+  const householdAvatarProps = recipeHousehold
+    ? { name: recipeHousehold.name, color: recipeHousehold.color }
+    : { name: personalName }
 
   return (
     <View style={styles.container}>
@@ -92,6 +102,10 @@ const ReadView = ({
               ))}
             </View>
           )}
+
+          <View style={styles.householdRow}>
+            <Avatar {...householdAvatarProps} size={28} />
+          </View>
 
           <NutritionBoxGrid
             editing={false}

@@ -80,6 +80,7 @@ export const styles = StyleSheet.create({
     paddingVertical: 1,
   },
   cardTagPillText: { fontSize: 12, lineHeight: 16, color: colors.brand, fontWeight: '500' },
+  cardMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   cardMeta: { fontSize: 12, color: colors.tertiaryLabel },
   empty: { padding: 40, alignItems: 'center' },
   emptyText: {

@@ -31,6 +31,7 @@ import { useApiClient } from '@carrot/shared/api/context'
 import { useQueryClient } from '@tanstack/react-query'
 import type { RecipeOut, Tag } from '@carrot/shared/types'
 import { tTag } from '@carrot/shared/utils/tagUtils'
+import Avatar from '../../components/Avatar'
 import GlassViewSafe from '../../components/GlassViewSafe'
 import MarqueeText from '../../components/MarqueeText'
 import MarqueeRow from '../../components/MarqueeRow'
@@ -89,6 +90,7 @@ const RecipesScreen = () => {
   const api = useApiClient()
   const qc = useQueryClient()
   const { items: notifItems } = useNotificationHistory()
+  const personalName = useMemo(() => user?.nickname || user?.email || t('households.personal'), [user, t])
   const [query, setQuery] = useState('')
   const [isSearching, setIsSearching] = useState(false)
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null)
@@ -321,7 +323,7 @@ const RecipesScreen = () => {
           householdMenuActions={householdMenuActions}
           onHouseholdAction={handleHouseholdAction}
           activeHousehold={activeHousehold}
-          personalName={user?.nickname || user?.email || t('households.personal')}
+          personalName={personalName}
           switchContextLabel={t('households.switchContext')}
         />
       ),
@@ -445,6 +447,14 @@ const RecipesScreen = () => {
     [selectedTagId, handleTagPress, t],
   )
 
+  const recipeHouseholdAvatarProps = useCallback(
+    (householdId: string | null) => {
+      const household = householdId ? households.find((h) => h.id === householdId) : undefined
+      return household ? { name: household.name, color: household.color } : { name: personalName }
+    },
+    [households, personalName],
+  )
+
   const renderRecipe = useCallback(
     ({ item }: ListRenderItemInfo<RecipeOut>) => {
       const isFav = favouriteOverrides.has(item.id)
@@ -522,17 +532,12 @@ const RecipesScreen = () => {
                   </>
                 )}
               </MarqueeSyncSlots>
-              {(item.servings != null || item.kcal_per_serving != null || item.protein_per_serving != null || item.fat_per_serving != null || item.carbs_per_serving != null) && (
-                <Text style={styles.cardMeta}>
-                  {[
-                    item.servings != null ? `${t('recipes.serves')}: ${item.servings}` : null,
-                    item.kcal_per_serving != null ? `${item.kcal_per_serving} kcal` : null,
-                    item.protein_per_serving != null ? `${item.protein_per_serving}g ${t('recipes.protein')}` : null,
-                    item.fat_per_serving != null ? `${item.fat_per_serving}g ${t('recipes.fat')}` : null,
-                    item.carbs_per_serving != null ? `${item.carbs_per_serving}g ${t('recipes.carbs')}` : null,
-                  ].filter(Boolean).join('   ')}
-                </Text>
-              )}
+              <View style={styles.cardMetaRow}>
+                <Avatar {...recipeHouseholdAvatarProps(item.household_id)} size={18} />
+                {item.kcal_per_serving != null && (
+                  <Text style={styles.cardMeta}>{`${item.kcal_per_serving} kcal`}</Text>
+                )}
+              </View>
             </View>
             <Pressable
               style={({ pressed }) => [styles.favBtn, pressed && { opacity: 0.7 }]}
@@ -548,7 +553,7 @@ const RecipesScreen = () => {
         </Reanimated.View>
       )
     },
-    [handleRecipePress, handleToggleFavourite, renderSwipeActions, favouriteOverrides, t],
+    [handleRecipePress, handleToggleFavourite, renderSwipeActions, favouriteOverrides, recipeHouseholdAvatarProps, t],
   )
 
   const favChip = useMemo(

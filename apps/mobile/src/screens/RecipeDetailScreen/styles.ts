@@ -46,6 +46,11 @@ export const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   tagText: { color: colors.brand, fontSize: 12, fontWeight: '500' },
+  householdRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   sourceRow: {
     flexDirection: 'row',
     alignItems: 'center',
