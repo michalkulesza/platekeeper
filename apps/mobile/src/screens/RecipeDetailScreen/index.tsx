@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Text, View } from 'react-native'
+import { ActionSheetIOS, ActivityIndicator, Alert, Text, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import * as Haptics from 'expo-haptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -23,7 +23,7 @@ const RecipeDetailScreen = () => {
   const navigation = useNavigation()
   const { t } = useTranslation()
   const api = useApiClient()
-  const { recipes, isLoading, error, toggleFavourite } = useRecipes()
+  const { recipes, isLoading, error, toggleFavourite, linkToHousehold } = useRecipes()
   const { addItems } = useShoppingList()
   const [heroImageErrored, setHeroImageErrored] = useState(false)
   const [addMode, setAddMode] = useState(false)
@@ -55,6 +55,20 @@ const RecipeDetailScreen = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
     toggleFavourite.mutate(recipe.id)
   }, [recipe, toggleFavourite])
+
+  const handleOpenRecipeActions = useCallback(() => {
+    if (!recipe) return
+    ActionSheetIOS.showActionSheetWithOptions(
+      { options: [t('recipes.sendToHousehold'), t('common.cancel')], cancelButtonIndex: 1 },
+      (index) => {
+        if (index !== 0) return
+        linkToHousehold.mutate(recipe.id, {
+          onSuccess: () => Alert.alert(t('addRecipe.recipeAddedToHousehold')),
+          onError: () => Alert.alert(t('common.ok'), t('addRecipe.failedToAdd')),
+        })
+      },
+    )
+  }, [recipe, linkToHousehold, t])
 
   const handleAddIngredient = useCallback((key: string, text: string) => {
     pendingIngredientKeyRef.current = key
@@ -89,6 +103,7 @@ const RecipeDetailScreen = () => {
     handleEdit: editDraft.handleEdit,
     handleCancelEdit: editDraft.handleCancelEdit,
     handleOpenMealPlanSheet,
+    handleOpenRecipeActions,
   })
 
   if (isLoading) {

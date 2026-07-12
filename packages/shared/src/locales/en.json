@@ -42,6 +42,7 @@
     "sectionRecipes": "Recipes",
     "sectionIngredients": "Ingredients",
     "recipeActions": "Recipe actions",
+    "sendToHousehold": "Send to household",
     "rowActions": "Row actions",
     "dragToReorder": "Drag to reorder",
     "servings_one": "{{count}} serving",
