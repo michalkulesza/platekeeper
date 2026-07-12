@@ -2,6 +2,7 @@ import asyncio
 
 from sqlalchemy import select
 
+from api import users
 from api.database import async_session_maker
 from api.models import Recipe
 from api.services.gemini import estimate_unit_variants

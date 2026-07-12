@@ -413,7 +413,6 @@ const RecipeDetailModal = ({
                         <EditComponent
                           key={ci}
                           comp={comp}
-                          unitSystem={preferences?.unit_system ?? 'metric'}
                           single={single}
                           onIngredientChange={(ii, val) =>
                             setIngredient(ci, ii, val)
@@ -425,6 +424,7 @@ const RecipeDetailModal = ({
                         <ViewComponent
                           key={ci}
                           comp={comp}
+                          unitSystem={preferences?.unit_system ?? 'metric'}
                           single={single}
                           activeAllergens={activeAllergens}
                           onReplaceIngredient={(ii) =>
