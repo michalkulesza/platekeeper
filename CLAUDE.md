@@ -1,5 +1,5 @@
 # Misc
-- After each successful task make a commit with a message. If not sure if feature is fully completed, ask user.
+- Before committing, ask the user to confirm the change is fully complete and correct — do not commit on your own judgment that a task is "successful." Only commit after they confirm.
 - When implementing a plan from .md include that file in the commit
 
 # Production VPS access
@@ -13,3 +13,4 @@ here automatically — this file only holds what's specific to `carrot`.
 
 ## Translations
 This project's locale files: en, pl, de, fr, es. Add new keys to all 5 when introducing strings.
+
