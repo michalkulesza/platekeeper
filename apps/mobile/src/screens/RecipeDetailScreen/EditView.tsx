@@ -3,28 +3,26 @@ import NetworkImage from '../../components/NetworkImage'
 import { useTranslation } from 'react-i18next'
 import { Feather } from '@expo/vector-icons'
 import type { EdgeInsets } from 'react-native-safe-area-context'
-import type { Tag } from '@carrot/shared/types'
-import { tTag } from '@carrot/shared/utils/tagUtils'
+import type { RecipeOut } from '@carrot/shared/types'
 import { colors } from '../../theme/colors'
-import { UnitPickerModal, TagPickerModal, IngredientEditor } from '../../components/RecipeFieldEditors'
+import { UnitPickerModal, IngredientEditor } from '../../components/RecipeFieldEditors'
 import NutritionBoxGrid from '../../components/NutritionBoxGrid'
 import { proxyThumbnailUrl } from '../../api/thumbnailUrl'
 import { styles } from './styles'
 import type { EditComponent, EditDraft } from './helpers'
 import type { useEditDraft } from './useEditDraft'
+import NotesSection from './NotesSection'
+import TagsSection from './TagsSection'
 
 type EditDraftState = ReturnType<typeof useEditDraft>
 
 const EditView = ({
+  recipe,
   draft,
-  selectedTags,
   saving,
-  allTags,
   insets,
+  fontSizeIndex,
   handlePickThumbnail,
-  handleTagAdd,
-  handleTagRemove,
-  handleTagCreate,
   handleCancelEdit,
   handleSaveEdit,
   handleUnitSelect,
@@ -39,24 +37,19 @@ const EditView = ({
   setDraft,
   setThumbErrored,
   setUnitPickerTarget,
-  setShowTagPicker,
   uploadingThumb,
   thumbErrored,
   unitPickerTarget,
-  showTagPicker,
   currentUnit,
 }: {
+  recipe: RecipeOut
   draft: EditDraft
-  selectedTags: Tag[]
   saving: boolean
-  allTags: Tag[]
   insets: EdgeInsets
+  fontSizeIndex: number
 } & Pick<
   EditDraftState,
   | 'handlePickThumbnail'
-  | 'handleTagAdd'
-  | 'handleTagRemove'
-  | 'handleTagCreate'
   | 'handleCancelEdit'
   | 'handleSaveEdit'
   | 'handleUnitSelect'
@@ -71,15 +64,12 @@ const EditView = ({
   | 'setDraft'
   | 'setThumbErrored'
   | 'setUnitPickerTarget'
-  | 'setShowTagPicker'
   | 'uploadingThumb'
   | 'thumbErrored'
   | 'unitPickerTarget'
-  | 'showTagPicker'
   | 'currentUnit'
 >) => {
   const { t } = useTranslation()
-  const selectedTagIds = new Set(selectedTags.map((tag) => tag.id))
 
   return (
     <KeyboardAvoidingView
@@ -145,25 +135,9 @@ const EditView = ({
             accessibilityLabel={t('recipes.colTitle')}
           />
 
-          <View style={styles.tagRow}>
-            {selectedTags.map((tag) => (
-              <Pressable
-                key={tag.id}
-                style={({ pressed }) => [styles.tag, pressed && { opacity: 0.7 }]}
-                onPress={() => handleTagRemove(tag.id)}
-                accessibilityLabel={`${tag.name}, tap to remove`}
-              >
-                <Text style={styles.tagText}>{tTag(tag.name, t)} ×</Text>
-              </Pressable>
-            ))}
-            <Pressable
-              style={({ pressed }) => [styles.addTagBtn, pressed && { opacity: 0.7 }]}
-              onPress={() => setShowTagPicker(true)}
-              accessibilityLabel={t('tags.addTag')}
-            >
-              <Text style={styles.addTagBtnText}>+ {t('tags.addTag')}</Text>
-            </Pressable>
-          </View>
+          <NotesSection recipe={recipe} fontSizeIndex={fontSizeIndex} />
+
+          <TagsSection recipe={recipe} />
 
           <NutritionBoxGrid
             editing
@@ -178,33 +152,12 @@ const EditView = ({
             disclaimerText={t('recipes.nutritionEstimateDisclaimer')}
           />
 
-          <TagPickerModal
-            visible={showTagPicker}
-            allTags={allTags}
-            selectedIds={selectedTagIds}
-            onAdd={handleTagAdd}
-            onRemove={handleTagRemove}
-            onCreate={handleTagCreate}
-            onClose={() => setShowTagPicker(false)}
-          />
           <UnitPickerModal
             visible={unitPickerTarget != null}
             selected={currentUnit}
             onSelect={handleUnitSelect}
             onClose={() => setUnitPickerTarget(null)}
           />
-
-          <View style={styles.notesBlock}>
-            <Text style={styles.sectionLabel}>{t('recipes.notes')}</Text>
-            <TextInput
-              style={[styles.notesText, styles.notesInput]}
-              value={draft.notes}
-              onChangeText={(v) => setDraft((prev) => prev && { ...prev, notes: v })}
-              multiline
-              placeholder={t('common.addPrivateNotes')}
-              accessibilityLabel={t('recipes.notes')}
-            />
-          </View>
 
           {draft.components.map((comp, ci) => (
             <EditComponentBlock

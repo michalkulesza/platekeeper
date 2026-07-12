@@ -126,6 +126,7 @@ export const styles = StyleSheet.create({
   },
   notesBlock: { marginBottom: 16 },
   notesText: { fontSize: 17, color: colors.secondaryLabel, lineHeight: 22 },
+  notesPlaceholder: { color: colors.tertiaryLabel },
   componentBlock: { marginTop: 8 },
   componentName: {
     fontSize: 20,

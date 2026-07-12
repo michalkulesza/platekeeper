@@ -7,7 +7,6 @@ import { useNavigation, useLocalSearchParams } from 'expo-router'
 import { useApiClient } from '@carrot/shared/api/context'
 import { useRecipes } from '@carrot/shared/hooks/useRecipes'
 import { useShoppingList } from '@carrot/shared/hooks/useShoppingList'
-import { useTags } from '@carrot/shared/hooks/useTags'
 import type { RecipeOut } from '@carrot/shared/types'
 import { useDebugMode } from '../../context/DebugModeContext'
 import type { AddToMealPlanSheetHandle } from '../../components/AddToMealPlanSheet'
@@ -26,7 +25,6 @@ const RecipeDetailScreen = () => {
   const api = useApiClient()
   const { recipes, isLoading, error, toggleFavourite } = useRecipes()
   const { addItems } = useShoppingList()
-  const { tags: allTags, create: createTagMutation } = useTags()
   const [heroImageErrored, setHeroImageErrored] = useState(false)
   const [addMode, setAddMode] = useState(false)
   const [sessionAdded, setSessionAdded] = useState<Set<string>>(new Set())
@@ -43,9 +41,7 @@ const RecipeDetailScreen = () => {
     [recipes, recipeId],
   )
 
-  const createTag = useCallback((name: string) => createTagMutation.mutateAsync(name), [createTagMutation])
-
-  const editDraft = useEditDraft({ recipe, recipeId, autoEditParam, api, t, createTag })
+  const editDraft = useEditDraft({ recipe, recipeId, autoEditParam, api, t })
 
   const handleOpenMealPlanSheet = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
@@ -122,15 +118,12 @@ const RecipeDetailScreen = () => {
   if (editDraft.editing && editDraft.draft) {
     return (
       <EditView
+        recipe={recipe}
         draft={editDraft.draft}
-        selectedTags={editDraft.selectedTags}
         saving={editDraft.saving}
-        allTags={allTags}
         insets={insets}
+        fontSizeIndex={displayPrefs.fontSizeIndex}
         handlePickThumbnail={editDraft.handlePickThumbnail}
-        handleTagAdd={editDraft.handleTagAdd}
-        handleTagRemove={editDraft.handleTagRemove}
-        handleTagCreate={editDraft.handleTagCreate}
         handleCancelEdit={editDraft.handleCancelEdit}
         handleSaveEdit={editDraft.handleSaveEdit}
         handleUnitSelect={editDraft.handleUnitSelect}
@@ -145,11 +138,9 @@ const RecipeDetailScreen = () => {
         setDraft={editDraft.setDraft}
         setThumbErrored={editDraft.setThumbErrored}
         setUnitPickerTarget={editDraft.setUnitPickerTarget}
-        setShowTagPicker={editDraft.setShowTagPicker}
         uploadingThumb={editDraft.uploadingThumb}
         thumbErrored={editDraft.thumbErrored}
         unitPickerTarget={editDraft.unitPickerTarget}
-        showTagPicker={editDraft.showTagPicker}
         currentUnit={editDraft.currentUnit}
       />
     )

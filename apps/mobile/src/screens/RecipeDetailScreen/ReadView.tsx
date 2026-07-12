@@ -8,7 +8,6 @@ import { useAuth } from '../../context/AuthContext'
 import { Feather, Ionicons } from '@expo/vector-icons'
 import type { EdgeInsets } from 'react-native-safe-area-context'
 import type { RecipeOut } from '@carrot/shared/types'
-import { tTag } from '@carrot/shared/utils/tagUtils'
 import AddToMealPlanSheet, { type AddToMealPlanSheetHandle } from '../../components/AddToMealPlanSheet'
 import AddIngredientToShoppingListSheet, {
   type AddIngredientToShoppingListSheetHandle,
@@ -19,6 +18,8 @@ import { proxyThumbnailUrl, PLACEHOLDER_URL } from '../../api/thumbnailUrl'
 import { styles } from './styles'
 import { extractDisplayUrl, FONT_SIZES, LINE_HEIGHTS } from './helpers'
 import ComponentSection from './ComponentSection'
+import NotesSection from './NotesSection'
+import TagsSection from './TagsSection'
 
 const ReadView = ({
   recipe,
@@ -112,15 +113,9 @@ const ReadView = ({
             <Text style={styles.title}>{recipe.title}</Text>
           </View>
 
-          {recipe.tags.length > 0 && (
-            <View style={styles.tagRow}>
-              {recipe.tags.map((tag) => (
-                <View key={tag.id} style={styles.tag}>
-                  <Text style={styles.tagText}>{tTag(tag.name, t)}</Text>
-                </View>
-              ))}
-            </View>
-          )}
+          <NotesSection recipe={recipe} fontSizeIndex={fontSizeIndex} />
+
+          <TagsSection recipe={recipe} />
 
           <View style={styles.householdRow}>
             <Avatar {...householdAvatarProps} size={28} />
@@ -208,13 +203,6 @@ const ReadView = ({
               </View>
             </View>
           </View>
-
-          {recipe.notes ? (
-            <View style={styles.notesBlock}>
-              <Text style={styles.sectionLabel}>{t('recipes.notes')}</Text>
-              <Text style={[styles.notesText, { fontSize: FONT_SIZES[fontSizeIndex], lineHeight: LINE_HEIGHTS[fontSizeIndex] }]}>{recipe.notes}</Text>
-            </View>
-          ) : null}
 
           {recipe.components.map((component, i) => (
             <ComponentSection

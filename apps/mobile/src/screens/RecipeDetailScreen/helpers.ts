@@ -1,4 +1,4 @@
-import type { Ingredient, RecipeOut, StepIngredientRef } from '@carrot/shared/types'
+import type { Ingredient, RecipeOut, RecipeSaveRequest, StepIngredientRef } from '@carrot/shared/types'
 import { parseIngredient, type StructuredIngredient } from '@carrot/shared/utils/ingredientUtils'
 import type { DurationMatch } from '../../context/TimerContext'
 
@@ -34,7 +34,6 @@ export interface EditDraft {
   protein: string
   fat: string
   carbs: string
-  notes: string
   thumbnail_url: string | null
   components: EditComponent[]
 }
@@ -46,7 +45,6 @@ export const buildDraft = (recipe: RecipeOut): EditDraft => ({
   protein: recipe.protein_per_serving?.toString() ?? '',
   fat: recipe.fat_per_serving?.toString() ?? '',
   carbs: recipe.carbs_per_serving?.toString() ?? '',
-  notes: recipe.notes ?? '',
   thumbnail_url: recipe.thumbnail_url,
   components: recipe.components.map((c) => ({
     name: c.name ?? '',
@@ -56,6 +54,26 @@ export const buildDraft = (recipe: RecipeOut): EditDraft => ({
     ),
     steps: c.steps,
   })),
+})
+
+export const buildRecipeSaveRequest = (
+  recipe: RecipeOut,
+  overrides: Partial<RecipeSaveRequest> = {},
+): RecipeSaveRequest => ({
+  title: recipe.title,
+  servings: recipe.servings,
+  kcal_per_serving: recipe.kcal_per_serving,
+  protein_per_serving: recipe.protein_per_serving,
+  fat_per_serving: recipe.fat_per_serving,
+  carbs_per_serving: recipe.carbs_per_serving,
+  thumbnail_url: recipe.thumbnail_url,
+  creator_handle: recipe.creator_handle,
+  source_url: recipe.source_url,
+  notes: recipe.notes,
+  components: recipe.components,
+  tag_ids: recipe.tags.map((tag) => tag.id),
+  shared_to_personal: recipe.shared_to_personal,
+  ...overrides,
 })
 
 export const formatForList = (ing: Ingredient): string =>
