@@ -65,6 +65,7 @@ export const styles = StyleSheet.create({
   householdRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
     marginBottom: 12,
   },
   debugBox: {

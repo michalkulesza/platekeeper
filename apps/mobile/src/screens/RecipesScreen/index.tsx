@@ -453,10 +453,21 @@ const RecipesScreen = () => {
     [selectedTagIds, toggleTagId, t],
   )
 
-  const recipeHouseholdAvatarProps = useCallback(
-    (householdId: string | null) => {
-      const household = householdId ? households.find((h) => h.id === householdId) : undefined
-      return household ? { name: household.name, color: household.color } : { name: personalName }
+  const recipeHouseholdAvatars = useCallback(
+    (recipe: RecipeOut) => {
+      const household = recipe.household_id
+        ? households.find((candidate) => candidate.id === recipe.household_id)
+        : undefined
+      const avatars = []
+
+      if (!recipe.household_id || recipe.shared_to_personal) {
+        avatars.push({ key: 'personal', name: personalName })
+      }
+      if (household) {
+        avatars.push({ key: household.id, name: household.name, color: household.color })
+      }
+
+      return avatars
     },
     [households, personalName],
   )
@@ -539,7 +550,11 @@ const RecipesScreen = () => {
                 )}
               </MarqueeSyncSlots>
               <View style={styles.cardMetaRow}>
-                <Avatar {...recipeHouseholdAvatarProps(item.household_id)} size={18} />
+                <View style={styles.cardHouseholdAvatars}>
+                  {recipeHouseholdAvatars(item).map(({ key, ...avatarProps }) => (
+                    <Avatar key={key} {...avatarProps} size={18} />
+                  ))}
+                </View>
                 {item.kcal_per_serving != null && (
                   <Text style={styles.cardMeta}>{`${item.kcal_per_serving} kcal`}</Text>
                 )}
@@ -559,7 +574,7 @@ const RecipesScreen = () => {
         </Reanimated.View>
       )
     },
-    [handleRecipePress, handleToggleFavourite, renderSwipeActions, favouriteOverrides, recipeHouseholdAvatarProps, t],
+    [handleRecipePress, handleToggleFavourite, renderSwipeActions, favouriteOverrides, recipeHouseholdAvatars, t],
   )
 
   const favChip = useMemo(

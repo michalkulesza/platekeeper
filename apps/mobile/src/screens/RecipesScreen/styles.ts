@@ -78,6 +78,7 @@ export const styles = StyleSheet.create({
   },
   cardTagPillText: { fontSize: 12, lineHeight: 16, color: colors.brand, fontWeight: '500' },
   cardMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  cardHouseholdAvatars: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   cardMeta: { fontSize: 12, color: colors.tertiaryLabel },
   empty: { padding: 40, alignItems: 'center' },
   emptyText: {

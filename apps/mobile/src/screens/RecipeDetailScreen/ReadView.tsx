@@ -66,9 +66,12 @@ const ReadView = ({
   const hasImage = !!recipe.thumbnail_url
   const personalName = user?.nickname || user?.email || t('households.personal')
   const recipeHousehold = recipe.household_id ? households.find((h) => h.id === recipe.household_id) : undefined
-  const householdAvatarProps = recipeHousehold
-    ? { name: recipeHousehold.name, color: recipeHousehold.color }
-    : { name: personalName }
+  const householdAvatars = [
+    ...(!recipe.household_id || recipe.shared_to_personal ? [{ key: 'personal', name: personalName }] : []),
+    ...(recipeHousehold
+      ? [{ key: recipeHousehold.id, name: recipeHousehold.name, color: recipeHousehold.color }]
+      : []),
+  ]
 
   return (
     <View style={styles.container}>
@@ -140,7 +143,9 @@ const ReadView = ({
           />
 
           <View style={styles.householdRow}>
-            <Avatar {...householdAvatarProps} size={28} />
+            {householdAvatars.map(({ key, ...avatarProps }) => (
+              <Avatar key={key} {...avatarProps} size={28} />
+            ))}
           </View>
 
           {debugMode && recipe.debug_model ? (
