@@ -1,4 +1,5 @@
 import asyncio
+import re
 
 from sqlalchemy import select
 
@@ -6,6 +7,12 @@ from api import users
 from api.database import async_session_maker
 from api.models import Recipe
 from api.services.gemini import estimate_unit_variants
+
+_PIECE_UNIT = re.compile(r"^([\d¼½¾⅓⅔⅛⅜⅝⅞.,/]+)\s+piece\s+", re.IGNORECASE)
+
+
+def _remove_piece_unit(value: str) -> str:
+    return _PIECE_UNIT.sub(r"\1 ", value).strip()
 
 
 async def main() -> None:
@@ -15,7 +22,25 @@ async def main() -> None:
 
         for recipe in recipes:
             components = list(recipe.components or [])
-            if not components or all(component.get("metric_ingredients") and component.get("imperial_ingredients") for component in components):
+            if not components:
+                continue
+
+            normalized = []
+            for component in components:
+                normalized_component = dict(component)
+                for field in ("ingredients", "metric_ingredients", "imperial_ingredients"):
+                    values = normalized_component.get(field)
+                    if values:
+                        normalized_component[field] = [_remove_piece_unit(value) for value in values]
+                normalized.append(normalized_component)
+
+            components = normalized
+            has_variants = all(component.get("metric_ingredients") and component.get("imperial_ingredients") for component in components)
+            if has_variants:
+                if components != recipe.components:
+                    recipe.components = components
+                    await session.commit()
+                    print(f"Removed piece units from {recipe.id}: {recipe.title}")
                 continue
 
             source = [

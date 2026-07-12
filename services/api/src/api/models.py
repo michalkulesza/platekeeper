@@ -23,7 +23,6 @@ class UnitEnum(StrEnum):
     CUP = "cup"
     G = "g"
     KG = "kg"
-    PIECE = "piece"
     CLOVE = "clove"
     SLICE = "slice"
     CAN = "can"

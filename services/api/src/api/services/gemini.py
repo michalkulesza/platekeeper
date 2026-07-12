@@ -81,7 +81,7 @@ async def _with_retry(
 _ALLOWED_UNITS = (
     "volume: ml, l, tsp, tbsp, cup | "
     "weight: g, kg | "
-    "count: piece, clove, slice, can, bunch, pinch, sprig, handful"
+    "count: clove, slice, can, bunch, pinch, sprig, handful"
 )
 
 _SYSTEM = """\

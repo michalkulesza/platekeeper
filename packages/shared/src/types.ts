@@ -1,7 +1,7 @@
 export const UNITS = [
   'ml', 'l', 'tsp', 'tbsp', 'cup',
   'g', 'kg',
-  'piece', 'clove', 'slice', 'can', 'bunch', 'pinch', 'sprig', 'handful',
+  'clove', 'slice', 'can', 'bunch', 'pinch', 'sprig', 'handful',
 ] as const
 
 export type Unit = typeof UNITS[number]
