@@ -137,8 +137,6 @@ const EditView = ({
             accessibilityLabel={t('recipes.colTitle')}
           />
 
-          <NotesSection recipe={recipe} fontSizeIndex={fontSizeIndex} />
-
           <TagsSection recipe={recipe} />
 
           <NutritionBoxGrid
@@ -160,6 +158,8 @@ const EditView = ({
             onSelect={handleUnitSelect}
             onClose={() => setUnitPickerTarget(null)}
           />
+
+          <NotesSection recipe={recipe} fontSizeIndex={fontSizeIndex} />
 
           {draft.components.map((comp, ci) => (
             <EditComponentBlock
