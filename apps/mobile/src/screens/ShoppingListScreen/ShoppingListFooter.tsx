@@ -38,7 +38,6 @@ const ShoppingListFooter = ({
 
       {completedItems.length > 0 && (
         <View>
-          <View style={styles.sectionDivider} />
           <View style={styles.completedHeader}>
             <Text style={styles.completedLabel}>
               {completedItems.length} {t('shoppingList.completedSection')}
