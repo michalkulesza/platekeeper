@@ -2,7 +2,7 @@ import { StyleSheet } from 'react-native'
 import { colors } from '../../theme/colors'
 
 export const styles = StyleSheet.create({
-  headerTitleWrap: { flexDirection: 'column', alignItems: 'flex-start' },
+  headerTitleWrap: { flexDirection: 'column', alignItems: 'flex-start', width: '100%' },
   headerTitleText: {
     fontSize: 17,
     lineHeight: 22,

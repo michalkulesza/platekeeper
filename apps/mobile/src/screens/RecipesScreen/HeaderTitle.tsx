@@ -21,6 +21,8 @@ const HeaderTitle = ({
   personalLabel: string
   switchContextLabel: string
 }) => (
+  // width: '100%' on headerTitleWrap stops iOS from centering this custom
+  // headerTitle view when the nav bar has extra room (e.g. iPhone Pro Max).
   <View style={styles.headerTitleWrap}>
     <Text style={styles.headerTitleText} numberOfLines={1}>
       {title}
