@@ -7,7 +7,6 @@ Items are grouped by purpose and ordered from highest to lowest importance withi
 - [ ] **Make sure sharing work on physical device**
 - [ ] **Fix recipe share options in household context** — On recipe details, the share button is wrong in household context: it should also allow sending the recipe to my personal library, and it should hide "send to household" when the household already contains that recipe.
 - [ ] **Don't attach ingredients to the final assembly step** — When mapping ingredients to recipe steps, skip the last/final assembly step so ingredients aren't duplicated onto it.
-- [ ] **When importing recipe send it to the background straight away** - inseatead of waiting at the skeleton screen, drop it in the bg, and show placeholder, redirect to recipe page
 - [ ] **Unified ingredient list with collapsible groups** — When a recipe has multiple ingredient groups (e.g. Main and Sauce), show one combined "Ingredients" list of everything at the top, then render each group as its own collapsible section that is collapsed by default, with a caret/chevron at the end of each group header.
 - [ ] **Personal-only recipe filter** — Add a filter to show only recipes in my personal library that don't belong to any household.
 - [ ] **Quick plain-text meal entries** — When assigning a recipe to a meal-plan day, add a text field at the very top to add a free-text entry (e.g. "Frozen pizza") without an actual recipe attached.
@@ -18,6 +17,7 @@ Items are grouped by purpose and ordered from highest to lowest importance withi
 - [ ] **Visual recipe library / grid view** — Let users switch between the compact list and a photo-forward card or grid view with useful metadata such as tags, cooking time, and favourite status.
 - [ ] **Cook from what I have / pantry** — Track pantry staples, rank recipes by missing ingredients, and subtract pantry items from the shopping list.
 - [ ] **Calendar and reminder integration** — Send planned meals to the iOS Calendar and notify users when to start cooking or defrost ingredients.
+- [x] **When importing recipe send it to the background straight away** - inseatead of waiting at the skeleton screen, drop it in the bg, and show placeholder, redirect to recipe page
 - [x] **Ingredient scaling / adjust servings** — Released in 1.0.1 with serving-size steppers on web and iOS, live structured-ingredient recalculation, and scaled shopping-list additions.
 - [x] **Useful Home screen** — Show tonight’s meal
 - [x] **Move recipe add button** — Moved the mobile add action to a persistent orange glass button matching the Meal Plan “Today” control.
@@ -35,12 +35,11 @@ Items are grouped by purpose and ordered from highest to lowest importance withi
 
 ## Quality, release, and growth
 
-- [ ] **Reduce extraction hallucinations (prompt/model tuning)** — Cheap first lever before a full validation pass: add an anti-fabrication clause to the extraction prompt, set `temperature=0`, and route the faithful-extraction call to `gemini-2.5-flash` (keeping shopping-list/unit-conversion on `flash-lite`). See `docs/specs/reduce-extraction-hallucinations.md`.
-- [ ] **Double-verify recipe imports for hallucinations** — Add a second validation pass that compares imported ingredients, quantities, and instructions with the source before saving or presenting the recipe.
 - [ ] **Automated tests** — Add meaningful coverage for core user flows and regressions.
 - [ ] **Premium lock** — Gate paid capabilities with a clear upgrade flow.
 - [ ] **Public sharing** — Create shareable public recipe pages.
 - [ ] **Social tab and shareable recipes** — Add a discovery surface for recipes users choose to publish.
+- [x] **Reduce extraction hallucinations (prompt/model tuning)** — Cheap first lever before a full validation pass: add an anti-fabrication clause to the extraction prompt, set `temperature=0`, and route the faithful-extraction call to `gemini-2.5-flash` (keeping shopping-list/unit-conversion on `flash-lite`). See `docs/specs/reduce-extraction-hallucinations.md`.
 
 ## Portfolio / showcase
 
