@@ -46,6 +46,7 @@ async def update_preferences(
             auto_substitute=body.auto_substitute if body.auto_substitute is not None else False,
             personal_allergens=body.personal_allergens,
             language=body.language if body.language is not None else "en",
+            unit_system=body.unit_system if body.unit_system is not None else "metric",
             share_imports_to_personal=body.share_imports_to_personal if body.share_imports_to_personal is not None else False,
         )
         session.add(prefs)
@@ -58,6 +59,8 @@ async def update_preferences(
             prefs.personal_allergens = body.personal_allergens
         if body.language is not None:
             prefs.language = body.language
+        if body.unit_system is not None:
+            prefs.unit_system = body.unit_system
         if body.share_imports_to_personal is not None:
             prefs.share_imports_to_personal = body.share_imports_to_personal
 
