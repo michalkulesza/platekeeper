@@ -5,7 +5,13 @@ Items are grouped by purpose and ordered from highest to lowest importance withi
 ## Core product features
 
 - [ ] **Make sure sharing work on physical device**
+- [ ] **Fix recipe share options in household context** — On recipe details, the share button is wrong in household context: it should also allow sending the recipe to my personal library, and it should hide "send to household" when the household already contains that recipe.
+- [ ] **Don't attach ingredients to the final assembly step** — When mapping ingredients to recipe steps, skip the last/final assembly step so ingredients aren't duplicated onto it.
 - [ ] **When importing recipe send it to the background straight away** - inseatead of waiting at the skeleton screen, drop it in the bg, and show placeholder, redirect to recipe page
+- [ ] **Unified ingredient list with collapsible groups** — When a recipe has multiple ingredient groups (e.g. Main and Sauce), show one combined "Ingredients" list of everything at the top, then render each group as its own collapsible section that is collapsed by default, with a caret/chevron at the end of each group header.
+- [ ] **Personal-only recipe filter** — Add a filter to show only recipes in my personal library that don't belong to any household.
+- [ ] **Quick plain-text meal entries** — When assigning a recipe to a meal-plan day, add a text field at the very top to add a free-text entry (e.g. "Frozen pizza") without an actual recipe attached.
+- [ ] **Cooking time estimation** — Estimate each recipe's cooking time and show it in the stat boxes, in the far-left box.
 - [ ] **Round up fractional shopping-list quantities** — Display purchasable whole-item amounts while retaining the precise underlying quantity to prevent over-buying.
 - [ ] **Multiple meals per day** — Support breakfast, lunch, dinner, and leftovers instead of a single recipe for each date.
 - [ ] **Guided Cook Mode** — Full-screen, big-type, swipeable steps; keep the screen awake, surface timers from step text, and allow ingredient checkoff while cooking.
@@ -18,23 +24,26 @@ Items are grouped by purpose and ordered from highest to lowest importance withi
 
 ## Experience and product polish
 
-- [ ] **Delightful empty and loading states** — Extend shimmers to recipe lists and meal plans; add friendly empty states, restrained Carrot mascot moments, import-stage animation, haptics, and completion feedback.
-- [ ] **Haptics and native context menus** — Add meaningful haptic feedback and long-press recipe actions (favourite, plan, share, delete) with a peek preview.
-- [ ] **Colours and themes** — Define and apply a cohesive theme system.
+- [ ] **Wrong "added by" avatar for household recipes** — When another household member added a recipe that also exists in my personal library, it shows my avatar as the one who added it instead of the actual user; show the correct user's avatar alongside the household avatar.
+- [ ] **Meal-plan search drawer ignores top safe area** — While searching in the meal plan, the drawer expands too high and overlaps the top safe area; constrain it to respect the safe zone.
+- [ ] **Restyle meal-plan day search drawer** — When tapping a day in the meal plan, the drawer's search field should match the rounded native search styling used on the recipe page.
 - [ ] **Review dark mode** — Fix automatic appearance detection and verify all screens in dark mode.
+- [ ] **Haptics and native context menus** — Add meaningful haptic feedback and long-press recipe actions (favourite, plan, share, delete) with a peek preview.
+- [ ] **Delightful empty and loading states** — Extend shimmers to recipe lists and meal plans; add friendly empty states, restrained Carrot mascot moments, import-stage animation, haptics, and completion feedback.
+- [ ] **Colours and themes** — Define and apply a cohesive theme system.
 - [ ] **Simplify tags and allergens** — Remove custom tags and allergens if the predefined systems provide a clearer product experience.
 
 ## Quality, release, and growth
 
 - [ ] **Double-verify recipe imports for hallucinations** — Add a second validation pass that compares imported ingredients, quantities, and instructions with the source before saving or presenting the recipe.
 - [ ] **Automated tests** — Add meaningful coverage for core user flows and regressions.
+- [ ] **Premium lock** — Gate paid capabilities with a clear upgrade flow.
 - [ ] **Public sharing** — Create shareable public recipe pages.
 - [ ] **Social tab and shareable recipes** — Add a discovery surface for recipes users choose to publish.
-- [ ] **Premium lock** — Gate paid capabilities with a clear upgrade flow.
 
 ## Portfolio / showcase
 
-- [ ] **Weekly meal-plan generator** — Auto-fill a week while honoring allergens, preferences, and variety, then generate its shopping list.
 - [ ] **Semantic recipe search** — Use pgvector embeddings for natural-language queries such as “something warm and spicy for a cold night.”
+- [ ] **Weekly meal-plan generator** — Auto-fill a week while honoring allergens, preferences, and variety, then generate its shopping list.
 - [ ] **Polished stats and insights dashboard** — Visualize cooking habits, favourite cuisines, streaks, and import history using the existing stats data.
 - [ ] **Operational import dashboard** — Track pipeline latency, queue depth, cost, cache-hit rate, failures, retries, model usage, and per-job traces.
