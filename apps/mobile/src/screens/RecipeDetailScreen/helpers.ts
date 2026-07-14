@@ -1,4 +1,4 @@
-import type { Ingredient, RecipeOut, RecipeSaveRequest, StepIngredientRef } from '@carrot/shared/types'
+import type { RecipeOut, RecipeSaveRequest, StepIngredientRef } from '@carrot/shared/types'
 import { parseIngredient, type StructuredIngredient } from '@carrot/shared/utils/ingredientUtils'
 import type { DurationMatch } from '../../context/TimerContext'
 
@@ -69,9 +69,6 @@ export const buildRecipeSaveRequest = (
   shared_to_personal: recipe.shared_to_personal,
   ...overrides,
 })
-
-export const formatForList = (ing: Ingredient): string =>
-  [ing.qty, ing.unit, ing.name].filter(Boolean).join(' ')
 
 export type Segment =
   | { type: 'text'; text: string }

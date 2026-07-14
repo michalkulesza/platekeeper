@@ -76,6 +76,7 @@ const NutritionBoxGrid = ({
 }: NutritionBoxGridProps) => {
   const [openIndex, setOpenIndex] = useState<number | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const gridColumnsClass = items.length === 4 ? 'grid-cols-4' : 'grid-cols-5'
 
   useEffect(() => {
     if (openIndex === null) return
@@ -97,7 +98,10 @@ const NutritionBoxGrid = ({
   }, [editing])
 
   return (
-    <div className="flex-1 grid grid-cols-5 gap-2 min-w-0" ref={containerRef}>
+    <div
+      className={`flex-1 grid ${gridColumnsClass} gap-2 min-w-0`}
+      ref={containerRef}
+    >
       {items.map((item, i) => (
         <div key={item.label} className="relative min-w-0">
           {editing ? (

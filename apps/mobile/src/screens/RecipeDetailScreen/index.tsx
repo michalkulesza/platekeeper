@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Alert, Text, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import * as Haptics from 'expo-haptics'
@@ -32,6 +32,7 @@ const RecipeDetailScreen = () => {
   const [heroImageErrored, setHeroImageErrored] = useState(false)
   const [addMode, setAddMode] = useState(false)
   const [sessionAdded, setSessionAdded] = useState<Set<string>>(new Set())
+  const [selectedServings, setSelectedServings] = useState<number | null>(null)
   const insets = useSafeAreaInsets()
   const { enabled: debugMode } = useDebugMode()
   const mealPlanSheetRef = useRef<AddToMealPlanSheetHandle>(null)
@@ -45,7 +46,22 @@ const RecipeDetailScreen = () => {
     [recipes, recipeId],
   )
 
-  const editDraft = useEditDraft({ recipe, recipeId, autoEditParam, api, t })
+  const handleEditSaveSuccess = useCallback((updated: RecipeOut) => {
+    setSelectedServings(updated.servings)
+  }, [])
+
+  const editDraft = useEditDraft({
+    recipe,
+    recipeId,
+    autoEditParam,
+    api,
+    t,
+    onSaveSuccess: handleEditSaveSuccess,
+  })
+
+  useEffect(() => {
+    setSelectedServings(recipe?.servings ?? null)
+  }, [recipe?.id, recipe?.servings])
 
   const handleOpenMealPlanSheet = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
@@ -59,6 +75,16 @@ const RecipeDetailScreen = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
     toggleFavourite.mutate(recipe.id)
   }, [recipe, toggleFavourite])
+
+  const handleDecreaseServings = useCallback(() => {
+    setSelectedServings((current) => current === null ? null : Math.max(1, current - 1))
+    void Haptics.selectionAsync()
+  }, [])
+
+  const handleIncreaseServings = useCallback(() => {
+    setSelectedServings((current) => current === null ? null : Math.min(99, current + 1))
+    void Haptics.selectionAsync()
+  }, [])
 
   const handlePressRecipeAction = useCallback(
     ({ nativeEvent }: { nativeEvent: { event: string } }) => {
@@ -171,6 +197,7 @@ const RecipeDetailScreen = () => {
   return (
     <ReadView
       recipe={recipe}
+      selectedServings={selectedServings}
       addMode={addMode}
       showStepQty={displayPrefs.showStepQty}
       unitSystem={preferences?.unit_system ?? 'metric'}
@@ -187,6 +214,8 @@ const RecipeDetailScreen = () => {
       handleAddAll={handleAddAll}
       handleConfirmAddIngredient={handleConfirmAddIngredient}
       handleToggleFavourite={handleToggleFavourite}
+      handleDecreaseServings={handleDecreaseServings}
+      handleIncreaseServings={handleIncreaseServings}
       mealPlanSheetRef={mealPlanSheetRef}
       addIngredientSheetRef={addIngredientSheetRef}
     />

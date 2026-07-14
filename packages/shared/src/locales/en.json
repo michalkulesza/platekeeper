@@ -83,6 +83,8 @@
     "showIngredientAmount": "Show ingredient amount",
     "dismissIngredientTooltip": "Dismiss ingredient tooltip",
     "serves": "Serves",
+    "decreaseServings": "Decrease servings",
+    "increaseServings": "Increase servings",
     "kcalPerServing": "kcal / serving",
     "proteinPerServing": "g protein / serving",
     "fatPerServing": "g fat / serving",

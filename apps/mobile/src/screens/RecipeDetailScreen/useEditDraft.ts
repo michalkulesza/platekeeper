@@ -16,12 +16,14 @@ export const useEditDraft = ({
   autoEditParam,
   api,
   t,
+  onSaveSuccess,
 }: {
   recipe: RecipeOut | undefined
   recipeId: string
   autoEditParam: string | undefined
   api: ApiClient
   t: TFunction
+  onSaveSuccess: (updated: RecipeOut) => void
 }) => {
   const qc = useQueryClient()
 
@@ -220,13 +222,14 @@ export const useEditDraft = ({
       qc.setQueryData<RecipeOut[]>(['recipes'], (prev) =>
         prev ? prev.map((r) => (r.id === updated.id ? updated : r)) : prev,
       )
+      onSaveSuccess(updated)
       setEditing(false)
     } catch {
       Alert.alert(t('common.ok'), t('addRecipe.saveError'))
     } finally {
       setSaving(false)
     }
-  }, [draft, recipe, api, recipeId, qc, t])
+  }, [draft, recipe, api, recipeId, qc, t, onSaveSuccess])
 
   return {
     editing,

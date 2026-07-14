@@ -4,6 +4,7 @@ import type { RecipeOut } from '@carrot/shared/types'
 import HouseholdAvatarIndicators from '../HouseholdAvatarIndicators'
 import NutritionBoxGrid from '../NutritionBoxGrid'
 import { getHeaderBg, type EditState, type Mode } from './helpers'
+import ServingStepper from './ServingStepper'
 
 type NutritionField = 'servings' | 'kcal' | 'protein' | 'fat' | 'carbs'
 const NUTRITION_FIELDS: readonly NutritionField[] = [
@@ -25,6 +26,9 @@ interface RecipeMetaBarProps {
   fontSizeIndex: number
   onFontSizeChange: (index: number) => void
   onCancelMode: () => void
+  selectedServings: number | null
+  onDecreaseServings: () => void
+  onIncreaseServings: () => void
 }
 
 const TEXT_SIZES = [14, 16, 17, 20, 22] as const
@@ -40,11 +44,15 @@ const RecipeMetaBar = ({
   fontSizeIndex,
   onFontSizeChange,
   onCancelMode,
+  selectedServings,
+  onDecreaseServings,
+  onIncreaseServings,
 }: RecipeMetaBarProps) => {
   const { t } = useTranslation()
   const r = recipe
   const headerBg = getHeaderBg(mode)
   const editing = mode === 'editing'
+  const hasScalableServings = recipe.servings !== null && recipe.servings > 0
 
   const nutritionItems = [
     {
@@ -75,6 +83,9 @@ const RecipeMetaBar = ({
       accessibilityLabel: t('recipes.carbsPerServing'),
     },
   ]
+  const visibleNutritionItems = editing
+    ? nutritionItems
+    : nutritionItems.slice(1)
 
   const handleNutritionChangeValue = (index: number, value: string) => {
     onNutritionChange(NUTRITION_FIELDS[index], value)
@@ -84,10 +95,17 @@ const RecipeMetaBar = ({
     <div className={`px-5 pt-5 pb-0 flex flex-col gap-2 ${headerBg}`}>
       <NutritionBoxGrid
         editing={editing}
-        items={nutritionItems}
+        items={visibleNutritionItems}
         onChangeValue={handleNutritionChangeValue}
         disclaimerText={t('recipes.nutritionEstimateDisclaimer')}
       />
+      {mode === 'view' && hasScalableServings && selectedServings !== null && (
+        <ServingStepper
+          servings={selectedServings}
+          onDecrease={onDecreaseServings}
+          onIncrease={onIncreaseServings}
+        />
+      )}
       <HouseholdAvatarIndicators recipe={r} />
 
       {debugMode && r.debug_model && (

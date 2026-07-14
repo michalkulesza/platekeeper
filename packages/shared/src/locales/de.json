@@ -79,6 +79,8 @@
     "showIngredientAmount": "Zutatenmenge anzeigen",
     "dismissIngredientTooltip": "Zutaten-Tooltip schließen",
     "serves": "Portionen",
+    "decreaseServings": "Portionen verringern",
+    "increaseServings": "Portionen erhöhen",
     "kcalPerServing": "kcal / Portion",
     "proteinPerServing": "g Eiweiß / Portion",
     "fatPerServing": "g Fett / Portion",

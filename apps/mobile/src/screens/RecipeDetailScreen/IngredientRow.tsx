@@ -1,7 +1,7 @@
 import { Pressable, Text, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Feather } from '@expo/vector-icons'
-import type { Ingredient } from '@carrot/shared/types'
+import { displayIngredient } from '@carrot/shared/utils/ingredientUtils'
 import { colors } from '../../theme/colors'
 import { styles } from './styles'
 
@@ -13,7 +13,7 @@ const IngredientRow = ({
   fontSize = 17,
   lineHeight = 22,
 }: {
-  ingredient: Ingredient
+  ingredient: string
   addMode?: boolean
   isAdded?: boolean
   onAdd?: () => void
@@ -21,12 +21,12 @@ const IngredientRow = ({
   lineHeight?: number
 }) => {
   const { t } = useTranslation()
-  const parts = [ingredient.qty, ingredient.unit, ingredient.name].filter(Boolean).join(' ')
+  const displayValue = displayIngredient(ingredient, t)
   return (
     <View style={styles.ingredientRow}>
       <Text style={styles.bullet}>{'•'}</Text>
       <Text style={[styles.ingredientText, { fontSize, lineHeight }]}>
-        {parts}
+        {displayValue}
       </Text>
       {addMode && (
         <Pressable

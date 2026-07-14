@@ -1,7 +1,11 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SaveComponent, StepIngredientRef } from '@carrot/shared/types'
-import { computeClientStepIngredientRefs, displayIngredient } from './helpers'
+import {
+  computeClientStepIngredientRefs,
+  displayIngredient,
+  getScaledIngredientValues,
+} from './helpers'
 import AllergenPopover from './AllergenPopover'
 import StepText from './StepText'
 
@@ -20,6 +24,7 @@ interface ViewComponentProps {
   onAddIngredient?: (ii: number) => void
   onAddAllIngredients?: () => void
   fontSizeIndex: number
+  servingScale: number
 }
 
 const TEXT_SIZE_CLASSES = [
@@ -45,14 +50,17 @@ const ViewComponent = ({
   onAddIngredient,
   onAddAllIngredients,
   fontSizeIndex,
+  servingScale,
 }: ViewComponentProps) => {
   const { t } = useTranslation()
-  const ingredients = unitSystem === 'imperial'
-    ? comp.imperial_ingredients ?? comp.ingredients
-    : comp.metric_ingredients ?? comp.ingredients
-  const steps = unitSystem === 'imperial'
-    ? comp.imperial_steps ?? comp.steps
-    : comp.metric_steps ?? comp.steps
+  const ingredients = useMemo(
+    () => getScaledIngredientValues(comp, unitSystem, servingScale),
+    [comp, servingScale, unitSystem]
+  )
+  const steps =
+    unitSystem === 'imperial'
+      ? (comp.imperial_steps ?? comp.steps)
+      : (comp.metric_steps ?? comp.steps)
 
   const clientRefs = useMemo<StepIngredientRef[][] | null>(() => {
     if (comp.step_ingredient_refs != null) return null

@@ -20,9 +20,11 @@ import { FONT_SIZES, LINE_HEIGHTS } from './helpers'
 import ComponentSection from './ComponentSection'
 import NotesSection from './NotesSection'
 import TagsSection from './TagsSection'
+import ServingStepper from './ServingStepper'
 
 const ReadView = ({
   recipe,
+  selectedServings,
   addMode,
   showStepQty,
   unitSystem,
@@ -39,10 +41,13 @@ const ReadView = ({
   handleAddAll,
   handleConfirmAddIngredient,
   handleToggleFavourite,
+  handleDecreaseServings,
+  handleIncreaseServings,
   mealPlanSheetRef,
   addIngredientSheetRef,
 }: {
   recipe: RecipeOut
+  selectedServings: number | null
   addMode: boolean
   showStepQty: boolean
   unitSystem: string
@@ -59,6 +64,8 @@ const ReadView = ({
   handleAddAll: (keys: string[], texts: string[]) => void
   handleConfirmAddIngredient: (text: string) => void
   handleToggleFavourite: () => void
+  handleDecreaseServings: () => void
+  handleIncreaseServings: () => void
   mealPlanSheetRef: RefObject<AddToMealPlanSheetHandle | null>
   addIngredientSheetRef: RefObject<AddIngredientToShoppingListSheetHandle | null>
 }) => {
@@ -66,8 +73,12 @@ const ReadView = ({
   const { households } = useHousehold()
   const { user } = useAuth()
   const hasImage = !!recipe.thumbnail_url
+  const hasScalableServings = recipe.servings !== null && recipe.servings > 0
   const personalName = user?.nickname || user?.email || t('households.personal')
   const [openHouseholdAvatar, setOpenHouseholdAvatar] = useState<string | null>(null)
+  const servingScale = recipe.servings && selectedServings
+    ? selectedServings / recipe.servings
+    : 1
   const recipeHousehold = recipe.household_id ? households.find((h) => h.id === recipe.household_id) : undefined
   const householdAvatars = [
     ...(!recipe.household_id || recipe.shared_to_personal
@@ -138,7 +149,6 @@ const ReadView = ({
           <NutritionBoxGrid
             editing={false}
             items={[
-              { label: t('recipes.serves'), value: recipe.servings?.toString() ?? '', accessibilityLabel: t('recipes.serves') },
               { label: t('recipes.colKcal'), value: recipe.kcal_per_serving?.toString() ?? '', accessibilityLabel: t('recipes.kcalPerServing') },
               { label: t('recipes.protein'), value: recipe.protein_per_serving?.toString() ?? '', accessibilityLabel: t('recipes.proteinPerServing'), unit: 'g' },
               { label: t('recipes.fat'), value: recipe.fat_per_serving?.toString() ?? '', accessibilityLabel: t('recipes.fatPerServing'), unit: 'g' },
@@ -146,6 +156,14 @@ const ReadView = ({
             ]}
             disclaimerText={t('recipes.nutritionEstimateDisclaimer')}
           />
+
+          {hasScalableServings && selectedServings !== null && (
+            <ServingStepper
+              servings={selectedServings}
+              onDecrease={handleDecreaseServings}
+              onIncrease={handleIncreaseServings}
+            />
+          )}
 
           <View style={styles.householdRow}>
             {householdAvatars.map(({ key, tooltip, ...avatarProps }) => (
@@ -228,6 +246,7 @@ const ReadView = ({
               addMode={addMode}
               showStepQty={showStepQty}
               unitSystem={unitSystem}
+              servingScale={servingScale}
               sessionAdded={sessionAdded}
               onAdd={handleAddIngredient}
               onAddAll={handleAddAll}

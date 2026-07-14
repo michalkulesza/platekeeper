@@ -4,6 +4,7 @@ import type {
   SaveComponent,
   StepIngredientRef,
 } from '@carrot/shared/types'
+import { scaleIngredientQuantity } from '@carrot/shared/utils/ingredientScaling'
 import { UNITS } from '../../api/client'
 
 export type Mode = 'view' | 'editing' | 'confirming'
@@ -93,10 +94,43 @@ export const displayIngredient = (
   })
 }
 
-export const formatForShoppingList = (s: string): string => {
-  const { qty, unit, name } = parseIngredient(s)
+export const getScaledIngredientValues = (
+  component: SaveComponent,
+  unitSystem: string,
+  servingScale: number
+): string[] => {
+  const ingredients =
+    unitSystem === 'imperial'
+      ? (component.imperial_ingredients ?? component.ingredients)
+      : (component.metric_ingredients ?? component.ingredients)
 
-  return [qty, unit, name].filter(Boolean).join(' ')
+  return ingredients.map((ingredient) =>
+    scaleIngredientQuantity(ingredient, servingScale)
+  )
+}
+
+export const getShoppingListIngredient = (
+  component: SaveComponent,
+  ingredientIndex: number,
+  unitSystem: string,
+  servingScale: number
+): string => {
+  const ingredients =
+    unitSystem === 'imperial'
+      ? (component.imperial_ingredients ?? component.ingredients)
+      : (component.metric_ingredients ?? component.ingredients)
+  const scaledIngredient = scaleIngredientQuantity(
+    ingredients[ingredientIndex] ??
+      component.ingredients[ingredientIndex] ??
+      '',
+    servingScale
+  )
+  const originalShoppingListValue =
+    component.shopping_list_ingredients?.[ingredientIndex]
+
+  return servingScale === 1 && originalShoppingListValue
+    ? originalShoppingListValue
+    : scaledIngredient
 }
 
 // Client-side fallback when the AI step/ingredient matcher wasn't run: does simple name matching,

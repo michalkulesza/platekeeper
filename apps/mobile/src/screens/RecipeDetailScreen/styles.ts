@@ -70,6 +70,33 @@ export const styles = StyleSheet.create({
     marginBottom: 12,
   },
   householdAvatarWrapper: { position: 'relative' },
+  servingStepperRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 44,
+    marginBottom: 8,
+  },
+  servingStepper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.secondaryBackground,
+    borderRadius: 10,
+  },
+  servingStepperButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  servingStepperValue: {
+    minWidth: 44,
+    fontSize: 17,
+    lineHeight: 22,
+    fontWeight: '600',
+    color: colors.label,
+    textAlign: 'center',
+  },
   debugBox: {
     backgroundColor: colors.gray6,
     borderRadius: 8,

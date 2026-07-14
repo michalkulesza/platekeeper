@@ -1,10 +1,11 @@
 import { useCallback, useMemo } from 'react'
 import { Pressable, Text, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import type { Ingredient, RecipeOut, SaveComponent, StepIngredientRef } from '@carrot/shared/types'
-import { buildClientStepRefs, serializeIngredient } from '@carrot/shared/utils/ingredientUtils'
+import type { RecipeOut, SaveComponent, StepIngredientRef } from '@carrot/shared/types'
+import { buildClientStepRefs } from '@carrot/shared/utils/ingredientUtils'
+import { scaleIngredientQuantity } from '@carrot/shared/utils/ingredientScaling'
 import { styles } from './styles'
-import { capitalizeFirst, formatForList } from './helpers'
+import { capitalizeFirst } from './helpers'
 import IngredientRow from './IngredientRow'
 import StepRow from './StepRow'
 
@@ -15,6 +16,7 @@ const ComponentSection = ({
   addMode = false,
   showStepQty = true,
   unitSystem,
+  servingScale = 1,
   sessionAdded,
   onAdd,
   onAddAll,
@@ -27,6 +29,7 @@ const ComponentSection = ({
   addMode?: boolean
   showStepQty?: boolean
   unitSystem: string
+  servingScale?: number
   sessionAdded?: Set<string>
   onAdd?: (key: string, text: string) => void
   onAddAll?: (keys: string[], texts: string[]) => void
@@ -41,39 +44,39 @@ const ComponentSection = ({
     ? component.imperial_steps ?? component.steps
     : component.metric_steps ?? component.steps
   const ingredients = useMemo(
-    () =>
-      ingredientValues.map((raw) => {
-        if (typeof raw === 'string') {
-          return { qty: null, unit: null, name: raw } as Ingredient
-        }
-        return raw as Ingredient
-      }),
-    [ingredientValues],
+    () => ingredientValues.map((ingredient) => scaleIngredientQuantity(ingredient, servingScale)),
+    [ingredientValues, servingScale],
   )
 
   const stepRefs = useMemo<StepIngredientRef[][]>(
     () =>
       component.step_ingredient_refs != null
         ? component.step_ingredient_refs
-        : buildClientStepRefs(
-            steps,
-            ingredients.map((ing) => serializeIngredient(ing)),
-          ),
+        : buildClientStepRefs(steps, ingredients),
     [component.step_ingredient_refs, steps, ingredients],
+  )
+
+  const getShoppingListValue = useCallback(
+    (ingredient: string, ingredientIndex: number) => {
+      const originalValue = component.shopping_list_ingredients?.[ingredientIndex]
+
+      return servingScale === 1 && originalValue ? originalValue : ingredient
+    },
+    [component.shopping_list_ingredients, servingScale],
   )
 
   const handleAddAll = useCallback(() => {
     const keys: string[] = []
     const texts: string[] = []
-    ingredients.forEach((ing, i) => {
+    ingredients.forEach((ingredient, i) => {
       const key = `${index}-${i}`
       if (!sessionAdded?.has(key)) {
         keys.push(key)
-        texts.push(component.shopping_list_ingredients?.[i] || formatForList(ing))
+        texts.push(getShoppingListValue(ingredient, i))
       }
     })
     if (texts.length > 0) onAddAll?.(keys, texts)
-  }, [ingredients, index, sessionAdded, onAddAll])
+  }, [getShoppingListValue, ingredients, index, sessionAdded, onAddAll])
 
   const allAdded = useMemo(
     () => ingredients.length > 0 && ingredients.every((_, i) => sessionAdded?.has(`${index}-${i}`)),
@@ -102,15 +105,15 @@ const ComponentSection = ({
               </Pressable>
             )}
           </View>
-          {ingredients.map((ing, i) => (
+          {ingredients.map((ingredient, i) => (
             <IngredientRow
               key={i}
-              ingredient={ing}
+              ingredient={ingredient}
               addMode={addMode}
               isAdded={sessionAdded?.has(`${index}-${i}`) ?? false}
               onAdd={() => onAdd?.(
                 `${index}-${i}`,
-                component.shopping_list_ingredients?.[i] || formatForList(ing),
+                getShoppingListValue(ingredient, i),
               )}
               fontSize={fontSize}
               lineHeight={lineHeight}
@@ -130,7 +133,7 @@ const ComponentSection = ({
               recipe={recipe}
               componentIndex={index}
               stepRefs={stepRefs[i] ?? []}
-              rawIngredients={ingredients.map((ing) => serializeIngredient(ing))}
+              rawIngredients={ingredients}
               showStepQty={showStepQty}
               fontSize={fontSize}
               lineHeight={lineHeight}

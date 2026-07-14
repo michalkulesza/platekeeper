@@ -81,6 +81,8 @@
     "showIngredientAmount": "Afficher la quantité",
     "dismissIngredientTooltip": "Fermer l'info-bulle",
     "serves": "Portions",
+    "decreaseServings": "Réduire le nombre de portions",
+    "increaseServings": "Augmenter le nombre de portions",
     "kcalPerServing": "kcal / portion",
     "proteinPerServing": "g de protéines / portion",
     "fatPerServing": "g de lipides / portion",

@@ -29,7 +29,7 @@ import {
   applyIngredientRestore,
   buildRecipeUpdateFromDraft,
   buildRecipeUpdateFromRecipe,
-  formatForShoppingList,
+  getShoppingListIngredient,
   toEditState,
   type EditState,
   type Mode,
@@ -82,8 +82,11 @@ const RecipeDetailModal = ({
   const [localNotes, setLocalNotes] = useState(recipe?.notes ?? '')
   const [notesSaving, setNotesSaving] = useState(false)
   const [fontSizeIndex, setFontSizeIndex] = useState(2)
+  const [selectedServings, setSelectedServings] = useState<number | null>(null)
   const savedNotesRef = useRef(recipe?.notes ?? '')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const activeRecipeId = recipe?.id
+  const originalServings = recipe?.servings ?? null
 
   useEffect(() => {
     if (recipe) {
@@ -98,6 +101,10 @@ const RecipeDetailModal = ({
       setError(null)
     }
   }, [recipe?.id, initialMode])
+
+  useEffect(() => {
+    setSelectedServings(originalServings)
+  }, [activeRecipeId, originalServings])
 
   // Scroll to target step after modal opens (wait for open animation)
   useEffect(() => {
@@ -134,6 +141,8 @@ const RecipeDetailModal = ({
 
   if (!recipe || !draft) return null
   const r = recipe
+  const servingScale =
+    r.servings && selectedServings ? selectedServings / r.servings : 1
 
   const components =
     mode === 'editing' ? draft.components : (r.components as SaveComponent[])
@@ -234,6 +243,7 @@ const RecipeDetailModal = ({
       )
       toast.success(t('recipes.recipeUpdated'), { timeout: 3000 })
       onUpdated?.(updated)
+      setSelectedServings(updated.servings)
       setMode('view')
     } catch (err) {
       setError(err instanceof Error ? err.message : t('recipes.failedToSave'))
@@ -302,9 +312,26 @@ const RecipeDetailModal = ({
     }
   }
 
+  const handleDecreaseServings = () => {
+    setSelectedServings((current) =>
+      current === null ? null : Math.max(1, current - 1)
+    )
+  }
+
+  const handleIncreaseServings = () => {
+    setSelectedServings((current) =>
+      current === null ? null : Math.min(99, current + 1)
+    )
+  }
+
   const handleAddIngredient = (ci: number, ii: number) => {
     const comp = (r.components as SaveComponent[])[ci]
-    const text = comp.shopping_list_ingredients?.[ii] || formatForShoppingList(comp.ingredients[ii])
+    const text = getShoppingListIngredient(
+      comp,
+      ii,
+      preferences?.unit_system ?? 'metric',
+      servingScale
+    )
     addShoppingListItems.mutate([text])
     setSessionAdded((prev) => new Set(prev).add(`${ci}-${ii}`))
   }
@@ -313,11 +340,18 @@ const RecipeDetailModal = ({
     const comp = (r.components as SaveComponent[])[ci]
     const keys: string[] = []
     const texts: string[] = []
-    comp.ingredients.forEach((ing, ii) => {
+    comp.ingredients.forEach((_, ii) => {
       const key = `${ci}-${ii}`
       if (!sessionAdded.has(key)) {
         keys.push(key)
-        texts.push(comp.shopping_list_ingredients?.[ii] || formatForShoppingList(ing))
+        texts.push(
+          getShoppingListIngredient(
+            comp,
+            ii,
+            preferences?.unit_system ?? 'metric',
+            servingScale
+          )
+        )
       }
     })
     if (texts.length === 0) return
@@ -391,6 +425,9 @@ const RecipeDetailModal = ({
                   fontSizeIndex={fontSizeIndex}
                   onFontSizeChange={setFontSizeIndex}
                   onCancelMode={cancelMode}
+                  selectedServings={selectedServings}
+                  onDecreaseServings={handleDecreaseServings}
+                  onIncreaseServings={handleIncreaseServings}
                 />
 
                 <div className="px-5">
@@ -439,8 +476,11 @@ const RecipeDetailModal = ({
                           addMode={addMode}
                           sessionAdded={sessionAdded}
                           onAddIngredient={(ii) => handleAddIngredient(ci, ii)}
-                          onAddAllIngredients={() => handleAddAllIngredients(ci)}
+                          onAddAllIngredients={() =>
+                            handleAddAllIngredients(ci)
+                          }
                           fontSizeIndex={fontSizeIndex}
+                          servingScale={servingScale}
                         />
                       ))}
                 </div>
