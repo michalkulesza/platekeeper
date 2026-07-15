@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native'
 import { useTranslation } from 'react-i18next'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { UNITS } from '@carrot/shared/types'
 import type { AllergenFlag, Tag } from '@carrot/shared/types'
 import type { StructuredIngredient } from '@carrot/shared/utils/ingredientUtils'
@@ -110,8 +111,11 @@ export const TagPickerModal = ({
   onClose: () => void
 }) => {
   const { t } = useTranslation()
+  const insets = useSafeAreaInsets()
   const [query, setQuery] = useState('')
   const [creating, setCreating] = useState(false)
+
+  const tagModalMarginBottom = useMemo(() => ({ marginBottom: insets.bottom + 12 }), [insets.bottom])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -178,7 +182,7 @@ export const TagPickerModal = ({
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.tagModalOverlay} onPress={onClose} />
-      <View style={styles.tagModal}>
+      <View style={[styles.tagModal, tagModalMarginBottom]}>
         <View style={styles.sheetHandle} />
         <View style={styles.tagModalHeader}>
           <Text style={styles.tagModalTitle}>{t('tags.editTags')}</Text>
@@ -378,14 +382,18 @@ const styles = StyleSheet.create({
   pressedLight: { opacity: 0.7 },
   pressedMedium: { opacity: 0.6 },
 
-  tagModalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
+  tagModalOverlay: { flex: 1, backgroundColor: 'transparent' },
   tagModal: {
     backgroundColor: PlatformColor('systemBackground') as unknown as string,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    borderRadius: 20,
+    marginHorizontal: 8,
     paddingTop: 8,
     maxHeight: '72%',
     paddingBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
   },
   tagModalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8 },
   tagModalTitle: { fontSize: 17, lineHeight: 22, fontWeight: '600', color: PlatformColor('label') as unknown as string },
