@@ -21,7 +21,7 @@ import { useRecipes, useRecipeStats } from '@carrot/shared/hooks/useRecipes'
 import { useTags } from '@carrot/shared/hooks/useTags'
 import { usePreferences } from '@carrot/shared/hooks/usePreferences'
 import { useImportJobs } from '@carrot/shared/hooks/useImportJobs'
-import type { RecipeOut, Tag, UserPreferences } from '@carrot/shared/types'
+import type { RecipeOut, UserPreferences } from '@carrot/shared/types'
 
 const AppShell = () => {
   const { t } = useTranslation()
@@ -54,15 +54,6 @@ const AppShell = () => {
     void qc.invalidateQueries({ queryKey: ['preferences'] })
     void qc.invalidateQueries({ queryKey: ['mealPlan'] })
   }, [user?.active_household_id, qc])
-
-  const handleTagCreated = useCallback(
-    (tag: Tag) => {
-      qc.setQueryData<Tag[]>(['tags'], (old = []) =>
-        [...old, tag].sort((a, b) => a.name.localeCompare(b.name))
-      )
-    },
-    [qc]
-  )
 
   const handleRecipeUpdated = useCallback(
     (updated: RecipeOut) => {
@@ -122,7 +113,6 @@ const AppShell = () => {
                           recipes={recipes}
                           loading={recipesLoading}
                           allTags={allTags}
-                          onTagCreated={handleTagCreated}
                           onRecipeUpdated={handleRecipeUpdated}
                           onRecipeDeleted={handleRecipeDeleted}
                           preferences={preferences}
@@ -137,7 +127,6 @@ const AppShell = () => {
                           recipes={recipes}
                           preferences={preferences}
                           allTags={allTags}
-                          onTagCreated={handleTagCreated}
                           onRecipeUpdated={handleRecipeUpdated}
                           onRecipeDeleted={handleRecipeDeleted}
                         />

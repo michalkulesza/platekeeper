@@ -15,7 +15,6 @@ import {
 import type { RecipeOut, SaveComponent, Tag } from '@carrot/shared/types'
 import {
   addTagToRecipe,
-  createTag,
   deleteRecipe,
   removeTagFromRecipe,
   toggleFavourite,
@@ -45,7 +44,6 @@ import EditComponent from './EditComponent'
 interface RecipeDetailModalProps {
   recipe: RecipeOut | null
   allTags: Tag[]
-  onTagCreated: (tag: Tag) => void
   onClose: () => void
   onUpdated?: (r: RecipeOut) => void
   onDeleted?: (id: string) => void
@@ -57,7 +55,6 @@ interface RecipeDetailModalProps {
 const RecipeDetailModal = ({
   recipe,
   allTags,
-  onTagCreated,
   onClose,
   onUpdated,
   onDeleted,
@@ -195,13 +192,6 @@ const RecipeDetailModal = ({
       const removed = allTags.find((tag) => tag.id === tagId)
       if (removed) setLocalTags((prev) => [...prev, removed])
     }
-  }
-
-  const handleTagCreate = async (name: string): Promise<Tag> => {
-    const tag = await createTag(name)
-    onTagCreated(tag)
-
-    return tag
   }
 
   const handleNotesSave = async () => {
@@ -402,7 +392,6 @@ const RecipeDetailModal = ({
                   allTags={allTags}
                   onTagAdd={handleTagAdd}
                   onTagRemove={handleTagRemove}
-                  onTagCreate={handleTagCreate}
                   fileInputRef={fileInputRef}
                   onThumbnailFile={handleThumbnailFile}
                   imgUploading={imgUploading}

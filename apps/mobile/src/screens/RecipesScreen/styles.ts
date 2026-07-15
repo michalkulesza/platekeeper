@@ -9,6 +9,7 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.label,
   },
+  headerAvatarLoading: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
   headerBtns: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   headerBtn: { paddingHorizontal: 4, paddingVertical: 4 },
   floatingAddButton: {
@@ -45,7 +46,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     marginHorizontal: 16,
-    marginTop: 12,
+    marginBottom: 12,
     padding: 12,
     borderRadius: 12,
     backgroundColor: colors.background,

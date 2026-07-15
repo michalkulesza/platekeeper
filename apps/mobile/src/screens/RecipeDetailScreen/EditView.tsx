@@ -134,7 +134,7 @@ const EditView = ({
             accessibilityLabel={t('recipes.colTitle')}
           />
 
-          <TagsSection recipe={recipe} editing />
+          <TagsSection recipe={recipe} />
 
           <NutritionBoxGrid
             editing

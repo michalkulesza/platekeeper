@@ -17,7 +17,6 @@ interface RecipeHeroSectionProps {
   allTags: Tag[]
   onTagAdd: (tag: Tag) => void
   onTagRemove: (tagId: string) => void
-  onTagCreate: (name: string) => Promise<Tag>
   fileInputRef: RefObject<HTMLInputElement | null>
   onThumbnailFile: (e: ChangeEvent<HTMLInputElement>) => void
   imgUploading: boolean
@@ -38,7 +37,6 @@ const RecipeHeroSection = ({
   allTags,
   onTagAdd,
   onTagRemove,
-  onTagCreate,
   fileInputRef,
   onThumbnailFile,
   imgUploading,
@@ -63,7 +61,6 @@ const RecipeHeroSection = ({
         allTags={allTags}
         onAdd={onTagAdd}
         onRemove={onTagRemove}
-        onCreateTag={onTagCreate}
         editable={mode === 'editing'}
         addable
       />

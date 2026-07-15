@@ -4,7 +4,10 @@ import { useTranslation } from 'react-i18next'
 import { Feather } from '@expo/vector-icons'
 import type { RecipeOut, SaveComponent, StepIngredientRef } from '@carrot/shared/types'
 import { buildClientStepRefs } from '@carrot/shared/utils/ingredientUtils'
-import { scaleIngredientQuantity } from '@carrot/shared/utils/ingredientScaling'
+import {
+  getImperialCupQty,
+  scaleIngredientQuantity,
+} from '@carrot/shared/utils/ingredientScaling'
 import { styles } from './styles'
 import { colors } from '../../theme/colors'
 import { capitalizeFirst } from './helpers'
@@ -57,6 +60,18 @@ const ComponentSection = ({
     [ingredientValues, servingScale],
   )
 
+  const getCupHint = useCallback(
+    (ingredientIndex: number) => {
+      if (unitSystem === 'imperial') return ''
+      const qty = getImperialCupQty(
+        component.imperial_ingredients?.[ingredientIndex],
+        servingScale,
+      )
+      return qty ? ` (${qty} ${t('units.cup', { defaultValue: 'cup' })})` : ''
+    },
+    [component.imperial_ingredients, servingScale, t, unitSystem],
+  )
+
   const stepRefs = useMemo<StepIngredientRef[][]>(
     () =>
       component.step_ingredient_refs != null
@@ -92,35 +107,34 @@ const ComponentSection = ({
     [ingredients, index, sessionAdded],
   )
 
-  const groupName = capitalizeFirst(component.name) || t('recipes.sectionIngredients')
-
   if (!showIngredients && steps.length === 0) return null
 
   return (
     <View style={styles.componentBlock}>
-      {showGroupHeader && collapsible ? (
-        <Pressable
-          onPress={() => setIngredientsExpanded((current) => !current)}
-          style={styles.componentToggle}
-          accessibilityLabel={groupName}
-          accessibilityRole="button"
-          accessibilityState={{ expanded: ingredientsExpanded }}
-        >
-          <Text style={styles.componentToggleText}>{groupName}</Text>
-          <Feather
-            name={ingredientsExpanded ? 'chevron-up' : 'chevron-down'}
-            size={22}
-            color={colors.label}
-          />
-        </Pressable>
-      ) : showGroupHeader && component.name ? (
+      {showGroupHeader && component.name && (
         <Text style={styles.componentName}>{capitalizeFirst(component.name)}</Text>
-      ) : null}
+      )}
 
-      {showIngredients && ingredientsExpanded && ingredients.length > 0 && (
+      {showIngredients && ingredients.length > 0 && (
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionLabel}>{t('recipes.sectionIngredients')}</Text>
+            <Pressable
+              onPress={collapsible ? () => setIngredientsExpanded((current) => !current) : undefined}
+              style={styles.sectionHeaderToggle}
+              accessibilityRole="button"
+              accessibilityState={collapsible ? { expanded: ingredientsExpanded } : undefined}
+              hitSlop={8}
+            >
+              <Text style={styles.sectionLabel}>{t('recipes.sectionIngredients')}</Text>
+              {collapsible && (
+                <Feather
+                  name={ingredientsExpanded ? 'chevron-up' : 'chevron-down'}
+                  size={16}
+                  color={colors.secondaryLabel}
+                  style={styles.sectionToggleIcon}
+                />
+              )}
+            </Pressable>
             {addMode && (
               <Pressable
                 onPress={allAdded ? undefined : handleAddAll}
@@ -133,10 +147,11 @@ const ComponentSection = ({
               </Pressable>
             )}
           </View>
-          {ingredients.map((ingredient, i) => (
+          {ingredientsExpanded && ingredients.map((ingredient, i) => (
             <IngredientRow
               key={i}
               ingredient={ingredient}
+              cupHint={getCupHint(i)}
               addMode={addMode}
               isAdded={sessionAdded?.has(`${index}-${i}`) ?? false}
               onAdd={() => onAdd?.(

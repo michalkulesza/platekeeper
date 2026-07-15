@@ -94,7 +94,7 @@ const RecipesScreen = () => {
   const householdFetchStartedRef = useRef(false)
   const { busy, showSpinner } = useScreenLoading(isLoading || switchingHousehold)
   const { tags } = useTags()
-  const { households, activeHouseholdId, activeHousehold, switchHousehold } = useHousehold()
+  const { households, isLoadingHouseholds, activeHouseholdId, activeHousehold, switchHousehold } = useHousehold()
   const api = useApiClient()
   const qc = useQueryClient()
   const personalName = useMemo(() => user?.nickname || user?.email || t('households.personal'), [user, t])
@@ -354,6 +354,7 @@ const RecipesScreen = () => {
           activeHousehold={activeHousehold}
           personalName={personalName}
           switchContextLabel={t('households.switchContext')}
+          isLoadingHouseholds={isLoadingHouseholds}
         />
       ),
       headerSearchBarOptions,
@@ -372,6 +373,7 @@ const RecipesScreen = () => {
     householdMenuActions,
     handleHouseholdAction,
     activeHousehold,
+    isLoadingHouseholds,
     user,
     handleSearchChangeText,
     handleSearchCancel,
@@ -667,6 +669,7 @@ const RecipesScreen = () => {
           ListHeaderComponent={
             <View>
               <Reanimated.View style={topSpacerStyle} />
+              <NextMealCard enabled={dataQueriesEnabled} />
               {showImportJobs && pendingJobs.length > 0 && (
                 <View>
                   {pendingJobs.map((job: ImportJob) => (
@@ -730,7 +733,6 @@ const RecipesScreen = () => {
           {groupedFilterTags.other.length > 0 && <View style={styles.tagBarDivider} />}
           {groupedFilterTags.other.map(renderTag)}
         </ScrollView>
-        <NextMealCard enabled={dataQueriesEnabled} />
       </Reanimated.View>
       <FloatingAddButton accessibilityLabel={t('nav.addRecipe')} />
     </View>

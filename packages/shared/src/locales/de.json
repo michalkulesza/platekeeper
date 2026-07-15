@@ -34,7 +34,8 @@
     "uploadFailed": "Foto konnte nicht hochgeladen werden. Bitte erneut versuchen.",
     "invalidImageUrl": "Ungültige URL. Bitte eine gültige https://-Adresse eingeben.",
     "somethingWentWrong": "Etwas ist schiefgelaufen",
-    "tryAgain": "Erneut versuchen"
+    "tryAgain": "Erneut versuchen",
+    "search": "Suche"
   },
   "recipes": {
     "searchPlaceholder": "Rezepte suchen…",
@@ -416,12 +417,10 @@
   "tags": {
     "tags": "Tags",
     "noTags": "Keine Tags",
-    "searchOrCreate": "Suchen oder erstellen…",
-    "creating": "Erstelle…",
-    "createTag": "\"{{name}}\" erstellen",
     "noTagsAvailable": "Keine Tags vorhanden",
     "allTagsAdded": "Alle Tags bereits hinzugefügt",
     "addTag": "Tag hinzufügen",
+    "editTags": "Tags bearbeiten",
     "removeTag": "{{name}} entfernen",
     "category": {
       "protein": "Protein",

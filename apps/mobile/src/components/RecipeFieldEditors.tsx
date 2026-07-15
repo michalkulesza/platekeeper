@@ -2,7 +2,9 @@ import { useCallback, useMemo, useState } from 'react'
 import {
   Alert,
   FlatList,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   PlatformColor,
   Pressable,
   ScrollView,
@@ -11,7 +13,9 @@ import {
   TextInput,
   View,
 } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import { useTranslation } from 'react-i18next'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { UNITS } from '@carrot/shared/types'
 import type { AllergenFlag, Tag } from '@carrot/shared/types'
 import type { StructuredIngredient } from '@carrot/shared/utils/ingredientUtils'
@@ -98,20 +102,20 @@ export const TagPickerModal = ({
   selectedIds,
   onAdd,
   onRemove,
-  onCreate,
   onClose,
 }: {
   visible: boolean
   allTags: Tag[]
   selectedIds: Set<string>
   onAdd: (tag: Tag) => void
-  onRemove?: (tagId: string) => void
-  onCreate: (name: string) => Promise<Tag>
+  onRemove: (tagId: string) => void
   onClose: () => void
 }) => {
   const { t } = useTranslation()
+  const insets = useSafeAreaInsets()
   const [query, setQuery] = useState('')
-  const [creating, setCreating] = useState(false)
+
+  const tagModalPaddingBottom = useMemo(() => ({ paddingBottom: insets.bottom + 24 }), [insets.bottom])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -120,37 +124,22 @@ export const TagPickerModal = ({
 
   const groupedSections = useMemo(() => {
     const grouped = groupTagsByCategory(filtered)
+    const selectedFirst = (tags: Tag[]) =>
+      [...tags].sort((a, b) => Number(selectedIds.has(b.id)) - Number(selectedIds.has(a.id)))
     return [
       ...TAG_CATEGORIES.map((category) => ({
         key: category,
         title: t(`tags.category.${category}`),
-        tags: grouped[category],
+        tags: selectedFirst(grouped[category]),
       })),
-      { key: 'other', title: t('tags.category.other'), tags: grouped.other },
+      { key: 'other', title: t('tags.category.other'), tags: selectedFirst(grouped.other) },
     ].filter((section) => section.tags.length > 0)
-  }, [filtered, t])
-
-  const trimmedQuery = query.trim()
-  const exactMatch = allTags.some((tag) => tag.name.toLowerCase() === trimmedQuery.toLowerCase())
-  const canCreate = trimmedQuery.length > 0 && !exactMatch
-
-  const handleCreate = useCallback(async () => {
-    if (!trimmedQuery) return
-
-    setCreating(true)
-    try {
-      const tag = await onCreate(trimmedQuery)
-      onAdd(tag)
-      setQuery('')
-    } finally {
-      setCreating(false)
-    }
-  }, [trimmedQuery, onCreate, onAdd])
+  }, [filtered, t, selectedIds])
 
   const handleTagRowPress = useCallback(
     (tag: Tag) => {
       if (selectedIds.has(tag.id)) {
-        onRemove?.(tag.id)
+        onRemove(tag.id)
         return
       }
 
@@ -163,25 +152,22 @@ export const TagPickerModal = ({
     ({ pressed }: { pressed: boolean }) => [pressed && styles.pressedLight],
     [],
   )
-  const getCreateRowStyle = useCallback(
-    ({ pressed }: { pressed: boolean }) => [styles.tagCreateRow, pressed && styles.pressedLight],
-    [],
-  )
   const getTagListRowStyle = useCallback(
     ({ pressed }: { pressed: boolean }) => [styles.tagListRow, pressed && styles.pressedLight],
     [],
   )
 
-  const createTagLabel = t('tags.createTag', { name: trimmedQuery })
-  const createTagText = creating ? t('tags.creating') : createTagLabel
-
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.tagModalWrap}>
-        <View style={styles.tagModal}>
+      <KeyboardAvoidingView
+        style={styles.tagModalKeyboardWrap}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <Pressable style={styles.tagModalOverlay} onPress={onClose} />
+        <View style={[styles.tagModal, tagModalPaddingBottom]}>
           <View style={styles.sheetHandle} />
           <View style={styles.tagModalHeader}>
-            <Text style={styles.tagModalTitle}>{t('tags.addTag')}</Text>
+            <Text style={styles.tagModalTitle}>{t('tags.editTags')}</Text>
             <Pressable
               style={getCloseButtonStyle}
               onPress={onClose}
@@ -191,29 +177,24 @@ export const TagPickerModal = ({
               <Text style={styles.tagModalClose}>✕</Text>
             </Pressable>
           </View>
-          <TextInput
-            style={styles.tagSearch}
-            placeholder={t('tags.searchOrCreate')}
-            value={query}
-            onChangeText={setQuery}
-            autoCapitalize="none"
-            autoCorrect={false}
-            keyboardType="default"
-            returnKeyType="search"
-            textContentType="none"
-            accessibilityLabel={t('tags.searchOrCreate')}
-          />
+          <View style={styles.tagSearchContainer}>
+            <Ionicons name="search" size={16} color={PlatformColor('secondaryLabel') as unknown as string} />
+            <TextInput
+              style={styles.tagSearchInput}
+              placeholder={t('common.search')}
+              placeholderTextColor={PlatformColor('placeholderText') as unknown as string}
+              value={query}
+              onChangeText={setQuery}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="default"
+              returnKeyType="search"
+              textContentType="none"
+              clearButtonMode="while-editing"
+              accessibilityLabel={t('common.search')}
+            />
+          </View>
           <ScrollView style={styles.tagScrollList} keyboardShouldPersistTaps="handled">
-            {canCreate && (
-              <Pressable
-                style={getCreateRowStyle}
-                onPress={handleCreate}
-                disabled={creating}
-                accessibilityLabel={createTagLabel}
-              >
-                <Text style={styles.tagCreateText}>{createTagText}</Text>
-              </Pressable>
-            )}
             {groupedSections.map((section) => (
               <View key={section.key}>
                 <Text style={styles.tagSectionHeader}>{section.title}</Text>
@@ -224,7 +205,6 @@ export const TagPickerModal = ({
                       key={tag.id}
                       style={getTagListRowStyle}
                       onPress={() => handleTagRowPress(tag)}
-                      disabled={isSelected && !onRemove}
                       accessibilityLabel={tag.name}
                       accessibilityState={{ selected: isSelected }}
                     >
@@ -235,12 +215,12 @@ export const TagPickerModal = ({
                 })}
               </View>
             ))}
-            {filtered.length === 0 && !canCreate && (
+            {filtered.length === 0 && (
               <Text style={styles.tagEmpty}>{t('tags.noTagsAvailable')}</Text>
             )}
           </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   )
 }
@@ -380,49 +360,46 @@ const styles = StyleSheet.create({
   pressedLight: { opacity: 0.7 },
   pressedMedium: { opacity: 0.6 },
 
-  tagModalWrap: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  tagModalKeyboardWrap: { flex: 1 },
+  tagModalOverlay: { flex: 1, backgroundColor: 'transparent' },
   tagModal: {
     backgroundColor: PlatformColor('systemBackground') as unknown as string,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     paddingTop: 8,
     maxHeight: '72%',
-    paddingBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
   },
   tagModalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8 },
   tagModalTitle: { fontSize: 17, lineHeight: 22, fontWeight: '600', color: PlatformColor('label') as unknown as string },
   tagModalClose: { fontSize: 17, color: PlatformColor('secondaryLabel') as unknown as string, padding: 4 },
-  tagSearch: {
+  tagSearchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     marginHorizontal: 16,
     marginBottom: 8,
-    borderWidth: 1,
-    borderColor: PlatformColor('opaqueSeparator') as unknown as string,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 16,
-    color: PlatformColor('label') as unknown as string,
+    height: 36,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    backgroundColor: PlatformColor('systemGray6') as unknown as string,
   },
+  tagSearchInput: { flex: 1, paddingVertical: 0, fontSize: 16, color: PlatformColor('label') as unknown as string },
   tagScrollList: { maxHeight: 320 },
   tagSectionHeader: {
     fontSize: 13,
     lineHeight: 18,
     fontWeight: '600',
-    color: PlatformColor('secondaryLabel') as unknown as string,
+    color: PlatformColor('label') as unknown as string,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 4,
   },
-  tagCreateRow: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: colors.brandLight,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: PlatformColor('separator') as unknown as string,
-  },
-  tagCreateText: { fontSize: 16, color: colors.brand, fontWeight: '600' },
   tagListRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

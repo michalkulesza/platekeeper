@@ -34,7 +34,8 @@
     "uploadFailed": "Nie udało się przesłać zdjęcia. Spróbuj ponownie.",
     "invalidImageUrl": "Nieprawidłowy URL. Podaj prawidłowy adres https://.",
     "somethingWentWrong": "Coś poszło nie tak",
-    "tryAgain": "Spróbuj ponownie"
+    "tryAgain": "Spróbuj ponownie",
+    "search": "Szukaj"
   },
   "recipes": {
     "searchPlaceholder": "Wyszukaj",
@@ -424,12 +425,10 @@
   "tags": {
     "tags": "Tagi",
     "noTags": "Brak tagów",
-    "searchOrCreate": "Szukaj lub utwórz…",
-    "creating": "Tworzę…",
-    "createTag": "Utwórz '{{name}}'",
     "noTagsAvailable": "Brak dostępnych tagów",
     "allTagsAdded": "Wszystkie tagi już dodane",
     "addTag": "Dodaj tag",
+    "editTags": "Edytuj tagi",
     "removeTag": "Usuń {{name}}",
     "category": {
       "protein": "Białko",

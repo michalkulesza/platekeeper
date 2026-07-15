@@ -27,9 +27,9 @@ const formatCookingTime = (minutes: number | null, t: (key: string) => string) =
   if (minutes === null) return ''
   const hours = Math.floor(minutes / 60)
   const remainingMinutes = minutes % 60
-  if (hours === 0) return `${minutes} ${t('recipes.minutesShort')}`
-  if (remainingMinutes === 0) return `${hours} ${t('recipes.hoursShort')}`
-  return `${hours} ${t('recipes.hoursShort')} ${remainingMinutes} ${t('recipes.minutesShort')}`
+  if (hours === 0) return `${minutes}${t('recipes.minutesShort')}`
+  if (remainingMinutes === 0) return `${hours}${t('recipes.hoursShort')}`
+  return `${hours}${t('recipes.hoursShort')}${remainingMinutes}${t('recipes.minutesShort')}`
 }
 
 const ReadView = ({
@@ -154,7 +154,7 @@ const ReadView = ({
             )}
           </View>
 
-          <TagsSection recipe={recipe} editing={false} />
+          <TagsSection recipe={recipe} />
 
           <NutritionBoxGrid
             editing={false}
@@ -263,7 +263,7 @@ const ReadView = ({
               onAddAll={handleAddAll}
               fontSize={FONT_SIZES[fontSizeIndex]}
               lineHeight={LINE_HEIGHTS[fontSizeIndex]}
-              collapsible={recipe.components.length > 1 && i > 0}
+              collapsible={recipe.components.length > 1}
               showIngredients={recipe.components.length > 1}
               showGroupHeader={recipe.components.length > 1}
             />

@@ -34,7 +34,8 @@
     "uploadFailed": "Impossible d'envoyer la photo. Veuillez réessayer.",
     "invalidImageUrl": "URL invalide. Veuillez entrer une adresse https:// valide.",
     "somethingWentWrong": "Une erreur est survenue",
-    "tryAgain": "Réessayer"
+    "tryAgain": "Réessayer",
+    "search": "Rechercher"
   },
   "recipes": {
     "searchPlaceholder": "Chercher des recettes…",
@@ -416,12 +417,10 @@
   "tags": {
     "tags": "Tags",
     "noTags": "Aucun tag",
-    "searchOrCreate": "Rechercher ou créer…",
-    "creating": "Création…",
-    "createTag": "Créer « {{name}} »",
     "noTagsAvailable": "Aucun tag disponible",
     "allTagsAdded": "Tous les tags déjà ajoutés",
     "addTag": "Ajouter un tag",
+    "editTags": "Modifier les tags",
     "removeTag": "Supprimer {{name}}",
     "category": {
       "protein": "Protéine",

@@ -8,10 +8,10 @@ import { tTag } from '@carrot/shared/utils/tagUtils'
 import { TagPickerModal } from '../../components/RecipeFieldEditors'
 import { styles } from './styles'
 
-const TagsSection = ({ recipe, editing }: { recipe: RecipeOut; editing: boolean }) => {
+const TagsSection = ({ recipe }: { recipe: RecipeOut }) => {
   const { t } = useTranslation()
   const qc = useQueryClient()
-  const { tags: allTags, create: createTagMutation, addToRecipe, removeFromRecipe } = useTags()
+  const { tags: allTags, addToRecipe, removeFromRecipe } = useTags()
   const [showTagPicker, setShowTagPicker] = useState(false)
 
   const selectedIds = useMemo(() => new Set(recipe.tags.map((tag) => tag.id)), [recipe.tags])
@@ -52,8 +52,6 @@ const TagsSection = ({ recipe, editing }: { recipe: RecipeOut; editing: boolean 
     [patchRecipeTags, removeFromRecipe, recipe.id, recipe.tags, t],
   )
 
-  const handleTagCreate = useCallback(async (name: string): Promise<Tag> => createTagMutation.mutateAsync(name), [createTagMutation])
-
   return (
     <>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tagScroll}>
@@ -62,14 +60,10 @@ const TagsSection = ({ recipe, editing }: { recipe: RecipeOut; editing: boolean 
             <Pressable
               key={tag.id}
               style={({ pressed }) => [styles.tag, pressed && { opacity: 0.7 }]}
-              onPress={editing ? () => handleTagRemove(tag.id) : undefined}
-              accessibilityLabel={editing ? `${tag.name}, tap to remove` : tag.name}
-              disabled={!editing}
+              onPress={() => handleTagRemove(tag.id)}
+              accessibilityLabel={`${tag.name}, tap to remove`}
             >
-              <Text style={styles.tagText}>
-                {tTag(tag.name, t)}
-                {editing && ' ×'}
-              </Text>
+              <Text style={styles.tagText}>{tTag(tag.name, t)} ×</Text>
             </Pressable>
           ))}
           <Pressable
@@ -86,8 +80,7 @@ const TagsSection = ({ recipe, editing }: { recipe: RecipeOut; editing: boolean 
         allTags={allTags}
         selectedIds={selectedIds}
         onAdd={handleTagAdd}
-        onRemove={editing ? handleTagRemove : undefined}
-        onCreate={handleTagCreate}
+        onRemove={handleTagRemove}
         onClose={() => setShowTagPicker(false)}
       />
     </>

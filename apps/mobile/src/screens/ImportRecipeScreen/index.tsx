@@ -53,7 +53,7 @@ const ImportRecipeScreen = () => {
   const insets = useSafeAreaInsets()
   const api = useApiClient()
   const qc = useQueryClient()
-  const { tags, create: createTagMutation } = useTags()
+  const { tags } = useTags()
   const { preferences } = usePreferences()
   const { activeHouseholdId } = useHousehold()
   const {
@@ -293,10 +293,6 @@ const ImportRecipeScreen = () => {
     }
   }, [editable, selectedTags, activeHouseholdId, preferences, api, qc, t, router])
 
-  const handleTagCreate = useCallback(
-    async (name: string): Promise<Tag> => createTagMutation.mutateAsync(name),
-    [createTagMutation],
-  )
   const handleTagAdd = useCallback((tag: Tag) => setSelectedTags((prev) => [...prev, tag]), [])
   const handleTagRemove = useCallback((id: string) => setSelectedTags((prev) => prev.filter((tag) => tag.id !== id)), [])
   const selectedTagIds = useMemo(() => new Set(selectedTags.map((tag) => tag.id)), [selectedTags])
@@ -394,7 +390,6 @@ const ImportRecipeScreen = () => {
             allTags={tags}
             onTagAdd={handleTagAdd}
             onTagRemove={handleTagRemove}
-            onTagCreate={handleTagCreate}
             activeAllergens={activeAllergens}
           />
         )}

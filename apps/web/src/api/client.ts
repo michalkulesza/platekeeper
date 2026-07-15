@@ -43,7 +43,6 @@ export const {
   importRecipes,
   uploadThumbnail,
   listTags,
-  createTag,
   addTagToRecipe,
   removeTagFromRecipe,
   listMealPlan,

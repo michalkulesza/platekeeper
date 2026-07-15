@@ -34,7 +34,8 @@
     "uploadFailed": "Couldn't upload the photo. Please try again.",
     "invalidImageUrl": "Invalid URL. Please enter a valid https:// address.",
     "somethingWentWrong": "Something went wrong",
-    "tryAgain": "Try again"
+    "tryAgain": "Try again",
+    "search": "Search"
   },
   "recipes": {
     "searchPlaceholder": "Search recipes…",
@@ -75,8 +76,8 @@
     "colServings": "Servings",
     "totalTime": "Total time",
     "totalTimeMinutes": "Total time (min)",
-    "minutesShort": "min",
-    "hoursShort": "hr",
+    "minutesShort": "m",
+    "hoursShort": "h",
     "colKcal": "Kcal",
     "colProtein": "Protein",
     "colFat": "Fat",
@@ -416,12 +417,10 @@
   "tags": {
     "tags": "Tags",
     "noTags": "No tags",
-    "searchOrCreate": "Search or create…",
-    "creating": "Creating…",
-    "createTag": "Create \"{{name}}\"",
     "noTagsAvailable": "No tags available",
     "allTagsAdded": "All tags already added",
     "addTag": "Add tag",
+    "editTags": "Edit tags",
     "removeTag": "Remove {{name}}",
     "category": {
       "protein": "Protein",

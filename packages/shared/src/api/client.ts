@@ -173,16 +173,6 @@ export const createApiClient = (config: ApiClientConfig) => {
     return res.json() as Promise<Tag[]>
   }
 
-  const createTag = async (name: string): Promise<Tag> => {
-    const res = await apiFetch('/api/tags', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name }),
-    })
-    await throwOnError(res, 'Failed to create tag')
-    return res.json() as Promise<Tag>
-  }
-
   const addTagToRecipe = async (recipeId: string, tagId: string): Promise<void> => {
     const res = await apiFetch(`/api/recipes/${recipeId}/tags/${tagId}`, { method: 'POST' })
     if (!res.ok) throw new Error('Failed to add tag')
@@ -557,13 +547,15 @@ export const createApiClient = (config: ApiClientConfig) => {
     await throwOnError(res, 'Failed to clear completed items')
   }
 
-  const subscribeShoppingList = (
-    onList: (items: ShoppingListItem[]) => void,
-    onPresence: (users: PresenceUser[]) => void
+  /** Subscribes to an SSE stream, dispatching each `data:` event to onEvent. Returns an unsubscribe fn. */
+  const subscribeStream = <TEvent extends { type: string }>(
+    path: string,
+    onEvent: (event: TEvent) => void,
+    context: string
   ): (() => void) => {
     let aborted = false
     const controller = new AbortController()
-    apiFetch('/api/shopping-list/stream', { signal: controller.signal })
+    apiFetch(path, { signal: controller.signal })
       .then(async (res) => {
         if (!res.ok || !res.body) return
         const reader = res.body.getReader()
@@ -579,19 +571,48 @@ export const createApiClient = (config: ApiClientConfig) => {
             const line = chunk.trim()
             if (!line.startsWith('data: ')) continue
             try {
-              const event = JSON.parse(line.slice(6)) as { type: string; items?: ShoppingListItem[]; users?: PresenceUser[] }
-              if (event.type === 'list_snapshot' && event.items) onList(event.items)
-              else if (event.type === 'presence' && event.users) onPresence(event.users)
+              onEvent(JSON.parse(line.slice(6)) as TEvent)
             } catch { /* ignore malformed events */ }
           }
         }
       })
-      .catch((err: unknown) => reportError?.(err, 'subscribeShoppingList'))
+      .catch((err: unknown) => reportError?.(err, context))
     return () => {
       aborted = true
       controller.abort()
     }
   }
+
+  const subscribeShoppingList = (
+    onList: (items: ShoppingListItem[]) => void,
+    onPresence: (users: PresenceUser[]) => void
+  ): (() => void) =>
+    subscribeStream<{ type: string; items?: ShoppingListItem[]; users?: PresenceUser[] }>(
+      '/api/shopping-list/stream',
+      (event) => {
+        if (event.type === 'list_snapshot' && event.items) onList(event.items)
+        else if (event.type === 'presence' && event.users) onPresence(event.users)
+      },
+      'subscribeShoppingList'
+    )
+
+  const subscribeMealPlan = (onChange: () => void): (() => void) =>
+    subscribeStream<{ type: string }>(
+      '/api/meal-plan/stream',
+      (event) => {
+        if (event.type === 'meal_plan_changed') onChange()
+      },
+      'subscribeMealPlan'
+    )
+
+  const subscribeRecipes = (onChange: () => void): (() => void) =>
+    subscribeStream<{ type: string }>(
+      '/api/recipes/stream',
+      (event) => {
+        if (event.type === 'recipe_changed') onChange()
+      },
+      'subscribeRecipes'
+    )
 
   const postPresence = async (
     action: 'start' | 'stop' | 'keepalive',
@@ -700,6 +721,7 @@ export const createApiClient = (config: ApiClientConfig) => {
     deleteRecipe,
     fetchStats,
     listRecipes,
+    subscribeRecipes,
     listPersonalRecipes,
     linkRecipeToHousehold,
     linkRecipeToPersonal,
@@ -708,13 +730,13 @@ export const createApiClient = (config: ApiClientConfig) => {
     importRecipes,
     uploadThumbnail,
     listTags,
-    createTag,
     addTagToRecipe,
     removeTagFromRecipe,
     listMealPlan,
     getNextMealPlanEntry,
     setMealPlanEntry,
     deleteMealPlanEntry,
+    subscribeMealPlan,
     getPreferences,
     updatePreferences,
     updateHouseholdAllergens,

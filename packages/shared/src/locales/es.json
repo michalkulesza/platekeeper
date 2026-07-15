@@ -34,7 +34,8 @@
     "uploadFailed": "No se pudo subir la foto. Por favor, inténtalo de nuevo.",
     "invalidImageUrl": "URL no válida. Introduce una dirección https:// válida.",
     "somethingWentWrong": "Algo salió mal",
-    "tryAgain": "Inténtalo de nuevo"
+    "tryAgain": "Inténtalo de nuevo",
+    "search": "Buscar"
   },
   "recipes": {
     "searchPlaceholder": "Buscar recetas…",
@@ -415,12 +416,10 @@
   "tags": {
     "tags": "Etiquetas",
     "noTags": "Sin etiquetas",
-    "searchOrCreate": "Buscar o crear…",
-    "creating": "Creando…",
-    "createTag": "Crear \"{{name}}\"",
     "noTagsAvailable": "No hay etiquetas disponibles",
     "allTagsAdded": "Todas las etiquetas ya añadidas",
     "addTag": "Añadir etiqueta",
+    "editTags": "Editar etiquetas",
     "removeTag": "Eliminar {{name}}",
     "category": {
       "protein": "Proteína",
