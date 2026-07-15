@@ -40,6 +40,7 @@ import RecipeMetaBar from './RecipeMetaBar'
 import RecipeNotesSection from './RecipeNotesSection'
 import RecipeModalFooter from './RecipeModalFooter'
 import ViewComponent from './ViewComponent'
+import UnifiedIngredientList from './UnifiedIngredientList'
 import EditComponent from './EditComponent'
 
 interface RecipeDetailModalProps {
@@ -359,6 +360,12 @@ const RecipeDetailModal = ({
     setSessionAdded((prev) => new Set([...prev, ...keys]))
   }
 
+  const handleAddAllUnifiedIngredients = () => {
+    components.forEach((_, componentIndex) =>
+      handleAddAllIngredients(componentIndex)
+    )
+  }
+
   const cancelMode = () => {
     if (mode === 'editing') setDraft(toEditState(r))
     setMode('view')
@@ -444,6 +451,22 @@ const RecipeDetailModal = ({
                     saving={notesSaving}
                     fontSizeIndex={fontSizeIndex}
                   />
+                  {mode !== 'editing' && components.length > 1 && (
+                    <UnifiedIngredientList
+                      components={components}
+                      unitSystem={preferences?.unit_system ?? 'metric'}
+                      servingScale={servingScale}
+                      activeAllergens={activeAllergens}
+                      addMode={addMode}
+                      sessionAdded={sessionAdded}
+                      onReplaceIngredient={handleReplaceIngredient}
+                      onRestoreIngredient={handleRestoreIngredient}
+                      onAddIngredient={handleAddIngredient}
+                      onAddAllIngredients={handleAddAllUnifiedIngredients}
+                      fontSizeIndex={fontSizeIndex}
+                    />
+                  )}
+
 
                   {mode === 'editing'
                     ? components.map((comp, ci) => (
@@ -480,6 +503,7 @@ const RecipeDetailModal = ({
                             handleAddAllIngredients(ci)
                           }
                           fontSizeIndex={fontSizeIndex}
+                          collapsible={components.length > 1}
                           servingScale={servingScale}
                         />
                       ))}

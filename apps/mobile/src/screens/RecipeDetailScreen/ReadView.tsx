@@ -18,6 +18,7 @@ import { proxyThumbnailUrl, PLACEHOLDER_URL } from '../../api/thumbnailUrl'
 import { styles } from './styles'
 import { FONT_SIZES, LINE_HEIGHTS } from './helpers'
 import ComponentSection from './ComponentSection'
+import UnifiedIngredientsSection from './UnifiedIngredientsSection'
 import NotesSection from './NotesSection'
 import TagsSection from './TagsSection'
 import ServingStepper from './ServingStepper'
@@ -249,6 +250,20 @@ const ReadView = ({
 
           <NotesSection recipe={recipe} fontSizeIndex={fontSizeIndex} />
 
+          {recipe.components.length > 1 && (
+            <UnifiedIngredientsSection
+              components={recipe.components}
+              unitSystem={unitSystem}
+              servingScale={servingScale}
+              addMode={addMode}
+              sessionAdded={sessionAdded}
+              onAdd={handleAddIngredient}
+              onAddAll={handleAddAll}
+              fontSize={FONT_SIZES[fontSizeIndex]}
+              lineHeight={LINE_HEIGHTS[fontSizeIndex]}
+            />
+          )}
+
           {recipe.components.map((component, i) => (
             <ComponentSection
               key={i}
@@ -264,6 +279,7 @@ const ReadView = ({
               onAddAll={handleAddAll}
               fontSize={FONT_SIZES[fontSizeIndex]}
               lineHeight={LINE_HEIGHTS[fontSizeIndex]}
+              collapsible={recipe.components.length > 1}
             />
           ))}
         </View>

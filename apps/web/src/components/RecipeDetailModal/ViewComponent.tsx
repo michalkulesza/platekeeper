@@ -1,4 +1,5 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { ChevronDown, ChevronUp } from 'react-feather'
 import { useTranslation } from 'react-i18next'
 import type { SaveComponent, StepIngredientRef } from '@carrot/shared/types'
 import {
@@ -25,6 +26,7 @@ interface ViewComponentProps {
   onAddAllIngredients?: () => void
   fontSizeIndex: number
   servingScale: number
+  collapsible?: boolean
 }
 
 const TEXT_SIZE_CLASSES = [
@@ -51,8 +53,10 @@ const ViewComponent = ({
   onAddAllIngredients,
   fontSizeIndex,
   servingScale,
+  collapsible = false,
 }: ViewComponentProps) => {
   const { t } = useTranslation()
+  const [expanded, setExpanded] = useState(!collapsible)
   const ingredients = useMemo(
     () => getScaledIngredientValues(comp, unitSystem, servingScale),
     [comp, servingScale, unitSystem]
@@ -74,12 +78,24 @@ const ViewComponent = ({
 
   return (
     <div className="mb-5">
-      {!single && (
-        <h3 className="text-sm font-semibold text-zinc-600 mb-2">
-          {comp.name}
-        </h3>
+      {collapsible ? (
+        <button
+          type="button"
+          onClick={() => setExpanded((current) => !current)}
+          aria-expanded={expanded}
+          className="w-full min-h-11 flex items-center justify-between text-left text-sm font-semibold text-zinc-600"
+        >
+          <span>{comp.name || t('recipes.sectionIngredients')}</span>
+          {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+        </button>
+      ) : (
+        !single && (
+          <h3 className="text-sm font-semibold text-zinc-600 mb-2">
+            {comp.name}
+          </h3>
+        )
       )}
-      {ingredients.length > 0 && (
+      {expanded && ingredients.length > 0 && (
         <>
           <div className="flex items-center justify-between mb-1">
             <p className="text-xs font-semibold uppercase text-zinc-400">
@@ -163,7 +179,7 @@ const ViewComponent = ({
           </ul>
         </>
       )}
-      {steps.length > 0 && (
+      {expanded && steps.length > 0 && (
         <>
           <p className="text-xs font-semibold uppercase text-zinc-400 mb-1">
             {t('recipes.steps')}

@@ -1,10 +1,12 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Pressable, Text, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
+import { Feather } from '@expo/vector-icons'
 import type { RecipeOut, SaveComponent, StepIngredientRef } from '@carrot/shared/types'
 import { buildClientStepRefs } from '@carrot/shared/utils/ingredientUtils'
 import { scaleIngredientQuantity } from '@carrot/shared/utils/ingredientScaling'
 import { styles } from './styles'
+import { colors } from '../../theme/colors'
 import { capitalizeFirst } from './helpers'
 import IngredientRow from './IngredientRow'
 import StepRow from './StepRow'
@@ -22,6 +24,7 @@ const ComponentSection = ({
   onAddAll,
   fontSize = 17,
   lineHeight = 22,
+  collapsible = false,
 }: {
   component: SaveComponent
   index: number
@@ -35,8 +38,10 @@ const ComponentSection = ({
   onAddAll?: (keys: string[], texts: string[]) => void
   fontSize?: number
   lineHeight?: number
+  collapsible?: boolean
 }) => {
   const { t } = useTranslation()
+  const [expanded, setExpanded] = useState(!collapsible)
   const ingredientValues = unitSystem === 'imperial'
     ? component.imperial_ingredients ?? component.ingredients
     : component.metric_ingredients ?? component.ingredients
@@ -83,13 +88,30 @@ const ComponentSection = ({
     [ingredients, index, sessionAdded],
   )
 
+  const groupName = capitalizeFirst(component.name) || t('recipes.sectionIngredients')
+
   return (
     <View style={styles.componentBlock}>
-      {component.name ? (
+      {collapsible ? (
+        <Pressable
+          onPress={() => setExpanded((current) => !current)}
+          style={styles.componentToggle}
+          accessibilityLabel={groupName}
+          accessibilityRole="button"
+          accessibilityState={{ expanded }}
+        >
+          <Text style={styles.componentToggleText}>{groupName}</Text>
+          <Feather
+            name={expanded ? 'chevron-up' : 'chevron-down'}
+            size={22}
+            color={colors.label}
+          />
+        </Pressable>
+      ) : component.name ? (
         <Text style={styles.componentName}>{capitalizeFirst(component.name)}</Text>
       ) : null}
 
-      {ingredients.length > 0 && (
+      {expanded && ingredients.length > 0 && (
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionLabel}>{t('recipes.sectionIngredients')}</Text>
@@ -122,7 +144,7 @@ const ComponentSection = ({
         </View>
       )}
 
-      {steps.length > 0 && (
+      {expanded && steps.length > 0 && (
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>{t('recipes.steps')}</Text>
           {steps.map((step, i) => (

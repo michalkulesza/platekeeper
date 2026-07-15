@@ -161,6 +161,18 @@ export const styles = StyleSheet.create({
     marginBottom: 12,
     lineHeight: 25,
   },
+  componentToggle: {
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  componentToggleText: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: colors.label,
+    lineHeight: 25,
+  },
   section: { marginBottom: 16 },
   sectionLabel: {
     fontSize: 13,
