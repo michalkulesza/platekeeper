@@ -4,6 +4,7 @@ Items are grouped by purpose and ordered from highest to lowest importance withi
 
 ## Core product features
 
+RERUN PROD FULL EXTRACTION 
 - [ ] **Guided Cook Mode** — Full-screen, big-type, swipeable steps; keep the screen awake, surface timers from step text, and allow ingredient checkoff while cooking.
 - [ ] **Visual recipe library / grid view** — Let users switch between the compact list and a photo-forward card or grid view with useful metadata such as tags, cooking time, and favourite status.
 
@@ -11,7 +12,6 @@ Items are grouped by purpose and ordered from highest to lowest importance withi
 - [ ] **Multiple meals per day** — Support breakfast, lunch, dinner, and leftovers instead of a single recipe for each date.
 - [ ] **Cook from what I have / pantry** — Track pantry staples, rank recipes by missing ingredients, and subtract pantry items from the shopping list.
 - [ ] **Calendar and reminder integration** — Send planned meals to the iOS Calendar and notify users when to start cooking or defrost ingredients.
-- [ ] **Analyze ingrdients prompt** - Cache + merge into enrichement one??? Is it reliable, doesnt it make up things
 - [ ] **Personal-only recipe filter** — Add a filter to show only recipes in my personal library that don't belong to any household.
 - [x] **When importing recipe send it to the background straight away** - inseatead of waiting at the skeleton screen, drop it in the bg, and show placeholder, redirect to recipe page
 - [x] **Ingredient scaling / adjust servings** — Released in 1.0.1 with serving-size steppers on web and iOS, live structured-ingredient recalculation, and scaled shopping-list additions.
@@ -30,8 +30,6 @@ Items are grouped by purpose and ordered from highest to lowest importance withi
 ## Experience and product polish
 
 - [ ] **Move add recipe to bottom drawer**
-- [x] **Preserve tsp and tbsp units** — Do not convert teaspoon or tablespoon measurements to grams or millilitres.
-- [x] **Collapse only extra ingredient groups** — For recipes with groups beyond Main, collapse each additional group’s ingredients only; keep the recipe steps visible.
 - [ ] **Anythign to do with top position px that is a hook that takes a while to reload ie jump when importing via share**
 - [ ] **Simplify tags and allergens** — Remove custom tags and allergens if the predefined systems provide a clearer product experience.
 - [ ] **Haptics and native context menus** — Add meaningful haptic feedback and long-press recipe actions (favourite, plan, share, delete) with a peek preview.
@@ -42,6 +40,8 @@ Items are grouped by purpose and ordered from highest to lowest importance withi
 - [x] **Respect the safe area in meal-plan search** — Bound the picker drawer’s keyboard-expanded range to the device safe area.
 - [x] **Use native-style meal-plan search** — Match the picker drawer’s search field to the rounded, borderless recipe-library search bar.
 - [x] **Review dark mode** — Fix automati/clearc appearance detection and verify all screens in dark mode.
+- [x] **Preserve tsp and tbsp units** — Do not convert teaspoon or tablespoon measurements to grams or millilitres.
+- [x] **Collapse only extra ingredient groups** — For recipes with groups beyond Main, collapse each additional group’s ingredients only; keep the recipe steps visible.
 
 ## Quality, release, and growth
 

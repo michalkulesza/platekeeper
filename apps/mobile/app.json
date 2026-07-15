@@ -22,7 +22,7 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
-      "buildNumber": "30",
+      "buildNumber": "32",
       "entitlements": {
         "com.apple.security.application-groups": [
           "group.com.kulesza.carrot"
