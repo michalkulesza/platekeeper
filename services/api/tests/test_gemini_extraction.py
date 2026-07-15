@@ -4,8 +4,9 @@ from unittest.mock import Mock
 
 import pytest
 
-from api.models import RecipeExtraction
+from api.models import RecipeComponent, RecipeExtraction, StepRef
 from api.services import gemini, pipeline
+from api.services.import_worker import _step_ingredient_refs
 
 
 def _response(payload: dict) -> SimpleNamespace:
@@ -65,6 +66,23 @@ async def test_shopping_list_values_stay_on_flash_lite_by_default(monkeypatch) -
     await gemini.recommend_shopping_list_values(["0.5 onion"])
 
     assert generate_content.call_args.kwargs["model"] == "gemini-2.5-flash-lite"
+
+
+def test_step_ingredient_refs_exclude_final_assembly_step() -> None:
+    component = RecipeComponent(
+        steps=["Chop the onion.", "Cook the onion.", "Assemble and serve."],
+        step_refs=[
+            StepRef(step_index=0, ingredient_index=0, mention="onion"),
+            StepRef(step_index=1, ingredient_index=0, mention="onion"),
+            StepRef(step_index=2, ingredient_index=0, mention="onion"),
+        ],
+    )
+
+    assert _step_ingredient_refs(component) == [
+        [{"ingredient_index": 0, "mention": "onion"}],
+        [{"ingredient_index": 0, "mention": "onion"}],
+        [],
+    ]
 
 
 @pytest.mark.asyncio

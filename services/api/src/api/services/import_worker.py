@@ -61,7 +61,7 @@ def _step_ingredient_refs(component: RecipeComponent) -> list[list[dict]] | None
         return None
     refs: list[list[dict]] = [[] for _ in component.steps]
     for ref in component.step_refs:
-        if ref.step_index < len(refs):
+        if ref.step_index < len(refs) - 1:
             refs[ref.step_index].append({"ingredient_index": ref.ingredient_index, "mention": ref.mention})
     return refs
 

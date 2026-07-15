@@ -121,7 +121,7 @@ export const toEditable = (
           () => []
         )
         for (const ref of c.step_refs) {
-          if (ref.step_index < numSteps) {
+          if (ref.step_index < numSteps - 1) {
             arr[ref.step_index].push({
               ingredient_index: ref.ingredient_index,
               mention: ref.mention,

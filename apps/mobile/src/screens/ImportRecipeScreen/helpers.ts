@@ -51,7 +51,7 @@ export const buildStepIngredientRefs = (component: RecipeComponent): StepIngredi
   const refs: StepIngredientRef[][] = Array.from({ length: stepCount }, () => [])
 
   for (const ref of component.step_refs) {
-    if (ref.step_index < stepCount) {
+    if (ref.step_index < stepCount - 1) {
       refs[ref.step_index].push({ ingredient_index: ref.ingredient_index, mention: ref.mention })
     }
   }

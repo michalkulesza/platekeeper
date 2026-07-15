@@ -139,7 +139,9 @@ export const getShoppingListIngredient = (
 export const computeClientStepIngredientRefs = (
   comp: SaveComponent
 ): StepIngredientRef[][] =>
-  comp.steps.map((step) => {
+  comp.steps.map((step, index) => {
+    if (index === comp.steps.length - 1) return []
+
     const refs: StepIngredientRef[] = []
     const stepLower = step.toLowerCase()
     comp.ingredients.forEach((ingStr, ii) => {

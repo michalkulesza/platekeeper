@@ -42,7 +42,9 @@ export const buildClientStepRefs = (
   steps: string[],
   ingredients: string[],
 ): StepIngredientRef[][] =>
-  steps.map((step) => {
+  steps.map((step, index) => {
+    if (index === steps.length - 1) return []
+
     const refs: StepIngredientRef[] = []
     const stepLower = step.toLowerCase()
     ingredients.forEach((ingStr, ii) => {
