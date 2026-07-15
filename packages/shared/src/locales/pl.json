@@ -34,7 +34,8 @@
     "uploadFailed": "Nie udało się przesłać zdjęcia. Spróbuj ponownie.",
     "invalidImageUrl": "Nieprawidłowy URL. Podaj prawidłowy adres https://.",
     "somethingWentWrong": "Coś poszło nie tak",
-    "tryAgain": "Spróbuj ponownie"
+    "tryAgain": "Spróbuj ponownie",
+    "search": "Szukaj"
   },
   "recipes": {
     "searchPlaceholder": "Wyszukaj",

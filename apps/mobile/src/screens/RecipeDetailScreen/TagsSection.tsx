@@ -11,7 +11,7 @@ import { styles } from './styles'
 const TagsSection = ({ recipe }: { recipe: RecipeOut }) => {
   const { t } = useTranslation()
   const qc = useQueryClient()
-  const { tags: allTags, create: createTagMutation, addToRecipe, removeFromRecipe } = useTags()
+  const { tags: allTags, addToRecipe, removeFromRecipe } = useTags()
   const [showTagPicker, setShowTagPicker] = useState(false)
 
   const selectedIds = useMemo(() => new Set(recipe.tags.map((tag) => tag.id)), [recipe.tags])
@@ -52,8 +52,6 @@ const TagsSection = ({ recipe }: { recipe: RecipeOut }) => {
     [patchRecipeTags, removeFromRecipe, recipe.id, recipe.tags, t],
   )
 
-  const handleTagCreate = useCallback(async (name: string): Promise<Tag> => createTagMutation.mutateAsync(name), [createTagMutation])
-
   return (
     <>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tagScroll}>
@@ -83,7 +81,6 @@ const TagsSection = ({ recipe }: { recipe: RecipeOut }) => {
         selectedIds={selectedIds}
         onAdd={handleTagAdd}
         onRemove={handleTagRemove}
-        onCreate={handleTagCreate}
         onClose={() => setShowTagPicker(false)}
       />
     </>

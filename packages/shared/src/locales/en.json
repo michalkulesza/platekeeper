@@ -34,7 +34,8 @@
     "uploadFailed": "Couldn't upload the photo. Please try again.",
     "invalidImageUrl": "Invalid URL. Please enter a valid https:// address.",
     "somethingWentWrong": "Something went wrong",
-    "tryAgain": "Try again"
+    "tryAgain": "Try again",
+    "search": "Search"
   },
   "recipes": {
     "searchPlaceholder": "Search recipes…",
