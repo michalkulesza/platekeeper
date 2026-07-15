@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useState } from 'react'
 import { Appearance } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
@@ -16,14 +16,23 @@ const ColorSchemeContext = createContext<ColorSchemeContextValue>({
 
 const STORAGE_KEY = 'color-scheme-preference'
 
+const applyAppearanceMode = (mode: AppearanceMode) => {
+  const colorScheme = mode === 'system' ? null : mode
+  Appearance.setColorScheme(colorScheme as never)
+}
+
 export const ColorSchemeProvider = ({ children }: { children: React.ReactNode }) => {
   const [mode, setModeState] = useState<AppearanceMode>('system')
+
+  useLayoutEffect(() => {
+    applyAppearanceMode('system')
+  }, [])
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY).then((val) => {
       if (val === 'light' || val === 'dark' || val === 'system') {
         setModeState(val)
-        Appearance.setColorScheme((val === 'system' ? null : val) as never)
+        applyAppearanceMode(val)
       }
     })
   }, [])
@@ -31,7 +40,7 @@ export const ColorSchemeProvider = ({ children }: { children: React.ReactNode })
   const setMode = useCallback((newMode: AppearanceMode) => {
     setModeState(newMode)
     void AsyncStorage.setItem(STORAGE_KEY, newMode)
-    Appearance.setColorScheme((newMode === 'system' ? null : newMode) as never)
+    applyAppearanceMode(newMode)
   }, [])
 
   return (
