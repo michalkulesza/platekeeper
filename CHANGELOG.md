@@ -14,6 +14,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.0.4] — 2026-07-15
+
+### Recipes & importing
+
+- ✨ **Feature** — Unified ingredient list: recipes with multiple ingredient groups (e.g. Main and Sauce) now show one combined list at the top, with each group also available as its own collapsed-by-default section.
+- ✨ **Feature** — Recipe import placeholders now dismiss instantly with optimistic UI updates, instead of waiting on the server round-trip.
+- 🐛 **Bug** — Fixed household recipe sharing: recipes already in a household no longer offer "send to household" and can instead be added to your personal library.
+- 🐛 **Bug** — Recipes with only one ingredient group no longer show a duplicated ingredients section.
+- 🐛 **Bug** — Fixed the mobile share-extension handoff for importing recipes from other apps.
+- 🐛 **Bug** — Recipe re-imports no longer get spuriously skipped as 429/rate-limited on Shopify-hosted recipe sites; page fetching now impersonates a real browser TLS fingerprint.
+- 🐛 **Bug** — Recipe extraction now retries on invalid Gemini enrichment responses and falls back gracefully on malformed fields instead of failing the whole import.
+- 🐛 **Bug** — Recipe import failures are now reported to Sentry for monitoring.
+
+### Households & sharing
+
+- 🐛 **Bug** — Refined the household sharing menu's send-to-household and send-to-personal-library options to correctly reflect a recipe's current household state.
+
+### Apps & platform
+
+- 🐛 **Bug** — Fixed cooking-mode preference sync between the recipe detail screen and app settings, which previously could disagree with each other.
+- 🐛 **Bug** — Mobile app now respects the system's dark/light appearance setting on startup instead of defaulting to light.
+- 🐛 **Bug** — Fixed remaining mobile dark-mode appearance issues on the meal plan screen and theme colors.
+- 🐛 **Bug** — Removed the internal debug mode toggle and its associated UI/config, now that its testing purpose is complete.
+
 ## [1.0.3] — 2026-07-15
 
 ### Recipes & importing
@@ -118,6 +142,7 @@ backend, a React web app, and a React Native (Expo) iOS app sharing a common
 - ✨ **Feature** — Rebranded to Carrot with new name, icons, and brand color, plus a marketing site at carrot.xcxz.xyz.
 - 🐛 **Bug** — Recipe thumbnails now stay cached, eliminating the image flash when opening a recipe's detail view.
 
+[1.0.4]: https://github.com/
 [1.0.3]: https://github.com/
 [1.0.2]: https://github.com/
 [1.0.1]: https://github.com/
