@@ -667,6 +667,7 @@ const RecipesScreen = () => {
           ListHeaderComponent={
             <View>
               <Reanimated.View style={topSpacerStyle} />
+              <NextMealCard enabled={dataQueriesEnabled} />
               {showImportJobs && pendingJobs.length > 0 && (
                 <View>
                   {pendingJobs.map((job: ImportJob) => (
@@ -730,7 +731,6 @@ const RecipesScreen = () => {
           {groupedFilterTags.other.length > 0 && <View style={styles.tagBarDivider} />}
           {groupedFilterTags.other.map(renderTag)}
         </ScrollView>
-        <NextMealCard enabled={dataQueriesEnabled} />
       </Reanimated.View>
       <FloatingAddButton accessibilityLabel={t('nav.addRecipe')} />
     </View>
