@@ -5,7 +5,6 @@ Items are grouped by purpose and ordered from highest to lowest importance withi
 ## Core product features
 
 - [ ] **RE RUN PRODUCTION** recipes
-- [ ] **Improve prompts** docs/specs/refine-recipe-import-queries.md
 
 - [ ] **Make sure sharing work on physical device**
 - [ ] **Fix recipe share options in household context** — On recipe details, the share button is wrong in household context: it should also allow sending the recipe to my personal library, and it should hide "send to household" when the household already contains that recipe.
@@ -25,6 +24,7 @@ Items are grouped by purpose and ordered from highest to lowest importance withi
 - [x] **Move recipe add button** — Moved the mobile add action to a persistent orange glass button matching the Meal Plan “Today” control.
 - [x] **Don't attach ingredients to the final assembly step** — When mapping ingredients to recipe steps, skip the last/final assembly step so ingredients aren't duplicated onto it.
 - [x] **Cooking time estimation** — Estimate each recipe's cooking time and show it in the stat boxes, in the far-left box.
+- [x] **Improve prompts** — Refined recipe-import query boundaries: source-only extraction schema, enrichment-only schema with a validated combiner, deduplicated allergen analysis, and honoured per-import model overrides. See docs/specs/refine-recipe-import-queries.md.
 
 ## Experience and product polish
 

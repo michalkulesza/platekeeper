@@ -249,14 +249,50 @@ class RecipeExtraction(BaseModel):
     components: list[RecipeComponent] = []
 
 
+class SourceIngredient(BaseModel):
+    qty: str | None = None
+    unit: UnitEnum | None = None
+    name: str
+
+
+class SourceComponent(BaseModel):
+    role: str = "main"
+    name: str | None = None
+    yield_note: str | None = None
+    ingredients: list[SourceIngredient] = []
+    steps: list[str] = []
+
+
 class RecipeSourceExtraction(BaseModel):
     title: str | None = None
     servings: int | None = None
-    components: list[RecipeComponent] = []
+    components: list[SourceComponent] = []
+
+
+class UnitVariantComponent(BaseModel):
+    metric_ingredients: list[str] = []
+    imperial_ingredients: list[str] = []
+    metric_steps: list[str] = []
+    imperial_steps: list[str] = []
+
+
+class EnrichmentComponent(UnitVariantComponent):
+    shopping_list_values: list[str] = []
+    step_refs: list[StepRef] = []
+
+
+class RecipeEnrichment(BaseModel):
+    total_time_minutes: int | None = None
+    kcal_per_serving: int
+    protein_per_serving: int
+    fat_per_serving: int
+    carbs_per_serving: int
+    tags: list[str] = []
+    components: list[EnrichmentComponent] = []
 
 
 class RecipeUnitVariants(BaseModel):
-    components: list[RecipeComponent] = []
+    components: list[UnitVariantComponent] = []
 
 
 # ── API request / response ────────────────────────────────────────────────────
@@ -557,7 +593,7 @@ class ImportJob(Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False, default=ImportJobStatus.PENDING)
     kind: Mapped[str] = mapped_column(String(20), nullable=False)
     input: Mapped[dict] = mapped_column(JSON, nullable=False)
-    model: Mapped[str] = mapped_column(String(100), nullable=False, default="gemini-2.5-flash-lite")
+    model: Mapped[str | None] = mapped_column(String(100), nullable=True, default=None)
     result_recipe_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("recipes.id", ondelete="SET NULL"), nullable=True
     )
@@ -575,7 +611,7 @@ class ImportJob(Base):
 class ImportJobCreate(BaseModel):
     kind: ImportJobKind
     input: dict  # {url} | {text} | {image_base64, mime_type}
-    model: str = "gemini-2.5-flash-lite"
+    model: str | None = None
     idempotency_key: uuid.UUID
 
 

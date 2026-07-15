@@ -134,8 +134,8 @@ def _strip_html(html: str) -> str:
 
 async def _try_linked_url(
     url: str,
+    model: str | None = None,
     available_tags: list[str] | None = None,
-    allergens: list[str] | None = None,
     usage: gemini_svc.UsageTracker | None = None,
 ) -> RecipeExtraction | None:
     try:
@@ -156,8 +156,8 @@ async def _try_linked_url(
             return None
 
     result = await gemini_svc.extract_recipe(
-        source_text, source_hint="webpage", model=settings.gemini_extraction_model,
-        available_tags=available_tags, allergens=allergens,
+        source_text, source_hint="webpage", model=model,
+        available_tags=available_tags,
         usage=usage,
     )
     return result if _is_complete(result) else None
@@ -213,7 +213,7 @@ def _attach_debug(result: ImportResult, usage: gemini_svc.UsageTracker) -> Impor
     return result.model_copy(update={"metadata": metadata})
 
 
-async def run_import_stream(url: str, model: str = "gemini-2.5-flash-lite", available_tags: list[str] | None = None, allergens: list[str] | None = None) -> AsyncGenerator[dict[str, Any], None]:
+async def run_import_stream(url: str, model: str | None = None, available_tags: list[str] | None = None, allergens: list[str] | None = None) -> AsyncGenerator[dict[str, Any], None]:
     if not allergens:
         cached = cache_svc.get(url)
         if cached is not None:
@@ -261,8 +261,8 @@ async def run_import_stream(url: str, model: str = "gemini-2.5-flash-lite", avai
             result_out: list = []
             async for _ev in _run_gemini(
                 gemini_svc.extract_recipe(
-                    source_text, source_hint="webpage", model=settings.gemini_extraction_model,
-                    available_tags=available_tags, allergens=allergens,
+                    source_text, source_hint="webpage", model=model,
+                    available_tags=available_tags,
                     usage=usage,
                 ),
                 result_out,
@@ -314,7 +314,7 @@ async def run_import_stream(url: str, model: str = "gemini-2.5-flash-lite", avai
             async for _ev in _run_gemini(
                 gemini_svc.extract_recipe(
                     metadata.description, source_hint="instagram/tiktok caption",
-                    model=settings.gemini_extraction_model, available_tags=available_tags, allergens=allergens,
+                    model=model, available_tags=available_tags,
                     usage=usage,
                 ),
                 result_out_desc,
@@ -333,7 +333,7 @@ async def run_import_stream(url: str, model: str = "gemini-2.5-flash-lite", avai
         yield _stage_event("checking_links", "Checking linked page…")
         try:
             result = await _try_linked_url(
-                link, available_tags=available_tags, allergens=allergens,
+                link, model=model, available_tags=available_tags,
                 usage=usage,
             )
             if result and _is_complete(result):
@@ -352,8 +352,8 @@ async def run_import_stream(url: str, model: str = "gemini-2.5-flash-lite", avai
             result_out_tr: list = []
             async for _ev in _run_gemini(
                 gemini_svc.extract_recipe(
-                    transcript, source_hint="video transcript", model=settings.gemini_extraction_model,
-                    available_tags=available_tags, allergens=allergens,
+                    transcript, source_hint="video transcript", model=model,
+                    available_tags=available_tags,
                     usage=usage,
                 ),
                 result_out_tr,
@@ -376,7 +376,7 @@ async def run_import_stream(url: str, model: str = "gemini-2.5-flash-lite", avai
 
 async def run_text_import_stream(
     text: str,
-    model: str = "gemini-2.5-flash-lite",
+    model: str | None = None,
     available_tags: list[str] | None = None,
     allergens: list[str] | None = None,
 ) -> AsyncGenerator[dict[str, Any], None]:
@@ -387,8 +387,8 @@ async def run_text_import_stream(
         result_out_txt: list = []
         async for _ev in _run_gemini(
             gemini_svc.extract_recipe(
-                text[:6000], source_hint="pasted text", model=settings.gemini_extraction_model,
-                available_tags=available_tags, allergens=allergens,
+                text[:6000], source_hint="pasted text", model=model,
+                available_tags=available_tags,
                 usage=usage,
             ),
             result_out_txt,
@@ -413,7 +413,7 @@ async def run_text_import_stream(
 async def run_image_import_stream(
     image_data: bytes,
     mime_type: str,
-    model: str = "gemini-2.5-flash-lite",
+    model: str | None = None,
     available_tags: list[str] | None = None,
     allergens: list[str] | None = None,
 ) -> AsyncGenerator[dict[str, Any], None]:
@@ -424,8 +424,8 @@ async def run_image_import_stream(
         result_out_img: list = []
         async for _ev in _run_gemini(
             gemini_svc.extract_recipe_from_image(
-                image_data, mime_type=mime_type, model=settings.gemini_extraction_model,
-                available_tags=available_tags, allergens=allergens,
+                image_data, mime_type=mime_type, model=model,
+                available_tags=available_tags,
                 usage=usage,
             ),
             result_out_img,
@@ -447,7 +447,7 @@ async def run_image_import_stream(
         ))
 
 
-async def run_import(url: str, model: str = "gemini-2.5-flash-lite") -> ImportResult:
+async def run_import(url: str, model: str | None = None) -> ImportResult:
     result: ImportResult | None = None
     async for event in run_import_stream(url, model=model):
         if event["type"] == "done":
@@ -459,7 +459,7 @@ async def run_import(url: str, model: str = "gemini-2.5-flash-lite") -> ImportRe
 async def run_image_import(
     image_data: bytes,
     mime_type: str,
-    model: str = "gemini-2.5-flash-lite",
+    model: str | None = None,
     available_tags: list[str] | None = None,
     allergens: list[str] | None = None,
 ) -> ImportResult:
@@ -475,7 +475,7 @@ async def run_image_import(
 
 async def run_url_import(
     url: str,
-    model: str = "gemini-2.5-flash-lite",
+    model: str | None = None,
     available_tags: list[str] | None = None,
     allergens: list[str] | None = None,
 ) -> ImportResult:
@@ -489,7 +489,7 @@ async def run_url_import(
 
 async def run_text_import(
     text: str,
-    model: str = "gemini-2.5-flash-lite",
+    model: str | None = None,
     available_tags: list[str] | None = None,
     allergens: list[str] | None = None,
 ) -> ImportResult:

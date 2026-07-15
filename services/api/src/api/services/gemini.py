@@ -10,7 +10,14 @@ from google.genai import types
 from pydantic import BaseModel
 
 from api.config import settings
-from api.models import RecipeExtraction, RecipeSourceExtraction, RecipeUnitVariants
+from api.models import (
+    Ingredient,
+    RecipeComponent,
+    RecipeEnrichment,
+    RecipeExtraction,
+    RecipeSourceExtraction,
+    RecipeUnitVariants,
+)
 
 log = logging.getLogger(__name__)
 
@@ -91,61 +98,37 @@ Use only these units: """ + _ALLOWED_UNITS + """. For unsupported units, preserv
 ingredient text in name with null qty and unit. Leave enrichment fields empty.
 """
 
+_UNIT_CONVERSION_SYSTEM = """\
+Convert recipe units into metric and imperial variants. Return the same number of
+components as the input, in the same order. For every component, return BOTH unit
+variants in parallel arrays:
+- metric_ingredients and metric_steps: use grams/kilograms/millilitres/litres and
+  Celsius. Convert every cup measurement to an ingredient-specific whole gram
+  value; never use a range.
+- imperial_ingredients and imperial_steps: use cups/tbsp/tsp where practical and
+  Fahrenheit.
+Each variant array must have the same number of entries and order as the
+component's source ingredients or steps. Preserve ingredient names and cooking
+instructions; change only units, amounts, and temperatures in the variant
+fields. Never modify ingredients or steps.
+"""
+
 _ENRICHMENT_SYSTEM = """\
-You are a recipe extraction assistant. Given text from a social media caption,
-a webpage, or a video transcript, extract all recipe information you can find.
-The text may be in any language — extract faithfully in the original language.
+You enrich an already-faithful recipe extraction with derived data. The input's
+title, servings, components, ingredient quantities, units, names, and steps are
+authoritative: never add, remove, reorder, or alter them, and never return them —
+only return the fields below, one entry per source component, in the same order.
 
-The input is already a faithful extraction. Its title, components, ingredients,
-quantities, units, names, and steps are authoritative: never add, remove, reorder, or alter
-them. Produce unit conversions only in the parallel variant fields.
+""" + _UNIT_CONVERSION_SYSTEM + """
 
-CRITICAL: Only extract ingredients, quantities, and steps that are explicitly present in
-the source text. Never add an ingredient that is not mentioned. Never change a number
-that is stated — copy quantities exactly as written. Estimation is permitted ONLY for
-nutrition, servings, and total cooking time when they are not stated, and ONLY in those fields — never for
-ingredients or their amounts.
-
-Return JSON matching the provided schema. If no recipe content is present, return
-an object with null title, empty components array, and 0 for every nutrition field.
-
-For ingredients, always try to separate qty/unit/name. Use ONLY these units:
-  """ + _ALLOWED_UNITS + """
-  Convert any other unit to the closest allowed unit (e.g. oz → g, fl oz → ml).
-  If no unit applies, set unit to null.
-
-Examples:
-  "2 cups flour" → qty="2", unit="cup", name="flour"
-  "3 cloves garlic, minced" → qty="3", unit="clove", name="garlic, minced"
-  "salt to taste" → qty=null, unit=null, name="salt, to taste"
-  "1 oz butter" → qty="28", unit="g", name="butter"
-
-For every ingredient, also return shopping_list_value: the concise text that
+For every ingredient, also return a shopping_list_value: the concise text that
 should be added to a shopping list. Preserve the ingredient and its needed
 amount, but round UP indivisible items to a practical whole purchase quantity
 (e.g. "0.5 onion" → "1 onion", "1.5 avocados" → "2 avocados"). Do not round
 weights, volumes, or other divisible measurements (e.g. "125 g butter" stays
 "125 g butter"). Include preparation notes only when they are important for
 what to buy. If no quantity is given, return the ingredient name.
-
-For every component, return BOTH unit variants in parallel arrays:
-- metric_ingredients and metric_steps: use grams/kilograms/millilitres/litres
-  and Celsius. Convert every cup measurement to an ingredient-specific whole
-  gram value; never use a range.
-- imperial_ingredients and imperial_steps: use cups/tbsp/tsp where practical
-  and Fahrenheit.
-Each variant array must have the same number of entries and order as ingredients
-or steps. Preserve ingredient names and cooking instructions; change only units,
-amounts, and temperatures in the variant fields. Never modify ingredients or steps.
-
-For multi-component recipes (e.g. "for the sauce:", "for the marinade:"),
-create a separate component for each section.
-
-servings: extract from the text if stated, as a single integer. If a range is
-given (e.g. "4 to 6 servings", "4-6 servings"), use the midpoint rounded to the
-nearest whole number (e.g. "4 to 6" → 5) — never concatenate the range into one
-number (e.g. "4 to 6" is NOT 46). If not stated, estimate a reasonable serving
-count based on the ingredient quantities and dish type.
+shopping_list_values must have exactly one entry per source ingredient, in order.
 
 total_time_minutes: total elapsed time from starting preparation to serving, in
 whole minutes. Include prep, active cooking, passive cooking, and resting time.
@@ -160,12 +143,6 @@ grams). If no recipe content is present at all, use 0.
 
 tags: if a list of available tags is provided, assign only those that clearly apply
 to this recipe. Use only tags from the provided list — never invent new ones.
-
-allergens: if a list of allergens is provided, check each ingredient against it.
-For each ingredient set:
-- "allergen": the exact allergen name from the list if the ingredient contains it, else null
-- "substitute": a single best substitute ingredient name if allergen found, else null
-Only flag allergens from the provided list — never flag others.
 
 step_refs: for every ingredient mentioned in a step — whether by full name,
 inflected/declined form (e.g. "kurczaki" or "kurczakiem" for ingredient
@@ -205,15 +182,12 @@ def _build_client() -> genai.Client:
 async def _enrich_recipe(
     source: RecipeSourceExtraction,
     available_tags: list[str] | None,
-    allergens: list[str] | None,
     generous: bool,
     usage: UsageTracker | None,
-) -> RecipeExtraction:
+) -> RecipeEnrichment:
     prompt = {"source_recipe": source.model_dump(mode="json")}
     if available_tags:
         prompt["available_tags"] = available_tags
-    if allergens:
-        prompt["allergens"] = allergens
 
     client = _build_client()
     response = await _with_retry(
@@ -224,7 +198,7 @@ async def _enrich_recipe(
                 system_instruction=_ENRICHMENT_SYSTEM,
                 temperature=0,
                 response_mime_type="application/json",
-                response_schema=RecipeExtraction,
+                response_schema=RecipeEnrichment,
             ),
         ),
         generous=generous,
@@ -232,7 +206,78 @@ async def _enrich_recipe(
     if usage is not None:
         usage.add(response)
 
-    return RecipeExtraction.model_validate(json.loads(response.text))
+    return RecipeEnrichment.model_validate(json.loads(response.text))
+
+
+def assemble_recipe(source: RecipeSourceExtraction, enrichment: RecipeEnrichment) -> RecipeExtraction:
+    """Combines a faithful source extraction with its enrichment, validating alignment.
+
+    Canonical fields (title, servings, component metadata, ingredient qty/unit/name,
+    steps) always come from `source`, never from `enrichment` — this is what prevents
+    the enrichment call from silently overwriting the faithful extraction.
+    """
+    if len(enrichment.components) != len(source.components):
+        raise ValueError(
+            f"Enrichment returned {len(enrichment.components)} components, "
+            f"expected {len(source.components)}"
+        )
+
+    components: list[RecipeComponent] = []
+    for index, (source_component, enriched) in enumerate(zip(source.components, enrichment.components)):
+        ingredient_count = len(source_component.ingredients)
+        step_count = len(source_component.steps)
+
+        for field_name, values in (
+            ("metric_ingredients", enriched.metric_ingredients),
+            ("imperial_ingredients", enriched.imperial_ingredients),
+            ("shopping_list_values", enriched.shopping_list_values),
+        ):
+            if len(values) != ingredient_count:
+                raise ValueError(
+                    f"Component {index}: {field_name} has {len(values)} entries, "
+                    f"expected {ingredient_count}"
+                )
+        for field_name, values in (
+            ("metric_steps", enriched.metric_steps),
+            ("imperial_steps", enriched.imperial_steps),
+        ):
+            if len(values) != step_count:
+                raise ValueError(
+                    f"Component {index}: {field_name} has {len(values)} entries, "
+                    f"expected {step_count}"
+                )
+        for ref in enriched.step_refs:
+            if not (0 <= ref.step_index < step_count) or not (0 <= ref.ingredient_index < ingredient_count):
+                raise ValueError(f"Component {index}: step_ref {ref} is out of range")
+
+        ingredients = [
+            Ingredient(qty=ing.qty, unit=ing.unit, name=ing.name, shopping_list_value=shopping_value)
+            for ing, shopping_value in zip(source_component.ingredients, enriched.shopping_list_values)
+        ]
+        components.append(RecipeComponent(
+            role=source_component.role,
+            name=source_component.name,
+            yield_note=source_component.yield_note,
+            ingredients=ingredients,
+            steps=source_component.steps,
+            metric_ingredients=enriched.metric_ingredients,
+            imperial_ingredients=enriched.imperial_ingredients,
+            metric_steps=enriched.metric_steps,
+            imperial_steps=enriched.imperial_steps,
+            step_refs=enriched.step_refs,
+        ))
+
+    return RecipeExtraction(
+        title=source.title,
+        servings=source.servings,
+        total_time_minutes=enrichment.total_time_minutes,
+        kcal_per_serving=enrichment.kcal_per_serving,
+        protein_per_serving=enrichment.protein_per_serving,
+        fat_per_serving=enrichment.fat_per_serving,
+        carbs_per_serving=enrichment.carbs_per_serving,
+        tags=enrichment.tags,
+        components=components,
+    )
 
 
 async def extract_recipe(
@@ -240,7 +285,6 @@ async def extract_recipe(
     source_hint: str = "",
     model: str | None = None,
     available_tags: list[str] | None = None,
-    allergens: list[str] | None = None,
     generous: bool = False,
     usage: UsageTracker | None = None,
 ) -> RecipeExtraction:
@@ -271,7 +315,8 @@ async def extract_recipe(
     raw = response.text
     log.debug("Gemini raw response (%s): %s", source_hint, raw[:500])
     source = RecipeSourceExtraction.model_validate(json.loads(raw))
-    return await _enrich_recipe(source, available_tags, allergens, generous, usage)
+    enrichment = await _enrich_recipe(source, available_tags, generous, usage)
+    return assemble_recipe(source, enrichment)
 
 
 async def extract_recipe_from_image(
@@ -279,7 +324,6 @@ async def extract_recipe_from_image(
     mime_type: str = "image/jpeg",
     model: str | None = None,
     available_tags: list[str] | None = None,
-    allergens: list[str] | None = None,
     generous: bool = False,
     usage: UsageTracker | None = None,
 ) -> RecipeExtraction:
@@ -317,34 +361,31 @@ async def extract_recipe_from_image(
     raw = response.text
     log.debug("Gemini image extraction raw: %s", raw[:500])
     source = RecipeSourceExtraction.model_validate(json.loads(raw))
-    return await _enrich_recipe(source, available_tags, allergens, generous, usage)
+    enrichment = await _enrich_recipe(source, available_tags, generous, usage)
+    return assemble_recipe(source, enrichment)
 
 
 async def estimate_unit_variants(
-    components: list[dict], model: str = _DEFAULT_MECHANICAL_MODEL
+    components: list[dict],
+    model: str = _DEFAULT_MECHANICAL_MODEL,
+    usage: UsageTracker | None = None,
 ) -> RecipeUnitVariants:
     prompt = json.dumps({"components": components}, ensure_ascii=False)
-    instruction = """\
-You convert recipe units. Return the same number of components, in the same order.
-For each component, return metric_ingredients, imperial_ingredients, metric_steps,
-and imperial_steps. Keep every array aligned with its source array. Metric values use
-grams/kilograms/millilitres/litres and Celsius; convert cups to ingredient-specific
-whole gram values, never ranges. Imperial values use cups/tbsp/tsp where practical
-and Fahrenheit. Preserve ingredient names and instruction wording except units,
-amounts, and temperatures. Also return ingredients and steps as metric equivalents.
-"""
     client = _build_client()
     response = await _with_retry(
         lambda: client.models.generate_content(
             model=model,
             contents=prompt,
             config=types.GenerateContentConfig(
-                system_instruction=instruction,
+                system_instruction=_UNIT_CONVERSION_SYSTEM,
+                temperature=0,
                 response_mime_type="application/json",
                 response_schema=RecipeUnitVariants,
             ),
         )
     )
+    if usage is not None:
+        usage.add(response)
     return RecipeUnitVariants.model_validate(json.loads(response.text))
 
 
