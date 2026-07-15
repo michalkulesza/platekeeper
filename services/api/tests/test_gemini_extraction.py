@@ -403,6 +403,27 @@ def test_find_domain_specific_recipe_returns_none_for_unmapped_domain() -> None:
     assert pipeline._find_domain_specific_recipe("https://example.com/recipe", "<html></html>") is None
 
 
+def test_is_complete_accepts_ingredients_and_steps_split_across_components() -> None:
+    # A recipe with sub-headed ingredient sections ("For the paste", "For the
+    # pork") and one shared instruction list: no single component carries
+    # both ingredients and steps, but the recipe as a whole is complete.
+    recipe = RecipeExtraction.model_validate(_enrichment_payload(components=[
+        {"name": "For the paste", "ingredients": [{"name": "tahini"}], "steps": []},
+        {"name": "For the pork", "ingredients": [{"name": "pork mince"}], "steps": []},
+        {"name": None, "ingredients": [], "steps": ["Mix the paste.", "Cook the pork."]},
+    ]))
+
+    assert pipeline._is_complete(recipe) is True
+
+
+def test_is_complete_rejects_recipe_with_no_ingredients_anywhere() -> None:
+    recipe = RecipeExtraction.model_validate(_enrichment_payload(components=[
+        {"name": None, "ingredients": [], "steps": ["Do something."]},
+    ]))
+
+    assert pipeline._is_complete(recipe) is False
+
+
 @pytest.mark.asyncio
 async def test_estimate_unit_variants_uses_shared_conversion_contract(monkeypatch) -> None:
     generate_content = Mock(return_value=_response({"components": [{

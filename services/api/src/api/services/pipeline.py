@@ -54,7 +54,15 @@ async def _run_gemini(
 
 
 def _is_complete(recipe: RecipeExtraction) -> bool:
-    return any(c.ingredients and c.steps for c in recipe.components)
+    # Recipes with sub-headed ingredient sections (e.g. "For the paste",
+    # "For the pork") but one shared instruction list get split by the
+    # extraction model into ingredients-only and steps-only components —
+    # neither has both, so check presence across the whole recipe instead of
+    # requiring a single component to carry both.
+    return (
+        any(c.ingredients for c in recipe.components)
+        and any(c.steps for c in recipe.components)
+    )
 
 
 def _find_jsonld_recipe(html: str) -> dict | None:
