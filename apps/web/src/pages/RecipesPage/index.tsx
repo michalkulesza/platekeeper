@@ -33,7 +33,6 @@ interface RecipesPageProps {
   recipes: RecipeOut[]
   loading: boolean
   allTags: Tag[]
-  onTagCreated: (tag: Tag) => void
   onRecipeUpdated: (r: RecipeOut) => void
   onRecipeDeleted: (id: string) => void
   preferences: UserPreferences | null
@@ -44,7 +43,6 @@ const RecipesPage = ({
   recipes,
   loading,
   allTags,
-  onTagCreated,
   onRecipeUpdated,
   onRecipeDeleted,
   preferences,
@@ -244,7 +242,6 @@ const RecipesPage = ({
       <RecipeDetailModal
         recipe={selected}
         allTags={allTags}
-        onTagCreated={onTagCreated}
         onClose={handleModalClose}
         onUpdated={handleUpdated}
         onDeleted={handleModalDeleted}

@@ -29,7 +29,6 @@ interface MealPlanPageProps {
   recipes: RecipeOut[]
   preferences: UserPreferences | null
   allTags: Tag[]
-  onTagCreated: (tag: Tag) => void
   onRecipeUpdated?: (r: RecipeOut) => void
   onRecipeDeleted?: (id: string) => void
 }
@@ -38,7 +37,6 @@ const MealPlanPage = ({
   recipes,
   preferences,
   allTags,
-  onTagCreated,
   onRecipeUpdated,
   onRecipeDeleted,
 }: MealPlanPageProps) => {
@@ -323,7 +321,6 @@ const MealPlanPage = ({
       <RecipeDetailModal
         recipe={viewRecipe}
         allTags={allTags}
-        onTagCreated={onTagCreated}
         onClose={clearViewRecipe}
         onUpdated={onRecipeUpdated}
         onDeleted={onRecipeDeleted}

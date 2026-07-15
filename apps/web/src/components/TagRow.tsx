@@ -10,7 +10,6 @@ interface TagRowProps {
   allTags: Tag[]
   onAdd: (tag: Tag) => void
   onRemove: (tagId: string) => void
-  onCreateTag?: (name: string) => Promise<Tag>
   editable?: boolean
   addable?: boolean
 }
@@ -50,10 +49,6 @@ interface TagPickerProps {
   onSearchKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void
   filtered: Tag[]
   onSelectTag: (tag: Tag) => void
-  canCreate: boolean
-  creating: boolean
-  onCreate: () => void
-  trimmedSearch: string
   allTagsEmpty: boolean
 }
 
@@ -64,10 +59,6 @@ const TagPicker = ({
   onSearchKeyDown,
   filtered,
   onSelectTag,
-  canCreate,
-  creating,
-  onCreate,
-  trimmedSearch,
   allTagsEmpty,
 }: TagPickerProps) => {
   const { t } = useTranslation()
@@ -96,7 +87,7 @@ const TagPicker = ({
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           onKeyDown={onSearchKeyDown}
-          placeholder={t('tags.searchOrCreate')}
+          placeholder={t('common.search')}
           className="w-full text-sm bg-transparent focus:outline-none placeholder-zinc-400"
         />
       </div>
@@ -118,19 +109,7 @@ const TagPicker = ({
             ))}
           </div>
         ))}
-        {canCreate && (
-          <button
-            type="button"
-            disabled={creating}
-            className="w-full text-left px-3 py-2 text-sm text-primary hover:bg-primary/5 transition-colors disabled:opacity-50"
-            onClick={onCreate}
-          >
-            {creating
-              ? t('tags.creating')
-              : t('tags.createTag', { name: trimmedSearch })}
-          </button>
-        )}
-        {filtered.length === 0 && !canCreate && (
+        {filtered.length === 0 && (
           <p className="px-3 py-2 text-sm text-zinc-400">{emptyStateLabel}</p>
         )}
       </div>
@@ -143,14 +122,12 @@ const TagRow = ({
   allTags,
   onAdd,
   onRemove,
-  onCreateTag,
   editable = true,
   addable = editable,
 }: TagRowProps) => {
   const { t } = useTranslation()
   const [pickerOpen, setPickerOpen] = useState(false)
   const [search, setSearch] = useState('')
-  const [creating, setCreating] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -168,14 +145,6 @@ const TagRow = ({
 
     return available.filter((tag) => tag.name.toLowerCase().includes(query))
   }, [available, trimmedSearch])
-
-  const canCreate = useMemo(() => {
-    const exactMatch = allTags.some(
-      (tag) => tag.name.toLowerCase() === trimmedSearch.toLowerCase()
-    )
-
-    return !!onCreateTag && trimmedSearch.length > 0 && !exactMatch
-  }, [allTags, onCreateTag, trimmedSearch])
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -205,29 +174,17 @@ const TagRow = ({
     [onAdd]
   )
 
-  const handleCreate = useCallback(async () => {
-    if (!onCreateTag || !trimmedSearch) return
-    setCreating(true)
-    try {
-      const tag = await onCreateTag(trimmedSearch)
-      handleAddTag(tag)
-    } finally {
-      setCreating(false)
-    }
-  }, [onCreateTag, trimmedSearch, handleAddTag])
-
   const handleSearchKeyDown = useCallback(
     (e: KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Escape') {
         setPickerOpen(false)
         setSearch('')
       }
-      if (e.key === 'Enter') {
-        if (filtered.length === 1) handleAddTag(filtered[0])
-        else if (canCreate) handleCreate()
+      if (e.key === 'Enter' && filtered.length === 1) {
+        handleAddTag(filtered[0])
       }
     },
-    [filtered, canCreate, handleAddTag, handleCreate]
+    [filtered, handleAddTag]
   )
 
   const togglePicker = useCallback(() => setPickerOpen((open) => !open), [])
@@ -265,10 +222,6 @@ const TagRow = ({
               onSearchKeyDown={handleSearchKeyDown}
               filtered={filtered}
               onSelectTag={handleAddTag}
-              canCreate={canCreate}
-              creating={creating}
-              onCreate={handleCreate}
-              trimmedSearch={trimmedSearch}
               allTagsEmpty={allTags.length === 0}
             />
           )}

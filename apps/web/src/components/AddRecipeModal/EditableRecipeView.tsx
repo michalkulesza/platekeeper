@@ -24,7 +24,6 @@ interface EditableRecipeViewProps {
   onChange: (r: EditableRecipe) => void
   onTagAdd: (tag: Tag) => void
   onTagRemove: (tagId: string) => void
-  onTagCreate: (name: string) => Promise<Tag>
 }
 
 const EditableRecipeView = ({
@@ -36,7 +35,6 @@ const EditableRecipeView = ({
   onChange,
   onTagAdd,
   onTagRemove,
-  onTagCreate,
 }: EditableRecipeViewProps) => {
   const { t } = useTranslation()
   const [isAdapted, setIsAdapted] = useState(false)
@@ -153,7 +151,6 @@ const EditableRecipeView = ({
           allTags={allTags}
           onAdd={onTagAdd}
           onRemove={onTagRemove}
-          onCreateTag={onTagCreate}
         />
       </div>
 

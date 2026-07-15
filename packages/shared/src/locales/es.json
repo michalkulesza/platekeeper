@@ -416,9 +416,6 @@
   "tags": {
     "tags": "Etiquetas",
     "noTags": "Sin etiquetas",
-    "searchOrCreate": "Buscar o crear…",
-    "creating": "Creando…",
-    "createTag": "Crear \"{{name}}\"",
     "noTagsAvailable": "No hay etiquetas disponibles",
     "allTagsAdded": "Todas las etiquetas ya añadidas",
     "addTag": "Añadir etiqueta",

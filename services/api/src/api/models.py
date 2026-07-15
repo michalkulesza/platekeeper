@@ -337,10 +337,6 @@ class TagOut(BaseModel):
     category: str | None = None
 
 
-class TagCreate(BaseModel):
-    name: str
-
-
 # ── Recipe save / list ────────────────────────────────────────────────────────
 
 class StepIngredientRef(BaseModel):
