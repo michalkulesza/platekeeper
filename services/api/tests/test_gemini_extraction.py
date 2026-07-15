@@ -80,15 +80,14 @@ async def test_query_one_uses_source_only_schema_and_query_two_is_enrichment_onl
 
 
 @pytest.mark.asyncio
-async def test_enrichment_retries_alignment_error_without_repeating_source_extraction(monkeypatch) -> None:
+async def test_enrichment_falls_back_only_for_misaligned_field(monkeypatch) -> None:
     source = _one_component_source().model_dump(mode="json")
     invalid_enrichment = _matching_enrichment().model_dump(mode="json")
+    invalid_enrichment["components"][0]["metric_ingredients"] = ["100 g onion"]
     invalid_enrichment["components"][0]["shopping_list_values"] = ["1 onion", "1 onion"]
-    valid_enrichment = _matching_enrichment().model_dump(mode="json")
     generate_content = Mock(side_effect=[
         _response(source),
         _response(invalid_enrichment),
-        _response(valid_enrichment),
     ])
     client = SimpleNamespace(models=SimpleNamespace(generate_content=generate_content))
     monkeypatch.setattr(gemini, "_build_client", lambda: client)
@@ -96,10 +95,8 @@ async def test_enrichment_retries_alignment_error_without_repeating_source_extra
     result = await gemini.extract_recipe("Ingredients: 1 onion")
 
     assert result.components[0].ingredients[0].shopping_list_value == "1 onion"
-    assert generate_content.call_count == 3
-    correction_prompt = json.loads(generate_content.call_args_list[2].kwargs["contents"])
-    assert "previous_validation_error" in correction_prompt
-    assert "shopping_list_values has 2 entries, expected 1" in correction_prompt["previous_validation_error"]
+    assert result.components[0].metric_ingredients == ["100 g onion"]
+    assert generate_content.call_count == 2
 
 
 @pytest.mark.asyncio

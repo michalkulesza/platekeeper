@@ -11,6 +11,7 @@ from pydantic import BaseModel, ValidationError
 
 from api.config import settings
 from api.models import (
+    EnrichmentComponent,
     Ingredient,
     RecipeComponent,
     RecipeEnrichment,
@@ -180,6 +181,64 @@ def _build_client() -> genai.Client:
     return genai.Client(api_key=settings.gemini_api_key)
 
 
+def _source_ingredient_display(ingredient) -> str:
+    return " ".join(part for part in (ingredient.qty, ingredient.unit, ingredient.name) if part)
+
+
+def _repair_enrichment_alignment(
+    source: RecipeSourceExtraction,
+    enrichment: RecipeEnrichment,
+) -> RecipeEnrichment:
+    """Use source-derived values only for malformed parallel enrichment fields."""
+    repaired_components: list[EnrichmentComponent] = []
+    repairs: list[str] = []
+
+    if len(enrichment.components) != len(source.components):
+        repairs.append(
+            f"components has {len(enrichment.components)} entries, expected {len(source.components)}"
+        )
+
+    for index, source_component in enumerate(source.components):
+        component = enrichment.components[index] if index < len(enrichment.components) else EnrichmentComponent()
+        ingredient_fallback = [_source_ingredient_display(ingredient) for ingredient in source_component.ingredients]
+        step_fallback = source_component.steps
+
+        def aligned_or_fallback(field_name: str, values: list[str], fallback: list[str]) -> list[str]:
+            if len(values) == len(fallback):
+                return values
+            repairs.append(
+                f"component {index} {field_name} has {len(values)} entries, expected {len(fallback)}"
+            )
+            return fallback
+
+        valid_step_refs = [
+            ref for ref in component.step_refs
+            if 0 <= ref.step_index < len(step_fallback)
+            and 0 <= ref.ingredient_index < len(ingredient_fallback)
+        ]
+        if len(valid_step_refs) != len(component.step_refs):
+            repairs.append(f"component {index} contains out-of-range step_refs")
+
+        repaired_components.append(component.model_copy(update={
+            "metric_ingredients": aligned_or_fallback(
+                "metric_ingredients", component.metric_ingredients, ingredient_fallback,
+            ),
+            "imperial_ingredients": aligned_or_fallback(
+                "imperial_ingredients", component.imperial_ingredients, ingredient_fallback,
+            ),
+            "shopping_list_values": aligned_or_fallback(
+                "shopping_list_values", component.shopping_list_values, ingredient_fallback,
+            ),
+            "metric_steps": aligned_or_fallback("metric_steps", component.metric_steps, step_fallback),
+            "imperial_steps": aligned_or_fallback("imperial_steps", component.imperial_steps, step_fallback),
+            "step_refs": valid_step_refs,
+        }))
+
+    if repairs:
+        log.warning("Repaired Gemini enrichment alignment with source fallbacks: %s", "; ".join(repairs))
+    return enrichment.model_copy(update={"components": repaired_components})
+
+
 async def _enrich_recipe(
     source: RecipeSourceExtraction,
     available_tags: list[str] | None,
@@ -219,11 +278,7 @@ async def _enrich_recipe(
 
         try:
             enrichment = RecipeEnrichment.model_validate(json.loads(response.text))
-            # Validate every parallel output before accepting the enrichment. The
-            # source extraction remains fixed across retries.
-            assemble_recipe(source, enrichment)
-            return enrichment
-        except (json.JSONDecodeError, ValidationError, ValueError) as exc:
+        except (json.JSONDecodeError, ValidationError) as exc:
             validation_error = str(exc)
             if attempt == _MAX_ENRICHMENT_ATTEMPTS:
                 raise
@@ -233,6 +288,12 @@ async def _enrich_recipe(
                 _MAX_ENRICHMENT_ATTEMPTS,
                 validation_error,
             )
+            continue
+
+        # Alignment errors are recoverable without another model call: retain
+        # every well-formed derived field and use canonical source data only for
+        # the malformed parallel fields.
+        return _repair_enrichment_alignment(source, enrichment)
 
     raise AssertionError("unreachable")
 
