@@ -59,18 +59,29 @@ const ViewHeaderRight = ({
   const { t } = useTranslation()
   const recipeActions = useMemo<MenuAction[]>(
     () => {
-      if (recipe.household_id === activeHouseholdId && !recipe.shared_to_personal) {
+      if (
+        activeHouseholdId !== null &&
+        recipe.household_id === activeHouseholdId &&
+        !recipe.shared_to_personal
+      ) {
         return [{ id: SEND_TO_PERSONAL, title: t('recipes.sendToPersonalLibrary') }]
       }
       if (recipe.household_id !== null) return []
+      if (households.length === 0) {
+        return [
+          {
+            id: 'send-to-household',
+            title: t('recipes.sendToHousehold'),
+            attributes: { disabled: true },
+          },
+        ]
+      }
       return [
-        households.length > 0
-          ? {
-              id: 'send-to-household',
-              title: t('recipes.sendToHousehold'),
-              subactions: households.map((h) => ({ id: `${SEND_TO_HOUSEHOLD_PREFIX}${h.id}`, title: h.name })),
-            }
-          : { id: 'send-to-household', title: t('recipes.sendToHousehold'), attributes: { disabled: true } },
+        {
+          id: 'send-to-household',
+          title: t('recipes.sendToHousehold'),
+          subactions: households.map((h) => ({ id: `${SEND_TO_HOUSEHOLD_PREFIX}${h.id}`, title: h.name })),
+        },
       ]
     },
     [activeHouseholdId, households, recipe.household_id, recipe.shared_to_personal, t],

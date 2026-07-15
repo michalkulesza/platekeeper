@@ -4,7 +4,6 @@ Items are grouped by purpose and ordered from highest to lowest importance withi
 
 ## Core product features
 
-- [x] **Unified ingredient list with collapsible groups** — When a recipe has multiple ingredient groups (e.g. Main and Sauce), show one combined "Ingredients" list of everything at the top, then render each group as its own collapsible section that is collapsed by default, with a caret/chevron at the end of each group header.
 - [ ] **Guided Cook Mode** — Full-screen, big-type, swipeable steps; keep the screen awake, surface timers from step text, and allow ingredient checkoff while cooking.
 - [ ] **Visual recipe library / grid view** — Let users switch between the compact list and a photo-forward card or grid view with useful metadata such as tags, cooking time, and favourite status.
 
@@ -26,12 +25,11 @@ Items are grouped by purpose and ordered from highest to lowest importance withi
 - [x] **Make sure sharing work on physical device**
 - [x] **Fix recipe share options in household context** — In household recipe details, offer adding household-only recipes to the personal library and hide household sharing for recipes already in a household.
 - [x] **Fix cooking mode sync** - between recipe details and app settings, they do not sync to eachother
+- [x] **Unified ingredient list with collapsible groups** — When a recipe has multiple ingredient groups (e.g. Main and Sauce), show one combined "Ingredients" list of everything at the top, then render each group as its own collapsible section that is collapsed by default, with a caret/chevron at the end of each group header.
 
 ## Experience and product polish
 
 - [ ] **Anythign to do with top position px that is a hook that takes a while to reload ie jump when importing via share**
-- [ ] **Extraction failed screen** - Improve that visually
-- [ ] **Review dark mode** — Fix automatic appearance detection and verify all screens in dark mode.
 - [ ] **Simplify tags and allergens** — Remove custom tags and allergens if the predefined systems provide a clearer product experience.
 - [ ] **Haptics and native context menus** — Add meaningful haptic feedback and long-press recipe actions (favourite, plan, share, delete) with a peek preview.
 - [ ] **Delightful empty and loading states** — Extend shimmers to recipe lists and meal plans; add friendly empty states, restrained Carrot mascot moments, import-stage animation, haptics, and completion feedback.
@@ -40,12 +38,13 @@ Items are grouped by purpose and ordered from highest to lowest importance withi
 - [x] **Correct household recipe contributor avatars** — Show the actual contributor alongside the household avatar when the recipe is also in a personal library.
 - [x] **Respect the safe area in meal-plan search** — Bound the picker drawer’s keyboard-expanded range to the device safe area.
 - [x] **Use native-style meal-plan search** — Match the picker drawer’s search field to the rounded, borderless recipe-library search bar.
+- [x] **Review dark mode** — Fix automatic appearance detection and verify all screens in dark mode.
 
 ## Quality, release, and growth
 
 - [ ] **Automated tests** — Add meaningful coverage for core user flows and regressions.
-- [ ] **Premium lock** — Gate paid capabilities with a clear upgrade flow.
 - [ ] **Public sharing** — Create shareable public recipe pages.
+- [ ] **Premium lock** — Gate paid capabilities with a clear upgrade flow.
 - [ ] **Social tab and shareable recipes** — Add a discovery surface for recipes users choose to publish.
 - [x] **Reduce extraction hallucinations (prompt/model tuning)** — Cheap first lever before a full validation pass: add an anti-fabrication clause to the extraction prompt, set `temperature=0`, and route the faithful-extraction call to `gemini-2.5-flash` (keeping shopping-list/unit-conversion on `flash-lite`). See `docs/specs/reduce-extraction-hallucinations.md`.
 
