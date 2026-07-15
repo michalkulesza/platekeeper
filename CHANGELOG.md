@@ -14,6 +14,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.0.3] — 2026-07-15
+
+### Recipes & importing
+
+- ✨ **Feature** — Recipe imports now continue in the background, immediately showing a placeholder and opening the recipe once processing completes.
+- ✨ **Feature** — Added cooking-time estimates to recipe nutrition stats.
+- 🐛 **Bug** — Recipe lists and the next-meal card now wait for authentication before loading, avoiding false errors on a fresh start.
+- 🐛 **Bug** — Household recipe avatars now identify the member who added the recipe rather than the viewer.
+- 🐛 **Bug** — Improved recipe import extraction reliability and support for concurrent reimports.
+
+### Meal planning
+
+- ✨ **Feature** — Add quick plain-text meals such as “Frozen pizza” alongside recipe-backed plan entries, in personal and household plans on web and mobile.
+- 🐛 **Bug** — Mobile meal-plan picker now respects the top safe area while attaching cleanly to the bottom of the screen.
+- 🐛 **Bug** — Restyled the mobile picker search and quick-meal fields for clearer contrast and native iOS appearance.
+
 ## [1.0.2] — 2026-07-14
 
 ### Apps & platform
@@ -102,6 +118,7 @@ backend, a React web app, and a React Native (Expo) iOS app sharing a common
 - ✨ **Feature** — Rebranded to Carrot with new name, icons, and brand color, plus a marketing site at carrot.xcxz.xyz.
 - 🐛 **Bug** — Recipe thumbnails now stay cached, eliminating the image flash when opening a recipe's detail view.
 
+[1.0.3]: https://github.com/
 [1.0.2]: https://github.com/
 [1.0.1]: https://github.com/
 [1.0.0]: https://github.com/
