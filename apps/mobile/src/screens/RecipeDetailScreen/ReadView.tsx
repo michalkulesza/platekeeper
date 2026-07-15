@@ -154,7 +154,7 @@ const ReadView = ({
             )}
           </View>
 
-          <TagsSection recipe={recipe} editing={false} />
+          <TagsSection recipe={recipe} />
 
           <NutritionBoxGrid
             editing={false}

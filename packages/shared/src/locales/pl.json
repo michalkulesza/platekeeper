@@ -430,6 +430,7 @@
     "noTagsAvailable": "Brak dostępnych tagów",
     "allTagsAdded": "Wszystkie tagi już dodane",
     "addTag": "Dodaj tag",
+    "editTags": "Edytuj tagi",
     "removeTag": "Usuń {{name}}",
     "category": {
       "protein": "Białko",

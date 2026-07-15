@@ -421,6 +421,7 @@
     "noTagsAvailable": "No hay etiquetas disponibles",
     "allTagsAdded": "Todas las etiquetas ya añadidas",
     "addTag": "Añadir etiqueta",
+    "editTags": "Editar etiquetas",
     "removeTag": "Eliminar {{name}}",
     "category": {
       "protein": "Proteína",

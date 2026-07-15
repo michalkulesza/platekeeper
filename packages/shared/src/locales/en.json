@@ -422,6 +422,7 @@
     "noTagsAvailable": "No tags available",
     "allTagsAdded": "All tags already added",
     "addTag": "Add tag",
+    "editTags": "Edit tags",
     "removeTag": "Remove {{name}}",
     "category": {
       "protein": "Protein",

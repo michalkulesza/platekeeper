@@ -105,7 +105,7 @@ export const TagPickerModal = ({
   allTags: Tag[]
   selectedIds: Set<string>
   onAdd: (tag: Tag) => void
-  onRemove?: (tagId: string) => void
+  onRemove: (tagId: string) => void
   onCreate: (name: string) => Promise<Tag>
   onClose: () => void
 }) => {
@@ -150,7 +150,7 @@ export const TagPickerModal = ({
   const handleTagRowPress = useCallback(
     (tag: Tag) => {
       if (selectedIds.has(tag.id)) {
-        onRemove?.(tag.id)
+        onRemove(tag.id)
         return
       }
 
@@ -177,69 +177,67 @@ export const TagPickerModal = ({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.tagModalWrap}>
-        <View style={styles.tagModal}>
-          <View style={styles.sheetHandle} />
-          <View style={styles.tagModalHeader}>
-            <Text style={styles.tagModalTitle}>{t('tags.addTag')}</Text>
-            <Pressable
-              style={getCloseButtonStyle}
-              onPress={onClose}
-              hitSlop={12}
-              accessibilityLabel={t('common.close')}
-            >
-              <Text style={styles.tagModalClose}>✕</Text>
-            </Pressable>
-          </View>
-          <TextInput
-            style={styles.tagSearch}
-            placeholder={t('tags.searchOrCreate')}
-            value={query}
-            onChangeText={setQuery}
-            autoCapitalize="none"
-            autoCorrect={false}
-            keyboardType="default"
-            returnKeyType="search"
-            textContentType="none"
-            accessibilityLabel={t('tags.searchOrCreate')}
-          />
-          <ScrollView style={styles.tagScrollList} keyboardShouldPersistTaps="handled">
-            {canCreate && (
-              <Pressable
-                style={getCreateRowStyle}
-                onPress={handleCreate}
-                disabled={creating}
-                accessibilityLabel={createTagLabel}
-              >
-                <Text style={styles.tagCreateText}>{createTagText}</Text>
-              </Pressable>
-            )}
-            {groupedSections.map((section) => (
-              <View key={section.key}>
-                <Text style={styles.tagSectionHeader}>{section.title}</Text>
-                {section.tags.map((tag) => {
-                  const isSelected = selectedIds.has(tag.id)
-                  return (
-                    <Pressable
-                      key={tag.id}
-                      style={getTagListRowStyle}
-                      onPress={() => handleTagRowPress(tag)}
-                      disabled={isSelected && !onRemove}
-                      accessibilityLabel={tag.name}
-                      accessibilityState={{ selected: isSelected }}
-                    >
-                      <Text style={styles.tagListText}>{tTag(tag.name, t)}</Text>
-                      {isSelected && <Text style={styles.tagCheck}>✓</Text>}
-                    </Pressable>
-                  )
-                })}
-              </View>
-            ))}
-            {filtered.length === 0 && !canCreate && (
-              <Text style={styles.tagEmpty}>{t('tags.noTagsAvailable')}</Text>
-            )}
-          </ScrollView>
+      <Pressable style={styles.tagModalOverlay} onPress={onClose} />
+      <View style={styles.tagModal}>
+        <View style={styles.sheetHandle} />
+        <View style={styles.tagModalHeader}>
+          <Text style={styles.tagModalTitle}>{t('tags.editTags')}</Text>
+          <Pressable
+            style={getCloseButtonStyle}
+            onPress={onClose}
+            hitSlop={12}
+            accessibilityLabel={t('common.close')}
+          >
+            <Text style={styles.tagModalClose}>✕</Text>
+          </Pressable>
         </View>
+        <TextInput
+          style={styles.tagSearch}
+          placeholder={t('tags.searchOrCreate')}
+          value={query}
+          onChangeText={setQuery}
+          autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType="default"
+          returnKeyType="search"
+          textContentType="none"
+          accessibilityLabel={t('tags.searchOrCreate')}
+        />
+        <ScrollView style={styles.tagScrollList} keyboardShouldPersistTaps="handled">
+          {canCreate && (
+            <Pressable
+              style={getCreateRowStyle}
+              onPress={handleCreate}
+              disabled={creating}
+              accessibilityLabel={createTagLabel}
+            >
+              <Text style={styles.tagCreateText}>{createTagText}</Text>
+            </Pressable>
+          )}
+          {groupedSections.map((section) => (
+            <View key={section.key}>
+              <Text style={styles.tagSectionHeader}>{section.title}</Text>
+              {section.tags.map((tag) => {
+                const isSelected = selectedIds.has(tag.id)
+                return (
+                  <Pressable
+                    key={tag.id}
+                    style={getTagListRowStyle}
+                    onPress={() => handleTagRowPress(tag)}
+                    accessibilityLabel={tag.name}
+                    accessibilityState={{ selected: isSelected }}
+                  >
+                    <Text style={styles.tagListText}>{tTag(tag.name, t)}</Text>
+                    {isSelected && <Text style={styles.tagCheck}>✓</Text>}
+                  </Pressable>
+                )
+              })}
+            </View>
+          ))}
+          {filtered.length === 0 && !canCreate && (
+            <Text style={styles.tagEmpty}>{t('tags.noTagsAvailable')}</Text>
+          )}
+        </ScrollView>
       </View>
     </Modal>
   )
@@ -380,7 +378,7 @@ const styles = StyleSheet.create({
   pressedLight: { opacity: 0.7 },
   pressedMedium: { opacity: 0.6 },
 
-  tagModalWrap: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  tagModalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
   tagModal: {
     backgroundColor: PlatformColor('systemBackground') as unknown as string,
     borderTopLeftRadius: 16,
