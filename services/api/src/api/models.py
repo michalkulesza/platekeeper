@@ -196,10 +196,6 @@ class Recipe(Base):
     source_url: Mapped[str | None] = mapped_column(String, nullable=True)
     components: Mapped[list[Any]] = mapped_column(JSON, default=list)
     notes: Mapped[str | None] = mapped_column(String, nullable=True)
-    debug_model: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    debug_input_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    debug_output_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    debug_total_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     position: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -301,18 +297,10 @@ class ImportRequest(BaseModel):
     url: str
 
 
-class ImportDebugUsage(BaseModel):
-    model: str
-    input_tokens: int
-    output_tokens: int
-    total_tokens: int
-
-
 class ImportMetadata(BaseModel):
     creator_handle: str | None = None
     thumbnail_url: str | None = None
     source_url: str | None = None
-    debug: ImportDebugUsage | None = None
 
 
 class ImportStage(StrEnum):
@@ -381,10 +369,6 @@ class RecipeSaveRequest(BaseModel):
     components: list[SaveComponent]
     tag_ids: list[uuid.UUID] = []
     shared_to_personal: bool = True
-    debug_model: str | None = None
-    debug_input_tokens: int | None = None
-    debug_output_tokens: int | None = None
-    debug_total_tokens: int | None = None
 
 
 class RecipeOut(BaseModel):
@@ -402,10 +386,6 @@ class RecipeOut(BaseModel):
     creator_handle: str | None
     source_url: str | None
     notes: str | None = None
-    debug_model: str | None = None
-    debug_input_tokens: int | None = None
-    debug_output_tokens: int | None = None
-    debug_total_tokens: int | None = None
     components: list[Any]
     created_at: datetime
     updated_at: datetime

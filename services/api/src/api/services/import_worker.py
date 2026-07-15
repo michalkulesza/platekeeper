@@ -118,10 +118,6 @@ async def _save_recipe(session, job: ImportJob, result: ImportResult) -> Recipe:
         source_url=metadata.source_url,
         components=components,
         tags=tags,
-        debug_model=metadata.debug.model if metadata.debug else None,
-        debug_input_tokens=metadata.debug.input_tokens if metadata.debug else None,
-        debug_output_tokens=metadata.debug.output_tokens if metadata.debug else None,
-        debug_total_tokens=metadata.debug.total_tokens if metadata.debug else None,
     )
     session.add(recipe)
     await session.flush()

@@ -244,10 +244,6 @@ async def save_recipe(
         source_url=body.source_url,
         notes=body.notes,
         components=[c.model_dump() for c in body.components],
-        debug_model=body.debug_model,
-        debug_input_tokens=body.debug_input_tokens,
-        debug_output_tokens=body.debug_output_tokens,
-        debug_total_tokens=body.debug_total_tokens,
     )
     session.add(recipe)
     await session.flush()

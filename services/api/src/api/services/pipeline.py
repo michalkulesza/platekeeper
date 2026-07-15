@@ -9,9 +9,7 @@ from urllib.parse import urlparse
 import httpx
 from bs4 import BeautifulSoup
 
-from api.config import settings
 from api.models import (
-    ImportDebugUsage,
     ImportMetadata,
     ImportResult,
     ImportStage,
@@ -206,20 +204,6 @@ async def _with_allergens(
     return result.model_copy(update={"recipe": recipe})
 
 
-def _attach_debug(result: ImportResult, usage: gemini_svc.UsageTracker) -> ImportResult:
-    """Attach aggregated token usage for every Gemini call made during this import."""
-    if not usage.calls or result.stage == ImportStage.FAILED:
-        return result
-    debug = ImportDebugUsage(
-        model=settings.gemini_extraction_model,
-        input_tokens=usage.input_tokens,
-        output_tokens=usage.output_tokens,
-        total_tokens=usage.input_tokens + usage.output_tokens,
-    )
-    metadata = result.metadata.model_copy(update={"debug": debug})
-    return result.model_copy(update={"metadata": metadata})
-
-
 async def run_import_stream(url: str, model: str | None = None, available_tags: list[str] | None = None, allergens: list[str] | None = None) -> AsyncGenerator[dict[str, Any], None]:
     if not allergens:
         cached = cache_svc.get(url)
@@ -281,7 +265,7 @@ async def run_import_stream(url: str, model: str | None = None, available_tags: 
             result = result_out[0]
             if _is_complete(result):
                 r = ImportResult(stage=stage, recipe=result, metadata=meta)
-                yield _done_event(_attach_debug(await _with_allergens(r, allergens, usage), usage), cache_key=url)
+                yield _done_event(await _with_allergens(r, allergens, usage), cache_key=url)
             else:
                 report_recipe_import_failure(
                     input_kind="url", source_url=url, reason="no_complete_recipe_extracted",
@@ -342,7 +326,7 @@ async def run_import_stream(url: str, model: str | None = None, available_tags: 
             result = result_out_desc[0]
             if _is_complete(result):
                 r = ImportResult(stage=ImportStage.DESCRIPTION, recipe=result, metadata=meta)
-                yield _done_event(_attach_debug(await _with_allergens(r, allergens, usage), usage), cache_key=url)
+                yield _done_event(await _with_allergens(r, allergens, usage), cache_key=url)
                 return
         except Exception as exc:
             log.warning("Gemini description stage failed: %s", exc)
@@ -357,7 +341,7 @@ async def run_import_stream(url: str, model: str | None = None, available_tags: 
             )
             if result and _is_complete(result):
                 r = ImportResult(stage=ImportStage.LINK, recipe=result, metadata=meta)
-                yield _done_event(_attach_debug(await _with_allergens(r, allergens, usage), usage), cache_key=url)
+                yield _done_event(await _with_allergens(r, allergens, usage), cache_key=url)
                 return
         except Exception as exc:
             log.warning("Link stage failed for %s: %s", link, exc)
@@ -382,7 +366,7 @@ async def run_import_stream(url: str, model: str | None = None, available_tags: 
             log.debug("Transcript extraction result: title=%r components=%d", result.title, len(result.components))
             if _is_complete(result):
                 r = ImportResult(stage=ImportStage.TRANSCRIPT, recipe=result, metadata=meta)
-                yield _done_event(_attach_debug(await _with_allergens(r, allergens, usage), usage), cache_key=url)
+                yield _done_event(await _with_allergens(r, allergens, usage), cache_key=url)
                 return
     except Exception as exc:
         log.warning("Transcription stage failed: %s", exc)
@@ -420,7 +404,7 @@ async def run_text_import_stream(
         result = result_out_txt[0]
         if _is_complete(result):
             r = ImportResult(stage=ImportStage.TRANSCRIPT, recipe=result, metadata=meta)
-            yield _done_event(_attach_debug(await _with_allergens(r, allergens, usage), usage))
+            yield _done_event(await _with_allergens(r, allergens, usage))
         else:
             report_recipe_import_failure(
                 input_kind="text", input_size=len(text), reason="no_complete_recipe_extracted",
@@ -463,7 +447,7 @@ async def run_image_import_stream(
         result = result_out_img[0]
         if _is_complete(result):
             r = ImportResult(stage=ImportStage.TRANSCRIPT, recipe=result, metadata=meta)
-            yield _done_event(_attach_debug(await _with_allergens(r, allergens, usage), usage))
+            yield _done_event(await _with_allergens(r, allergens, usage))
         else:
             report_recipe_import_failure(
                 input_kind="image", input_size=len(image_data), reason="no_complete_recipe_extracted",

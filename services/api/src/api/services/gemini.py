@@ -63,8 +63,6 @@ async def _with_retry(
     generous: bool = False,
     max_attempts: int = 200,
 ) -> _T:
-    if settings.debug_artificial_delay_seconds > 0:
-        await asyncio.sleep(settings.debug_artificial_delay_seconds)
     for attempt, delay in enumerate(_retry_delays(generous=generous), start=1):
         if attempt > max_attempts:
             raise RuntimeError(f"Gemini: exceeded {max_attempts} retry attempts")

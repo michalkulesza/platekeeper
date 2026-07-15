@@ -9,7 +9,6 @@ import { useRecipes } from '@carrot/shared/hooks/useRecipes'
 import { useShoppingList } from '@carrot/shared/hooks/useShoppingList'
 import { usePreferences } from '@carrot/shared/hooks/usePreferences'
 import type { RecipeOut } from '@carrot/shared/types'
-import { useDebugMode } from '../../context/DebugModeContext'
 import { useHousehold } from '../../context/HouseholdContext'
 import type { AddToMealPlanSheetHandle } from '../../components/AddToMealPlanSheet'
 import type { AddIngredientToShoppingListSheetHandle } from '../../components/AddIngredientToShoppingListSheet'
@@ -34,7 +33,6 @@ const RecipeDetailScreen = () => {
   const [sessionAdded, setSessionAdded] = useState<Set<string>>(new Set())
   const [selectedServings, setSelectedServings] = useState<number | null>(null)
   const insets = useSafeAreaInsets()
-  const { enabled: debugMode } = useDebugMode()
   const mealPlanSheetRef = useRef<AddToMealPlanSheetHandle>(null)
   const addIngredientSheetRef = useRef<AddIngredientToShoppingListSheetHandle>(null)
   const pendingIngredientKeyRef = useRef<string | null>(null)
@@ -215,7 +213,6 @@ const RecipeDetailScreen = () => {
       sessionAdded={sessionAdded}
       fontSizeIndex={displayPrefs.fontSizeIndex}
       keepScreenOn={displayPrefs.keepScreenOn}
-      debugMode={debugMode}
       insets={insets}
       heroImageErrored={heroImageErrored}
       setHeroImageErrored={setHeroImageErrored}

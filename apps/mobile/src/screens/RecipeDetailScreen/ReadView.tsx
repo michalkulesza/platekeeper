@@ -41,7 +41,6 @@ const ReadView = ({
   sessionAdded,
   fontSizeIndex,
   keepScreenOn,
-  debugMode,
   insets,
   heroImageErrored,
   setHeroImageErrored,
@@ -64,7 +63,6 @@ const ReadView = ({
   sessionAdded: Set<string>
   fontSizeIndex: number
   keepScreenOn: boolean
-  debugMode: boolean
   insets: EdgeInsets
   heroImageErrored: boolean
   setHeroImageErrored: (errored: boolean) => void
@@ -199,20 +197,6 @@ const ReadView = ({
               </View>
             ))}
           </View>
-
-          {debugMode && recipe.debug_model ? (
-            <View style={styles.debugBox}>
-              <Text style={styles.debugTitle}>{t('recipes.debugInfo')}</Text>
-              <Text style={styles.debugText}>
-                {t('recipes.debugModel')}: {recipe.debug_model}
-              </Text>
-              <Text style={styles.debugText}>
-                {t('recipes.debugTokens')}: {recipe.debug_total_tokens ?? '—'}
-                {' '}({t('recipes.debugInputTokens')} {recipe.debug_input_tokens ?? '—'}
-                {' · '}{t('recipes.debugOutputTokens')} {recipe.debug_output_tokens ?? '—'})
-              </Text>
-            </View>
-          ) : null}
 
           <View style={styles.toggleGroup}>
             <View style={styles.keepScreenRow}>

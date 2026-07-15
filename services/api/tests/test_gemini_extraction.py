@@ -268,8 +268,6 @@ async def test_text_import_honours_supplied_model_override(monkeypatch) -> None:
         return extraction
 
     monkeypatch.setattr(pipeline.gemini_svc, "extract_recipe", fake_extract_recipe)
-    monkeypatch.setattr(pipeline.settings, "gemini_extraction_model", "configured-extraction-model")
-
     events = [
         event async for event in pipeline.run_text_import_stream(
             "Ingredients: 1 onion", model="explicit-override-model"
@@ -277,7 +275,7 @@ async def test_text_import_honours_supplied_model_override(monkeypatch) -> None:
     ]
 
     assert captured_models == ["explicit-override-model"]
-    assert events[-1]["result"]["metadata"]["debug"] is None
+    assert "debug" not in events[-1]["result"]["metadata"]
 
 
 @pytest.mark.asyncio
@@ -290,14 +288,12 @@ async def test_text_import_uses_configured_model_when_none_supplied(monkeypatch)
         return extraction
 
     monkeypatch.setattr(pipeline.gemini_svc, "extract_recipe", fake_extract_recipe)
-    monkeypatch.setattr(pipeline.settings, "gemini_extraction_model", "configured-extraction-model")
-
     events = [
         event async for event in pipeline.run_text_import_stream("Ingredients: 1 onion")
     ]
 
     assert captured_models == [None]
-    assert events[-1]["result"]["metadata"]["debug"] is None
+    assert "debug" not in events[-1]["result"]["metadata"]
 
 
 @pytest.mark.asyncio

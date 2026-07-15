@@ -52,10 +52,5 @@ class Settings(BaseSettings):
     google_android_client_id: str = ""
     google_web_client_id: str = ""
 
-    # Debug only — sleeps this many seconds before the real Gemini call, so extraction
-    # stays "in progress" long enough to exercise the background-import UI. Never set
-    # in production.
-    debug_artificial_delay_seconds: float = 0
-
 
 settings = Settings()  # type: ignore[call-arg]

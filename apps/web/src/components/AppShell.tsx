@@ -17,7 +17,6 @@ import { useAuth } from '../context/AuthContext'
 import { HouseholdProvider } from '../context/HouseholdContext'
 import { TimerProvider } from '../context/TimerContext'
 import { NotificationHistoryProvider } from '../context/NotificationHistoryContext'
-import { DebugModeProvider } from '../context/DebugModeContext'
 import { useRecipes, useRecipeStats } from '@carrot/shared/hooks/useRecipes'
 import { useTags } from '@carrot/shared/hooks/useTags'
 import { usePreferences } from '@carrot/shared/hooks/usePreferences'
@@ -111,8 +110,7 @@ const AppShell = () => {
     <NotificationHistoryProvider>
       <TimerProvider>
         <HouseholdProvider>
-          <DebugModeProvider>
-            <div className="min-h-screen bg-background md:bg-zinc-100">
+          <div className="min-h-screen bg-background md:bg-zinc-100">
               <div className="md:max-w-7xl md:mx-auto md:flex md:min-h-screen">
                 <Sidebar />
                 <div className="flex-1 min-w-0 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0 md:bg-background md:my-2 md:mr-2 md:rounded-xl md:shadow-sm">
@@ -182,8 +180,7 @@ const AppShell = () => {
               />
               <ResumeTimersModal />
               <ExpiredTimersModal />
-            </div>
-          </DebugModeProvider>
+          </div>
         </HouseholdProvider>
       </TimerProvider>
     </NotificationHistoryProvider>

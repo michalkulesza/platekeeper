@@ -3,7 +3,6 @@ import { parseIngredient, type StructuredIngredient } from '@carrot/shared/utils
 import type { DurationMatch } from '../../context/TimerContext'
 
 export const KEEP_AWAKE_RECIPE_TAG = 'recipe-detail'
-export const KEEP_AWAKE_STORAGE_KEY = 'recipe-keep-screen-default'
 export const SHOW_STEP_QTY_STORAGE_KEY = 'recipe-show-step-qty'
 export const FONT_SIZE_STORAGE_KEY = 'recipe-font-size-index'
 

@@ -97,15 +97,6 @@ export const styles = StyleSheet.create({
     color: colors.label,
     textAlign: 'center',
   },
-  debugBox: {
-    backgroundColor: colors.gray6,
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 12,
-    gap: 2,
-  },
-  debugTitle: { fontSize: 11, fontWeight: '600', color: colors.secondaryLabel, textTransform: 'uppercase', letterSpacing: 0.3, marginBottom: 2 },
-  debugText: { fontSize: 12, color: colors.secondaryLabel },
   toggleGroup: {
     borderTopWidth: StyleSheet.hairlineWidth,
     borderBottomWidth: StyleSheet.hairlineWidth,

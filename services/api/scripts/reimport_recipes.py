@@ -75,11 +75,6 @@ def _apply_extraction(recipe: Recipe, result: ImportResult, auto_substitute: boo
         recipe.creator_handle = result.metadata.creator_handle
     if result.metadata.source_url:
         recipe.source_url = result.metadata.source_url
-    if result.metadata.debug:
-        recipe.debug_model = result.metadata.debug.model
-        recipe.debug_input_tokens = result.metadata.debug.input_tokens
-        recipe.debug_output_tokens = result.metadata.debug.output_tokens
-        recipe.debug_total_tokens = result.metadata.debug.total_tokens
 
 
 async def _extract(url: str, available_tags: list[str], allergens: list[str]) -> ImportResult:

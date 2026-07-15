@@ -27,7 +27,6 @@ interface RecipeMetaBarProps {
   draft: EditState
   mode: Mode
   onNutritionChange: (field: NutritionField, value: string) => void
-  debugMode: boolean
   wakeLockActive: boolean
   onToggleWakeLock: () => void
   fontSizeIndex: number
@@ -58,7 +57,6 @@ const RecipeMetaBar = ({
   draft,
   mode,
   onNutritionChange,
-  debugMode,
   wakeLockActive,
   onToggleWakeLock,
   fontSizeIndex,
@@ -135,23 +133,6 @@ const RecipeMetaBar = ({
         />
       )}
       <HouseholdAvatarIndicators recipe={r} />
-
-      {debugMode && r.debug_model && (
-        <div className="flex flex-col gap-0.5 rounded-lg bg-zinc-50 px-3 py-2">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
-            {t('recipes.debugInfo')}
-          </span>
-          <span className="text-xs text-zinc-500">
-            {t('recipes.debugModel')}: {r.debug_model}
-          </span>
-          <span className="text-xs text-zinc-500">
-            {t('recipes.debugTokens')}: {r.debug_total_tokens ?? '—'} (
-            {t('recipes.debugInputTokens')} {r.debug_input_tokens ?? '—'}
-            {' · '}
-            {t('recipes.debugOutputTokens')} {r.debug_output_tokens ?? '—'})
-          </span>
-        </div>
-      )}
 
       {mode === 'view' && (
         <div className="border-y border-zinc-200 divide-y divide-zinc-200">

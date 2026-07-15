@@ -1,6 +1,5 @@
 import type {
   AllergenFlag,
-  ImportDebugUsage,
   ImportResult,
   Ingredient,
   RecipeComponent,
@@ -39,7 +38,6 @@ export interface EditableRecipe {
   source_url: string | null
   components: EditableComponent[]
   suggestedTagNames: string[]
-  debug: ImportDebugUsage | null
 }
 
 export const buildStepIngredientRefs = (component: RecipeComponent): StepIngredientRef[][] | null => {
@@ -109,7 +107,6 @@ export const toEditable = (result: ImportResult, autoSubstitute: boolean): Edita
     creator_handle: metadata.creator_handle,
     source_url: metadata.source_url || null,
     suggestedTagNames: recipe?.tags ?? [],
-    debug: metadata.debug ?? null,
     components: (recipe?.components ?? []).map((c) => toEditableComponent(c, autoSubstitute)),
   }
 }
@@ -126,7 +123,6 @@ export const blankRecipe = (): EditableRecipe => ({
   creator_handle: null,
   source_url: null,
   suggestedTagNames: [],
-  debug: null,
   components: [{
     name: 'Main',
     yield_note: '',
@@ -157,10 +153,6 @@ export const buildRecipeSavePayload = (
   thumbnail_url: editable.thumbnail_url,
   creator_handle: editable.creator_handle,
   source_url: editable.source_url,
-  debug_model: editable.debug?.model ?? null,
-  debug_input_tokens: editable.debug?.input_tokens ?? null,
-  debug_output_tokens: editable.debug?.output_tokens ?? null,
-  debug_total_tokens: editable.debug?.total_tokens ?? null,
   components: editable.components.map((c) => ({
     name: c.name,
     yield_note: c.yield_note,
