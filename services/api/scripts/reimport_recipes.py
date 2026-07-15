@@ -7,6 +7,7 @@ from sqlalchemy import select
 from api.database import async_session_maker
 from api.models import ImportResult, Ingredient, Recipe, RecipeComponent, RecipeExtraction, UserPreferences
 from api.services.import_worker import _get_tags_and_allergens
+from api.services.monitoring import init_sentry
 from api.services.pipeline import run_import_stream
 
 
@@ -146,6 +147,7 @@ async def main(apply: bool, limit: int | None, recipe_ids: set[uuid.UUID], concu
 
 
 if __name__ == "__main__":
+    init_sentry()
     parser = argparse.ArgumentParser(
         description="Re-import URL-backed recipes in place using the current extraction model and prompt."
     )

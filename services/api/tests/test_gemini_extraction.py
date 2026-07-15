@@ -217,6 +217,25 @@ def test_assemble_recipe_rejects_out_of_range_step_ref() -> None:
         gemini.assemble_recipe(source, enrichment)
 
 
+def test_strip_html_preserves_structural_container_with_noise_named_theme_class() -> None:
+    html = """
+    <html><body class="content-sidebar">
+      <nav class="recipe-navigation">Recipe index</nav>
+      <div class="content-sidebar-wrap">
+        <article><h1>Article introduction</h1></article>
+        <div class="wprm-recipe-container">
+          <h1>Beef Stroganoff</h1><p>Ingredients: beef, mushrooms</p>
+        </div>
+      </div>
+    </body></html>
+    """
+
+    text = pipeline._strip_html(html)
+
+    assert "Beef Stroganoff" in text
+    assert "Ingredients: beef, mushrooms" in text
+
+
 @pytest.mark.asyncio
 async def test_estimate_unit_variants_uses_shared_conversion_contract(monkeypatch) -> None:
     generate_content = Mock(return_value=_response({"components": [{
@@ -279,6 +298,29 @@ async def test_text_import_uses_configured_model_when_none_supplied(monkeypatch)
 
     assert captured_models == [None]
     assert events[-1]["result"]["metadata"]["debug"] is None
+
+
+@pytest.mark.asyncio
+async def test_incomplete_text_import_is_reported_to_sentry(monkeypatch) -> None:
+    extraction = RecipeExtraction.model_validate(_enrichment_payload())
+
+    async def fake_extract_recipe(*args, **kwargs):
+        return extraction
+
+    report_failure = Mock()
+    monkeypatch.setattr(pipeline.gemini_svc, "extract_recipe", fake_extract_recipe)
+    monkeypatch.setattr(pipeline, "report_recipe_import_failure", report_failure)
+
+    events = [
+        event async for event in pipeline.run_text_import_stream("not a recipe")
+    ]
+
+    assert events[-1]["result"]["error"] == "Could not extract a recipe from this text."
+    assert report_failure.call_args.kwargs == {
+        "input_kind": "text",
+        "input_size": len("not a recipe"),
+        "reason": "no_complete_recipe_extracted",
+    }
 
 
 @pytest.mark.asyncio

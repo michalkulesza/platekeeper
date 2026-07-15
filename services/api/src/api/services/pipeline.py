@@ -19,6 +19,7 @@ from api.models import (
 )
 from api.services import cache as cache_svc
 from api.services import gemini as gemini_svc
+from api.services.monitoring import report_recipe_import_failure
 from api.services.scraper import ReelMetadata, scraper
 
 log = logging.getLogger(__name__)
@@ -115,13 +116,19 @@ def _strip_html(html: str) -> str:
     for el in list(soup.find_all(True)):
         if not el.attrs:
             continue
+        # Theme-level classes can contain noise words (for example,
+        # ``content-sidebar`` on RecipeTin Eats' body). Never remove structural
+        # containers based on a generic class-name match.
+        if el.name in {"html", "body", "main", "article"} or el.find(["article", "main"]):
+            continue
         combined = " ".join(el.get("class") or []).lower() + " " + (el.get("id") or "").lower()
         if any(p in combined for p in _NOISE_ATTRS):
             el.decompose()
 
-    # Prefer the most recipe-relevant container over the full body
+    # Prefer the page's semantic content before a generic recipe-named class:
+    # sites often use the latter for navigation or breadcrumbs.
     container = (
-        soup.find(class_=lambda c: c and any("recipe" in cls.lower() for cls in c))
+        soup.find(class_="wprm-recipe-container")
         or soup.find("article")
         or soup.find("main")
         or soup.body
@@ -232,6 +239,9 @@ async def run_import_stream(url: str, model: str | None = None, available_tags: 
                 html = r.text
         except Exception as exc:
             log.warning("Could not fetch page %s: %s", url, exc)
+            report_recipe_import_failure(
+                input_kind="url", source_url=url, reason="could_not_fetch_page", error=exc,
+            )
             yield _done_event(ImportResult(
                 stage=ImportStage.FAILED,
                 metadata=ImportMetadata(source_url=url),
@@ -273,6 +283,9 @@ async def run_import_stream(url: str, model: str | None = None, available_tags: 
                 r = ImportResult(stage=stage, recipe=result, metadata=meta)
                 yield _done_event(_attach_debug(await _with_allergens(r, allergens, usage), usage), cache_key=url)
             else:
+                report_recipe_import_failure(
+                    input_kind="url", source_url=url, reason="no_complete_recipe_extracted",
+                )
                 yield _done_event(ImportResult(
                     stage=ImportStage.FAILED,
                     metadata=meta,
@@ -280,6 +293,9 @@ async def run_import_stream(url: str, model: str | None = None, available_tags: 
                 ))
         except Exception as exc:
             log.warning("Gemini extraction failed for %s: %s", url, exc)
+            report_recipe_import_failure(
+                input_kind="url", source_url=url, reason="gemini_extraction_error", error=exc,
+            )
             yield _done_event(ImportResult(
                 stage=ImportStage.FAILED,
                 metadata=meta,
@@ -293,6 +309,9 @@ async def run_import_stream(url: str, model: str | None = None, available_tags: 
         metadata: ReelMetadata = await scraper.fetch_reel(url)
     except Exception as exc:
         log.warning("Could not fetch reel %s: %s", url, exc)
+        report_recipe_import_failure(
+            input_kind="url", source_url=url, reason="could_not_fetch_social_metadata", error=exc,
+        )
         yield _done_event(ImportResult(
             stage=ImportStage.FAILED,
             metadata=ImportMetadata(source_url=url),
@@ -361,12 +380,16 @@ async def run_import_stream(url: str, model: str | None = None, available_tags: 
                 yield _ev
             result = result_out_tr[0]
             log.debug("Transcript extraction result: title=%r components=%d", result.title, len(result.components))
-            r = ImportResult(stage=ImportStage.TRANSCRIPT, recipe=result, metadata=meta)
-            yield _done_event(_attach_debug(await _with_allergens(r, allergens, usage), usage), cache_key=url)
-            return
+            if _is_complete(result):
+                r = ImportResult(stage=ImportStage.TRANSCRIPT, recipe=result, metadata=meta)
+                yield _done_event(_attach_debug(await _with_allergens(r, allergens, usage), usage), cache_key=url)
+                return
     except Exception as exc:
         log.warning("Transcription stage failed: %s", exc)
 
+    report_recipe_import_failure(
+        input_kind="url", source_url=url, reason="no_complete_recipe_extracted",
+    )
     yield _done_event(ImportResult(
         stage=ImportStage.FAILED,
         metadata=meta,
@@ -399,11 +422,17 @@ async def run_text_import_stream(
             r = ImportResult(stage=ImportStage.TRANSCRIPT, recipe=result, metadata=meta)
             yield _done_event(_attach_debug(await _with_allergens(r, allergens, usage), usage))
         else:
+            report_recipe_import_failure(
+                input_kind="text", input_size=len(text), reason="no_complete_recipe_extracted",
+            )
             yield _done_event(ImportResult(
                 stage=ImportStage.FAILED, metadata=meta,
                 error="Could not extract a recipe from this text.",
             ))
     except Exception as exc:
+        report_recipe_import_failure(
+            input_kind="text", input_size=len(text), reason="gemini_extraction_error", error=exc,
+        )
         yield _done_event(ImportResult(
             stage=ImportStage.FAILED, metadata=meta,
             error=f"Gemini extraction failed: {exc}",
@@ -436,11 +465,17 @@ async def run_image_import_stream(
             r = ImportResult(stage=ImportStage.TRANSCRIPT, recipe=result, metadata=meta)
             yield _done_event(_attach_debug(await _with_allergens(r, allergens, usage), usage))
         else:
+            report_recipe_import_failure(
+                input_kind="image", input_size=len(image_data), reason="no_complete_recipe_extracted",
+            )
             yield _done_event(ImportResult(
                 stage=ImportStage.FAILED, metadata=meta,
                 error="Could not extract a recipe from this image.",
             ))
     except Exception as exc:
+        report_recipe_import_failure(
+            input_kind="image", input_size=len(image_data), reason="gemini_extraction_error", error=exc,
+        )
         yield _done_event(ImportResult(
             stage=ImportStage.FAILED, metadata=meta,
             error=f"Gemini image extraction failed: {exc}",

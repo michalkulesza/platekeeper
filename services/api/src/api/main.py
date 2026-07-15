@@ -13,6 +13,7 @@ from api.config import settings
 from api.database import Base, async_session_maker, engine, get_async_session
 from api.models import Recipe, Tag
 from api.services import r2
+from api.services.monitoring import init_sentry
 from api.routes.auth import router as auth_verify_router
 from api.routes.allergens import router as allergens_router
 from api.routes.export import router as export_router
@@ -149,6 +150,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Carrot API", lifespan=lifespan)
+init_sentry()
 
 app.add_middleware(
     CORSMiddleware,

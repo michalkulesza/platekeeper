@@ -28,6 +28,7 @@ Items are grouped by purpose and ordered from highest to lowest importance withi
 
 ## Experience and product polish
 
+- [ ] **Extraction failed screen** - Improve that visually
 - [ ] **Review dark mode** — Fix automatic appearance detection and verify all screens in dark mode.
 - [ ] **Haptics and native context menus** — Add meaningful haptic feedback and long-press recipe actions (favourite, plan, share, delete) with a peek preview.
 - [ ] **Delightful empty and loading states** — Extend shimmers to recipe lists and meal plans; add friendly empty states, restrained Carrot mascot moments, import-stage animation, haptics, and completion feedback.
