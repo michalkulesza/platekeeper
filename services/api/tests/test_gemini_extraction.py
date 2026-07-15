@@ -338,6 +338,62 @@ def test_find_microdata_recipe_requires_both_ingredients_and_instructions() -> N
     assert pipeline._find_microdata_recipe(html) is None
 
 
+def test_find_domain_specific_recipe_parses_kwestiasmaku_field_groups() -> None:
+    html = """
+    <html><body>
+      <h1>Test Danie</h1>
+      <div class="group-skladniki">
+        <ul><li>1 kg mięsa</li><li>2 cebule</li></ul>
+      </div>
+      <div class="group-przepis">
+        <ul><li>Podsmażyć cebulę.</li><li>Dodać mięso i dusić 20 minut.</li></ul>
+      </div>
+    </body></html>
+    """
+
+    recipe = pipeline._find_domain_specific_recipe(
+        "https://www.kwestiasmaku.com/przepis/test-danie", html
+    )
+
+    assert recipe == {
+        "name": "Test Danie",
+        "recipeIngredient": ["1 kg mięsa", "2 cebule"],
+        "recipeInstructions": ["Podsmażyć cebulę.", "Dodać mięso i dusić 20 minut."],
+    }
+
+
+def test_find_domain_specific_recipe_parses_oliveandmango_directions_after_summary() -> None:
+    html = """
+    <html><body>
+      <div itemscope itemtype="https://schema.org/Recipe">
+        <span itemprop="name">Test Chicken</span>
+        <span itemprop="recipeIngredient">1 chicken</span>
+        <span itemprop="recipeIngredient">2 lemons</span>
+        <div itemprop="text">
+          <h2>How To Make This Dish</h2>
+          <ol><li>ROAST the chicken.</li><li>SERVE.</li></ol>
+          <h2>Directions</h2>
+          <ol><li>Heat oven to 400F.</li><li>Roast for 40 minutes.</li></ol>
+        </div>
+      </div>
+    </body></html>
+    """
+
+    recipe = pipeline._find_domain_specific_recipe(
+        "https://www.oliveandmango.com/test-chicken/", html
+    )
+
+    assert recipe == {
+        "name": "Test Chicken",
+        "recipeIngredient": ["1 chicken", "2 lemons"],
+        "recipeInstructions": ["Heat oven to 400F.", "Roast for 40 minutes."],
+    }
+
+
+def test_find_domain_specific_recipe_returns_none_for_unmapped_domain() -> None:
+    assert pipeline._find_domain_specific_recipe("https://example.com/recipe", "<html></html>") is None
+
+
 @pytest.mark.asyncio
 async def test_estimate_unit_variants_uses_shared_conversion_contract(monkeypatch) -> None:
     generate_content = Mock(return_value=_response({"components": [{

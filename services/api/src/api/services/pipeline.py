@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from collections.abc import AsyncGenerator, Awaitable
 from typing import Any
 from urllib.parse import urlparse
@@ -127,6 +128,77 @@ def _find_microdata_recipe(html: str) -> dict | None:
     }
 
 
+def _parse_kwestiasmaku(soup: BeautifulSoup) -> dict | None:
+    # kwestiasmaku.com emits no schema.org markup at all; its Drupal template
+    # groups ingredients and steps under fixed field-group class names.
+    ingredients_container = soup.find(class_="group-skladniki")
+    steps_container = soup.find(class_="group-przepis")
+    if ingredients_container is None or steps_container is None:
+        return None
+
+    ingredients = [li.get_text(" ", strip=True) for li in ingredients_container.find_all("li")]
+    ingredients = [i for i in ingredients if i]
+    instructions = [li.get_text(" ", strip=True) for li in steps_container.find_all("li")]
+    instructions = [s for s in instructions if s]
+    if not ingredients or not instructions:
+        return None
+
+    title = soup.find("h1")
+    return {
+        "name": title.get_text(strip=True) if title else None,
+        "recipeIngredient": ingredients,
+        "recipeInstructions": instructions,
+    }
+
+
+def _parse_oliveandmango(soup: BeautifulSoup) -> dict | None:
+    # oliveandmango.com marks up ingredients via microdata but leaves steps as
+    # plain prose: a condensed 4-step overview followed by a "Directions"
+    # heading with the real numbered list, both inside itemprop="text".
+    container = soup.find(attrs={"itemtype": lambda v: v and v.rstrip("/").endswith("/Recipe")})
+    if container is None:
+        return None
+
+    ingredients = [
+        el.get_text(" ", strip=True)
+        for el in container.find_all(attrs={"itemprop": "recipeIngredient"})
+    ]
+    ingredients = [i for i in ingredients if i]
+
+    text_container = container.find(attrs={"itemprop": "text"}) or container
+    heading = text_container.find(
+        lambda tag: tag.name in ("h2", "h3") and re.search(r"directions|instructions|method", tag.get_text(), re.I)
+    )
+    ol = heading.find_next("ol") if heading else None
+    if ol is None:
+        ols = text_container.find_all("ol")
+        ol = ols[-1] if ols else None
+    instructions = [li.get_text(" ", strip=True) for li in ol.find_all("li", recursive=False)] if ol else []
+    instructions = [s for s in instructions if s]
+    if not ingredients or not instructions:
+        return None
+
+    name = container.find(attrs={"itemprop": "name"})
+    return {
+        "name": name.get_text(strip=True) if name else None,
+        "recipeIngredient": ingredients,
+        "recipeInstructions": instructions,
+    }
+
+
+_DOMAIN_PARSERS = {
+    "kwestiasmaku.com": _parse_kwestiasmaku,
+    "oliveandmango.com": _parse_oliveandmango,
+}
+
+
+def _find_domain_specific_recipe(url: str, html: str) -> dict | None:
+    parser = _DOMAIN_PARSERS.get(urlparse(url).netloc.removeprefix("www."))
+    if parser is None:
+        return None
+    return parser(BeautifulSoup(html, "html.parser"))
+
+
 def _jsonld_recipe_steps(data: dict) -> list[str]:
     steps: list[str] = []
     for s in data.get("recipeInstructions", []):
@@ -230,7 +302,7 @@ async def _try_linked_url(
         log.warning("Failed to fetch linked URL %s: %s", url, exc)
         return None
 
-    jsonld = _find_jsonld_recipe(html) or _find_microdata_recipe(html)
+    jsonld = _find_jsonld_recipe(html) or _find_microdata_recipe(html) or _find_domain_specific_recipe(url, html)
     if jsonld and _jsonld_recipe_is_complete(jsonld):
         source_text = _jsonld_recipe_to_text(jsonld)
     else:
@@ -314,7 +386,7 @@ async def run_import_stream(url: str, model: str | None = None, available_tags: 
         domain = urlparse(url).netloc.removeprefix("www.")
         meta = ImportMetadata(source_url=url, thumbnail_url=thumbnail_url, creator_handle=domain)
 
-        jsonld = _find_jsonld_recipe(html) or _find_microdata_recipe(html)
+        jsonld = _find_jsonld_recipe(html) or _find_microdata_recipe(html) or _find_domain_specific_recipe(url, html)
         if jsonld and _jsonld_recipe_is_complete(jsonld):
             # Structured JSON-LD is cleaner and more reliable input than scraped
             # page text, but tags/macros/qty-unit-note parsing still only ever
