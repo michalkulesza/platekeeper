@@ -10,8 +10,6 @@ interface PreferencesSectionProps {
   onPreferencesChange: (prefs: UserPreferences) => void
   wakeLockDefault: boolean
   onWakeLockDefaultChange: (enabled: boolean) => void
-  debugMode: boolean
-  onDebugModeChange: (enabled: boolean) => void
 }
 
 const PreferencesSection = ({
@@ -19,8 +17,6 @@ const PreferencesSection = ({
   onPreferencesChange,
   wakeLockDefault,
   onWakeLockDefaultChange,
-  debugMode,
-  onDebugModeChange,
 }: PreferencesSectionProps) => {
   const { t, i18n } = useTranslation()
 
@@ -58,7 +54,6 @@ const PreferencesSection = ({
 
   const handleWakeLockDefaultChange = useCallback(
     (value: boolean) => {
-      localStorage.setItem('wakelock-default', value ? '1' : '0')
       onWakeLockDefaultChange(value)
     },
     [onWakeLockDefaultChange]
@@ -168,19 +163,6 @@ const PreferencesSection = ({
             </Switch>
           </div>
         )}
-        <div className="flex items-center justify-between gap-2 pt-3 border-t border-zinc-100">
-          <div>
-            <p className="text-sm font-medium">{t('settings.debugMode')}</p>
-            <p className="text-xs text-zinc-400">
-              {t('settings.debugModeDesc')}
-            </p>
-          </div>
-          <Switch size="sm" isSelected={debugMode} onChange={onDebugModeChange}>
-            <Switch.Control>
-              <Switch.Thumb />
-            </Switch.Control>
-          </Switch>
-        </div>
       </div>
     </section>
   )

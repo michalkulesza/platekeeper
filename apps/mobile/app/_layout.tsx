@@ -31,7 +31,7 @@ import { NotificationHistoryProvider } from '../src/context/NotificationHistoryC
 import { TimerProvider } from '../src/context/TimerContext'
 import { HouseholdProvider } from '../src/context/HouseholdContext'
 import { ColorSchemeProvider } from '../src/context/ColorSchemeContext'
-import { DebugModeProvider } from '../src/context/DebugModeContext'
+import { CookingModeProvider } from '../src/context/CookingModeContext'
 import { mobileClient } from '../src/api/client'
 import { configureGoogleSignin } from '../src/utils/googleAuth'
 import { createUuid } from '../src/utils/uuid'
@@ -206,7 +206,7 @@ const RootLayout = () => {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <BottomSheetModalProvider>
         <ColorSchemeProvider>
-          <DebugModeProvider>
+          <CookingModeProvider>
             <PersistQueryClientProvider
               client={queryClient}
               persistOptions={{
@@ -229,7 +229,7 @@ const RootLayout = () => {
                 </ApiClientProvider>
               </I18nextProvider>
             </PersistQueryClientProvider>
-          </DebugModeProvider>
+          </CookingModeProvider>
         </ColorSchemeProvider>
       </BottomSheetModalProvider>
     </GestureHandlerRootView>

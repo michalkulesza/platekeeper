@@ -1,13 +1,13 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
+import { useCookingMode } from '../../context/CookingModeContext'
 
-export const useScreenWakeLock = () => {
-  const [active, setActive] = useState(
-    () => localStorage.getItem('wakelock-default') === '1'
-  )
+export const useScreenWakeLock = (recipeIsOpen: boolean) => {
+  const { enabled: active, setEnabled } = useCookingMode()
   const sentinelRef = useRef<WakeLockSentinel | null>(null)
+  const shouldKeepScreenAwake = active && recipeIsOpen
 
   useEffect(() => {
-    if (!active) {
+    if (!shouldKeepScreenAwake) {
       sentinelRef.current?.release().catch(() => {})
       sentinelRef.current = null
 
@@ -32,13 +32,13 @@ export const useScreenWakeLock = () => {
       sentinelRef.current?.release().catch(() => {})
       sentinelRef.current = null
     }
-  }, [active])
+  }, [shouldKeepScreenAwake])
 
   useEffect(() => {
     const onVisible = () => {
       if (
         document.visibilityState === 'visible' &&
-        active &&
+        shouldKeepScreenAwake &&
         !sentinelRef.current
       ) {
         navigator.wakeLock
@@ -52,11 +52,14 @@ export const useScreenWakeLock = () => {
     document.addEventListener('visibilitychange', onVisible)
 
     return () => document.removeEventListener('visibilitychange', onVisible)
-  }, [active])
+  }, [shouldKeepScreenAwake])
+
+  const toggle = useCallback(() => {
+    setEnabled(!active)
+  }, [active, setEnabled])
 
   return {
     active,
-    toggle: () => setActive((v) => !v),
-    release: () => setActive(false),
+    toggle,
   }
 }

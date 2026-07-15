@@ -23,7 +23,6 @@ import {
   uploadThumbnail,
 } from '../../api/client'
 import AssignToMealPlanModal from '../AssignToMealPlanModal'
-import { useDebugMode } from '../../context/DebugModeContext'
 import {
   applyIngredientReplace,
   applyIngredientRestore,
@@ -67,8 +66,7 @@ const RecipeDetailModal = ({
   scrollToStep,
 }: RecipeDetailModalProps) => {
   const { t } = useTranslation()
-  const { enabled: debugMode } = useDebugMode()
-  const wakeLock = useScreenWakeLock()
+  const wakeLock = useScreenWakeLock(Boolean(recipe))
   const { addItems: addShoppingListItems } = useShoppingList()
   const { preferences } = usePreferences()
   const [mode, setMode] = useState<Mode>('view')
@@ -373,7 +371,6 @@ const RecipeDetailModal = ({
   }
 
   const handleClose = () => {
-    wakeLock.release()
     setMode('view')
     setError(null)
     onClose()
@@ -426,7 +423,6 @@ const RecipeDetailModal = ({
                   onNutritionChange={(field, value) =>
                     setDraft((d) => d && { ...d, [field]: value })
                   }
-                  debugMode={debugMode}
                   wakeLockActive={wakeLock.active}
                   onToggleWakeLock={wakeLock.toggle}
                   fontSizeIndex={fontSizeIndex}
@@ -451,7 +447,8 @@ const RecipeDetailModal = ({
                     saving={notesSaving}
                     fontSizeIndex={fontSizeIndex}
                   />
-                  {mode !== 'editing' && components.length > 1 && (
+
+                  {mode !== 'editing' && components.length > 0 && (
                     <UnifiedIngredientList
                       components={components}
                       unitSystem={preferences?.unit_system ?? 'metric'}
@@ -466,7 +463,6 @@ const RecipeDetailModal = ({
                       fontSizeIndex={fontSizeIndex}
                     />
                   )}
-
 
                   {mode === 'editing'
                     ? components.map((comp, ci) => (
@@ -503,8 +499,10 @@ const RecipeDetailModal = ({
                             handleAddAllIngredients(ci)
                           }
                           fontSizeIndex={fontSizeIndex}
-                          collapsible={components.length > 1}
                           servingScale={servingScale}
+                          collapsible={components.length > 1}
+                          showIngredients={components.length > 1}
+                          showGroupHeader={components.length > 1}
                         />
                       ))}
                 </div>

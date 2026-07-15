@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { ToastProvider } from '@heroui/react'
 import { ApiClientProvider } from '@carrot/shared/api/context'
 import { AuthProvider } from './context/AuthContext'
+import { CookingModeProvider } from './context/CookingModeContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import AppShell from './components/AppShell'
 import LoginPage from './pages/LoginPage'
@@ -18,22 +19,27 @@ const App = () => (
     <ApiClientProvider client={webClient}>
       <BrowserRouter>
         <ToastProvider placement="bottom" />
-        <AuthProvider>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/verify" element={<VerifyPage />} />
-            <Route path="/complete-profile" element={<CompleteProfilePage />} />
-            <Route
-              path="/*"
-              element={
-                <ProtectedRoute>
-                  <AppShell />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </AuthProvider>
+        <CookingModeProvider>
+          <AuthProvider>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/verify" element={<VerifyPage />} />
+              <Route
+                path="/complete-profile"
+                element={<CompleteProfilePage />}
+              />
+              <Route
+                path="/*"
+                element={
+                  <ProtectedRoute>
+                    <AppShell />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </AuthProvider>
+        </CookingModeProvider>
       </BrowserRouter>
     </ApiClientProvider>
   </QueryClientProvider>

@@ -19,7 +19,7 @@ import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { MenuView } from '@react-native-menu/menu'
 import { useAppearanceMode, type AppearanceMode } from '../../context/ColorSchemeContext'
-import { useDebugMode } from '../../context/DebugModeContext'
+import { useCookingMode } from '../../context/CookingModeContext'
 import { usePreferences } from '@carrot/shared/hooks/usePreferences'
 import { useHouseholds } from '@carrot/shared/hooks/useHouseholds'
 import { useApiClient } from '@carrot/shared/api/context'
@@ -34,7 +34,6 @@ import {
   APPEARANCE_OPTIONS,
   DEVELOPER_SETTINGS_EMAIL,
   KEEP_AWAKE_SHOPPING_STORAGE_KEY,
-  KEEP_AWAKE_STORAGE_KEY,
   LANGUAGES,
   WEEK_START_OPTIONS,
 } from './helpers'
@@ -63,14 +62,11 @@ const SettingsScreen = () => {
   const { create: createHousehold } = useHouseholds()
   const api = useApiClient()
   const insets = useSafeAreaInsets()
-  const [cookingMode, setCookingMode] = useState(false)
+  const { enabled: cookingMode, setEnabled: setCookingMode } = useCookingMode()
   const [showStepQty, setShowStepQty] = useState(true)
   const [keepScreenOnShopping, setKeepScreenOnShopping] = useState(false)
 
   useEffect(() => {
-    AsyncStorage.getItem(KEEP_AWAKE_STORAGE_KEY).then((val) => {
-      setCookingMode(val === '1')
-    })
     AsyncStorage.getItem(SHOW_STEP_QTY_STORAGE_KEY).then((val) => {
       if (val !== null) setShowStepQty(val === '1')
     })
@@ -79,10 +75,12 @@ const SettingsScreen = () => {
     })
   }, [])
 
-  const handleCookingModeToggle = useCallback((val: boolean) => {
-    setCookingMode(val)
-    void AsyncStorage.setItem(KEEP_AWAKE_STORAGE_KEY, val ? '1' : '0')
-  }, [])
+  const handleCookingModeToggle = useCallback(
+    (val: boolean) => {
+      setCookingMode(val)
+    },
+    [setCookingMode],
+  )
 
   const handleShowStepQtyToggle = useCallback((val: boolean) => {
     setShowStepQty(val)
@@ -125,7 +123,6 @@ const SettingsScreen = () => {
   )
 
   const { mode: appearanceMode, setMode: setAppearanceMode } = useAppearanceMode()
-  const { enabled: debugMode, setEnabled: setDebugMode } = useDebugMode()
 
   const handleLanguagePicker = useCallback(() => {
     const labels = LANGUAGES.map(({ labelKey }) => t(labelKey))
@@ -439,17 +436,6 @@ const SettingsScreen = () => {
                 </View>
               </View>
             </MenuView>
-            <View style={styles.switchRow}>
-              <View style={styles.switchLabelBlock}>
-                <Text style={styles.switchLabel}>{t('settings.debugMode')}</Text>
-                <Text style={styles.cardDesc}>{t('settings.debugModeDesc')}</Text>
-              </View>
-              <Switch
-                value={debugMode}
-                onValueChange={setDebugMode}
-                accessibilityLabel={t('settings.debugMode')}
-              />
-            </View>
           </View>
         </>
       )}

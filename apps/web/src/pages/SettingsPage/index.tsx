@@ -16,7 +16,7 @@ import {
 } from '../../api/client'
 import { useAuth } from '../../context/AuthContext'
 import { useHousehold } from '../../context/HouseholdContext'
-import { useDebugMode } from '../../context/DebugModeContext'
+import { useCookingMode } from '../../context/CookingModeContext'
 import ProfileSection from './ProfileSection'
 import StatsSection from './StatsSection'
 import HouseholdsSection from './HouseholdsSection'
@@ -47,10 +47,8 @@ const SettingsPage = ({
   const { households, activeHouseholdId, activeHousehold, refetchHouseholds } =
     useHousehold()
   const { t } = useTranslation()
-  const { enabled: debugMode, setEnabled: setDebugMode } = useDebugMode()
-  const [wakeLockDefault, setWakeLockDefault] = useState(
-    () => localStorage.getItem('wakelock-default') === '1'
-  )
+  const { enabled: wakeLockDefault, setEnabled: setWakeLockDefault } =
+    useCookingMode()
   const [loggingOut, setLoggingOut] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [importing, setImporting] = useState(false)
@@ -182,8 +180,6 @@ const SettingsPage = ({
           onPreferencesChange={onPreferencesChange}
           wakeLockDefault={wakeLockDefault}
           onWakeLockDefaultChange={setWakeLockDefault}
-          debugMode={debugMode}
-          onDebugModeChange={setDebugMode}
         />
 
         <TimerSettingsSection />
