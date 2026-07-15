@@ -28,7 +28,6 @@ Items are grouped by purpose and ordered from highest to lowest importance withi
 
 ## Experience and product polish
 
-- [ ] **Meal-plan search drawer ignores top safe area** — While searching in the meal plan, the drawer expands too high and overlaps the top safe area; constrain it to respect the safe zone.
 - [ ] **Restyle meal-plan day search drawer** — When tapping a day in the meal plan, the drawer's search field should match the rounded native search styling used on the recipe page.
 - [ ] **Review dark mode** — Fix automatic appearance detection and verify all screens in dark mode.
 - [ ] **Haptics and native context menus** — Add meaningful haptic feedback and long-press recipe actions (favourite, plan, share, delete) with a peek preview.
@@ -37,6 +36,7 @@ Items are grouped by purpose and ordered from highest to lowest importance withi
 - [ ] **Simplify tags and allergens** — Remove custom tags and allergens if the predefined systems provide a clearer product experience.
 - [x] **When loading from an empty state** — Wait for authentication before loading recipes and the next planned meal, rather than showing an unauthenticated error.
 - [x] **Correct household recipe contributor avatars** — Show the actual contributor alongside the household avatar when the recipe is also in a personal library.
+- [x] **Respect the safe area in meal-plan search** — Bound the picker drawer’s keyboard-expanded range to the device safe area.
 
 ## Quality, release, and growth
 

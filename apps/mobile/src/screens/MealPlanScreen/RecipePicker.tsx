@@ -2,6 +2,7 @@ import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState
 import { ListRenderItemInfo, PlatformColor, Pressable, Text, View } from 'react-native'
 import { BottomSheetModal, BottomSheetFlatList, BottomSheetTextInput, BottomSheetBackdrop, type BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { useTranslation } from 'react-i18next'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import type { RecipeOut } from '@carrot/shared/types'
 import NetworkImage from '../../components/NetworkImage'
 import { proxyThumbnailUrl } from '../../api/thumbnailUrl'
@@ -30,6 +31,7 @@ const RecipePicker = forwardRef<RecipePickerHandle, RecipePickerProps>(({
   onClose,
 }, ref) => {
   const { t } = useTranslation()
+  const insets = useSafeAreaInsets()
   const [search, setSearch] = useState('')
   const sheetRef = useRef<BottomSheetModal>(null)
 
@@ -114,6 +116,8 @@ const RecipePicker = forwardRef<RecipePickerHandle, RecipePickerProps>(({
       snapPoints={SNAP_POINTS}
       enableDynamicSizing={false}
       enablePanDownToClose
+      topInset={insets.top}
+      bottomInset={insets.bottom}
       onDismiss={handleClose}
       backdropComponent={renderBackdrop}
       backgroundStyle={styles.sheetBackground}
