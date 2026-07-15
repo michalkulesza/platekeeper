@@ -40,6 +40,7 @@ export const styles = StyleSheet.create({
     height: 34,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: -2,
   },
   titleLinkWrap: {
     flex: 1,
