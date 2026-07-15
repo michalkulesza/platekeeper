@@ -28,7 +28,6 @@ Items are grouped by purpose and ordered from highest to lowest importance withi
 
 ## Experience and product polish
 
-- [ ] **Restyle meal-plan day search drawer** — When tapping a day in the meal plan, the drawer's search field should match the rounded native search styling used on the recipe page.
 - [ ] **Review dark mode** — Fix automatic appearance detection and verify all screens in dark mode.
 - [ ] **Haptics and native context menus** — Add meaningful haptic feedback and long-press recipe actions (favourite, plan, share, delete) with a peek preview.
 - [ ] **Delightful empty and loading states** — Extend shimmers to recipe lists and meal plans; add friendly empty states, restrained Carrot mascot moments, import-stage animation, haptics, and completion feedback.
@@ -37,6 +36,7 @@ Items are grouped by purpose and ordered from highest to lowest importance withi
 - [x] **When loading from an empty state** — Wait for authentication before loading recipes and the next planned meal, rather than showing an unauthenticated error.
 - [x] **Correct household recipe contributor avatars** — Show the actual contributor alongside the household avatar when the recipe is also in a personal library.
 - [x] **Respect the safe area in meal-plan search** — Bound the picker drawer’s keyboard-expanded range to the device safe area.
+- [x] **Use native-style meal-plan search** — Match the picker drawer’s search field to the rounded, borderless recipe-library search bar.
 
 ## Quality, release, and growth
 

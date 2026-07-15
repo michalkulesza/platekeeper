@@ -1,6 +1,7 @@
 import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import { ListRenderItemInfo, PlatformColor, Pressable, Text, View } from 'react-native'
 import { BottomSheetModal, BottomSheetFlatList, BottomSheetTextInput, BottomSheetBackdrop, type BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
+import { Ionicons } from '@expo/vector-icons'
 import { useTranslation } from 'react-i18next'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import type { RecipeOut } from '@carrot/shared/types'
@@ -123,16 +124,19 @@ const RecipePicker = forwardRef<RecipePickerHandle, RecipePickerProps>(({
       backgroundStyle={styles.sheetBackground}
       handleIndicatorStyle={styles.sheetHandle}
     >
-      <BottomSheetTextInput
-        style={styles.pickerSearch}
-        placeholder={t('mealPlan.searchRecipes')}
-        placeholderTextColor={PlatformColor('placeholderText') as unknown as string}
-        value={search}
-        onChangeText={setSearch}
-        autoCapitalize="none"
-        clearButtonMode="while-editing"
-        accessibilityLabel={t('mealPlan.searchRecipes')}
-      />
+      <View style={styles.pickerSearchContainer}>
+        <Ionicons name="search" size={17} color={PlatformColor('secondaryLabel') as unknown as string} />
+        <BottomSheetTextInput
+          style={styles.pickerSearch}
+          placeholder={t('mealPlan.searchRecipes')}
+          placeholderTextColor={PlatformColor('placeholderText') as unknown as string}
+          value={search}
+          onChangeText={setSearch}
+          autoCapitalize="none"
+          clearButtonMode="while-editing"
+          accessibilityLabel={t('mealPlan.searchRecipes')}
+        />
+      </View>
 
       {currentRecipeId && (
         <Pressable
