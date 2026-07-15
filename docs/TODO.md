@@ -29,6 +29,7 @@ Items are grouped by purpose and ordered from highest to lowest importance withi
 
 ## Experience and product polish
 
+- [ ] **Move add recipe to bottom drawer**
 - [ ] **Anythign to do with top position px that is a hook that takes a while to reload ie jump when importing via share**
 - [ ] **Simplify tags and allergens** — Remove custom tags and allergens if the predefined systems provide a clearer product experience.
 - [ ] **Haptics and native context menus** — Add meaningful haptic feedback and long-press recipe actions (favourite, plan, share, delete) with a peek preview.
@@ -38,7 +39,7 @@ Items are grouped by purpose and ordered from highest to lowest importance withi
 - [x] **Correct household recipe contributor avatars** — Show the actual contributor alongside the household avatar when the recipe is also in a personal library.
 - [x] **Respect the safe area in meal-plan search** — Bound the picker drawer’s keyboard-expanded range to the device safe area.
 - [x] **Use native-style meal-plan search** — Match the picker drawer’s search field to the rounded, borderless recipe-library search bar.
-- [x] **Review dark mode** — Fix automatic appearance detection and verify all screens in dark mode.
+- [x] **Review dark mode** — Fix automati/clearc appearance detection and verify all screens in dark mode.
 
 ## Quality, release, and growth
 
