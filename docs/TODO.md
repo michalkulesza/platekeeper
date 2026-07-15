@@ -28,7 +28,6 @@ Items are grouped by purpose and ordered from highest to lowest importance withi
 
 ## Experience and product polish
 
-- [ ] **Wrong "added by" avatar for household recipes** — When another household member added a recipe that also exists in my personal library, it shows my avatar as the one who added it instead of the actual user; show the correct user's avatar alongside the household avatar.
 - [ ] **Meal-plan search drawer ignores top safe area** — While searching in the meal plan, the drawer expands too high and overlaps the top safe area; constrain it to respect the safe zone.
 - [ ] **Restyle meal-plan day search drawer** — When tapping a day in the meal plan, the drawer's search field should match the rounded native search styling used on the recipe page.
 - [ ] **Review dark mode** — Fix automatic appearance detection and verify all screens in dark mode.
@@ -37,6 +36,7 @@ Items are grouped by purpose and ordered from highest to lowest importance withi
 - [ ] **Colours and themes** — Define and apply a cohesive theme system.
 - [ ] **Simplify tags and allergens** — Remove custom tags and allergens if the predefined systems provide a clearer product experience.
 - [x] **When loading from an empty state** — Wait for authentication before loading recipes and the next planned meal, rather than showing an unauthenticated error.
+- [x] **Correct household recipe contributor avatars** — Show the actual contributor alongside the household avatar when the recipe is also in a personal library.
 
 ## Quality, release, and growth
 

@@ -35,6 +35,11 @@ const HouseholdAvatarIndicators = ({
   const { user } = useAuth()
   const { households } = useHousehold()
   const personalName = user?.nickname || user?.email || t('households.personal')
+  const contributorName = recipe.household_id
+    ? (recipe.added_by ?? personalName)
+    : personalName
+  const contributorTooltip =
+    recipe.added_by ?? t('households.personalHousehold')
   const recipeHousehold = recipe.household_id
     ? households.find((household) => household.id === recipe.household_id)
     : undefined
@@ -45,8 +50,8 @@ const HouseholdAvatarIndicators = ({
         ? [
             {
               id: 'personal',
-              name: personalName,
-              tooltip: t('households.personalHousehold'),
+              name: contributorName,
+              tooltip: contributorTooltip,
             },
           ]
         : []),
@@ -62,11 +67,11 @@ const HouseholdAvatarIndicators = ({
         : []),
     ],
     [
-      personalName,
+      contributorName,
+      contributorTooltip,
       recipe.household_id,
       recipe.shared_to_personal,
       recipeHousehold,
-      t,
     ]
   )
   const avatarClassName =

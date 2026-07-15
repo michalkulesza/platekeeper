@@ -488,9 +488,10 @@ const RecipesScreen = () => {
         ? households.find((candidate) => candidate.id === recipe.household_id)
         : undefined
       const avatars = []
+      const contributorName = recipe.household_id ? recipe.added_by ?? personalName : personalName
 
       if (!recipe.household_id || recipe.shared_to_personal) {
-        avatars.push({ key: 'personal', name: personalName })
+        avatars.push({ key: 'personal', name: contributorName })
       }
       if (household) {
         avatars.push({ key: household.id, name: household.name, color: household.color })

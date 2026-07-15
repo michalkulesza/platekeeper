@@ -84,6 +84,8 @@ const ReadView = ({
   const hasImage = !!recipe.thumbnail_url
   const hasScalableServings = recipe.servings !== null && recipe.servings > 0
   const personalName = user?.nickname || user?.email || t('households.personal')
+  const contributorName = recipe.household_id ? recipe.added_by ?? personalName : personalName
+  const contributorTooltip = recipe.added_by ?? t('households.personalHousehold')
   const [openHouseholdAvatar, setOpenHouseholdAvatar] = useState<string | null>(null)
   const servingScale = recipe.servings && selectedServings
     ? selectedServings / recipe.servings
@@ -91,7 +93,7 @@ const ReadView = ({
   const recipeHousehold = recipe.household_id ? households.find((h) => h.id === recipe.household_id) : undefined
   const householdAvatars = [
     ...(!recipe.household_id || recipe.shared_to_personal
-      ? [{ key: 'personal', name: personalName, tooltip: t('households.personalHousehold') }]
+      ? [{ key: 'personal', name: contributorName, tooltip: contributorTooltip }]
       : []),
     ...(recipeHousehold
       ? [{ key: recipeHousehold.id, name: recipeHousehold.name, color: recipeHousehold.color, tooltip: recipeHousehold.name }]
