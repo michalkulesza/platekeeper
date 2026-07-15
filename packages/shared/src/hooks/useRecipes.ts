@@ -2,11 +2,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useApiClient } from '../api/context'
 import type { RecipeOut, RecipeSaveRequest } from '../types'
 
-export const useRecipes = () => {
+export const useRecipes = (enabled = true) => {
   const api = useApiClient()
   const qc = useQueryClient()
 
-  const query = useQuery({ queryKey: ['recipes'], queryFn: api.listRecipes })
+  const query = useQuery({ queryKey: ['recipes'], queryFn: api.listRecipes, enabled })
 
   const create = useMutation({
     mutationFn: api.saveRecipe,

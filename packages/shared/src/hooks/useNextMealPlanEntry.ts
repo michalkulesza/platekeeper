@@ -10,7 +10,7 @@ const millisecondsUntilLocalMidnight = (): number => {
   return midnight.getTime() - now.getTime()
 }
 
-export const useNextMealPlanEntry = () => {
+export const useNextMealPlanEntry = (enabled = true) => {
   const api = useApiClient()
   const [todayIso, setTodayIso] = useState(() => toISODate(new Date()))
 
@@ -25,6 +25,7 @@ export const useNextMealPlanEntry = () => {
   const query = useQuery({
     queryKey: ['mealPlan', 'next', todayIso],
     queryFn: () => api.getNextMealPlanEntry(todayIso),
+    enabled,
   })
 
   return {

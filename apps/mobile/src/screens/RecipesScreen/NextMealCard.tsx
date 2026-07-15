@@ -10,10 +10,14 @@ import { colors } from '../../theme/colors'
 import ThumbnailImage from './ThumbnailImage'
 import { styles } from './styles'
 
-const NextMealCard = () => {
+interface NextMealCardProps {
+  enabled: boolean
+}
+
+const NextMealCard = ({ enabled }: NextMealCardProps) => {
   const router = useRouter()
   const { t, i18n } = useTranslation()
-  const { entry, todayIso, isLoading, error, refetch } = useNextMealPlanEntry()
+  const { entry, todayIso, isLoading, error, refetch } = useNextMealPlanEntry(enabled)
 
   const handleOpen = useCallback(async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
@@ -45,7 +49,7 @@ const NextMealCard = () => {
     [],
   )
 
-  if (isLoading) {
+  if (!enabled || isLoading) {
     return (
       <View
         style={[styles.nextMealCard, styles.nextMealSkeleton]}

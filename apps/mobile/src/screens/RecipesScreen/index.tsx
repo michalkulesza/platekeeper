@@ -87,13 +87,14 @@ const RecipesScreen = () => {
       }
     })
   }, [])
-  const { recipes, isLoading, isFetching, error } = useRecipes()
+  const { user, loading: authLoading } = useAuth()
+  const dataQueriesEnabled = !authLoading && user !== null
+  const { recipes, isLoading, isFetching, error } = useRecipes(dataQueriesEnabled)
   const [switchingHousehold, setSwitchingHousehold] = useState(false)
   const householdFetchStartedRef = useRef(false)
   const { busy, showSpinner } = useScreenLoading(isLoading || switchingHousehold)
   const { tags } = useTags()
   const { households, activeHouseholdId, activeHousehold, switchHousehold } = useHousehold()
-  const { user } = useAuth()
   const api = useApiClient()
   const qc = useQueryClient()
   const personalName = useMemo(() => user?.nickname || user?.email || t('households.personal'), [user, t])
@@ -728,7 +729,7 @@ const RecipesScreen = () => {
           {groupedFilterTags.other.length > 0 && <View style={styles.tagBarDivider} />}
           {groupedFilterTags.other.map(renderTag)}
         </ScrollView>
-        <NextMealCard />
+        <NextMealCard enabled={dataQueriesEnabled} />
       </Reanimated.View>
       <FloatingAddButton accessibilityLabel={t('nav.addRecipe')} />
     </View>
