@@ -186,6 +186,30 @@ def test_assembled_recipe_retains_source_fields_exactly() -> None:
     assert assembled.tags == ["soup"]
 
 
+def test_enrichment_preserves_tsp_and_tbsp_in_both_unit_variants() -> None:
+    source = RecipeSourceExtraction.model_validate({
+        "components": [{
+            "ingredients": [
+                {"qty": "1", "unit": "tsp", "name": "vanilla extract"},
+                {"qty": "2", "unit": "tbsp", "name": "olive oil"},
+            ],
+        }],
+    })
+    enrichment = RecipeEnrichment.model_validate(_enrichment_payload(components=[{
+        "metric_ingredients": ["5 ml vanilla extract", "30 ml olive oil"],
+        "imperial_ingredients": ["1 tsp vanilla extract", "2 tbsp olive oil"],
+        "metric_steps": [],
+        "imperial_steps": [],
+        "shopping_list_values": ["1 tsp vanilla extract", "2 tbsp olive oil"],
+    }]))
+
+    repaired = gemini._repair_enrichment_alignment(source, enrichment)
+    component = repaired.components[0]
+
+    assert component.metric_ingredients == ["1 tsp vanilla extract", "2 tbsp olive oil"]
+    assert component.imperial_ingredients == ["1 tsp vanilla extract", "2 tbsp olive oil"]
+
+
 def test_assemble_recipe_rejects_mismatched_component_count() -> None:
     source = _one_component_source()
     enrichment = RecipeEnrichment.model_validate(_enrichment_payload(components=[]))
@@ -239,8 +263,8 @@ def test_strip_html_preserves_structural_container_with_noise_named_theme_class(
 @pytest.mark.asyncio
 async def test_estimate_unit_variants_uses_shared_conversion_contract(monkeypatch) -> None:
     generate_content = Mock(return_value=_response({"components": [{
-        "metric_ingredients": ["1 onion"],
-        "imperial_ingredients": ["1 onion"],
+        "metric_ingredients": ["5 ml vanilla"],
+        "imperial_ingredients": ["5 ml vanilla"],
         "metric_steps": ["Chop."],
         "imperial_steps": ["Chop."],
     }]}))
@@ -248,13 +272,15 @@ async def test_estimate_unit_variants_uses_shared_conversion_contract(monkeypatc
     monkeypatch.setattr(gemini, "_build_client", lambda: client)
 
     usage = gemini.UsageTracker()
-    await gemini.estimate_unit_variants(
-        [{"name": "main", "ingredients": ["1 onion"], "steps": ["Chop."]}], usage=usage
+    result = await gemini.estimate_unit_variants(
+        [{"name": "main", "ingredients": ["1 tsp vanilla"], "steps": ["Chop."]}], usage=usage
     )
 
     call = generate_content.call_args
     assert call.kwargs["config"].temperature == 0
     assert call.kwargs["config"].system_instruction == gemini._UNIT_CONVERSION_SYSTEM
+    assert result.components[0].metric_ingredients == ["1 tsp vanilla"]
+    assert result.components[0].imperial_ingredients == ["1 tsp vanilla"]
     assert usage.calls == 1
 
 

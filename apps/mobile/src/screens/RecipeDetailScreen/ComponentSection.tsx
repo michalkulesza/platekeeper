@@ -45,7 +45,7 @@ const ComponentSection = ({
   showGroupHeader?: boolean
 }) => {
   const { t } = useTranslation()
-  const [expanded, setExpanded] = useState(!collapsible)
+  const [ingredientsExpanded, setIngredientsExpanded] = useState(!collapsible)
   const ingredientValues = unitSystem === 'imperial'
     ? component.imperial_ingredients ?? component.ingredients
     : component.metric_ingredients ?? component.ingredients
@@ -100,15 +100,15 @@ const ComponentSection = ({
     <View style={styles.componentBlock}>
       {showGroupHeader && collapsible ? (
         <Pressable
-          onPress={() => setExpanded((current) => !current)}
+          onPress={() => setIngredientsExpanded((current) => !current)}
           style={styles.componentToggle}
           accessibilityLabel={groupName}
           accessibilityRole="button"
-          accessibilityState={{ expanded }}
+          accessibilityState={{ expanded: ingredientsExpanded }}
         >
           <Text style={styles.componentToggleText}>{groupName}</Text>
           <Feather
-            name={expanded ? 'chevron-up' : 'chevron-down'}
+            name={ingredientsExpanded ? 'chevron-up' : 'chevron-down'}
             size={22}
             color={colors.label}
           />
@@ -117,7 +117,7 @@ const ComponentSection = ({
         <Text style={styles.componentName}>{capitalizeFirst(component.name)}</Text>
       ) : null}
 
-      {showIngredients && expanded && ingredients.length > 0 && (
+      {showIngredients && ingredientsExpanded && ingredients.length > 0 && (
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionLabel}>{t('recipes.sectionIngredients')}</Text>
@@ -150,7 +150,7 @@ const ComponentSection = ({
         </View>
       )}
 
-      {expanded && steps.length > 0 && (
+      {steps.length > 0 && (
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>{t('recipes.steps')}</Text>
           {steps.map((step, i) => (

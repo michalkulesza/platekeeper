@@ -500,7 +500,7 @@ const RecipeDetailModal = ({
                           }
                           fontSizeIndex={fontSizeIndex}
                           servingScale={servingScale}
-                          collapsible={components.length > 1}
+                          collapsible={components.length > 1 && ci > 0}
                           showIngredients={components.length > 1}
                           showGroupHeader={components.length > 1}
                         />

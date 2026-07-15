@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import re
 from typing import Callable, TypeVar
 
 from google import genai
@@ -103,10 +104,11 @@ Convert recipe units into metric and imperial variants. Return the same number o
 components as the input, in the same order. For every component, return BOTH unit
 variants in parallel arrays:
 - metric_ingredients and metric_steps: use grams/kilograms/millilitres/litres and
-  Celsius. Convert every cup measurement to an ingredient-specific whole gram
-  value; never use a range.
+  Celsius where applicable. Preserve every tsp and tbsp measurement exactly as
+  stated; do not convert either unit to grams or millilitres. Convert every cup
+  measurement to an ingredient-specific whole gram value; never use a range.
 - imperial_ingredients and imperial_steps: use cups/tbsp/tsp where practical and
-  Fahrenheit.
+  Fahrenheit. Preserve every tsp and tbsp measurement exactly as stated.
 Each variant array must have the same number of entries and order as the
 component's source ingredients or steps. Preserve ingredient names and cooking
 instructions; change only units, amounts, and temperatures in the variant
@@ -183,6 +185,16 @@ def _source_ingredient_display(ingredient) -> str:
     return " ".join(part for part in (ingredient.qty, ingredient.unit, ingredient.name) if part)
 
 
+_SPOON_UNIT_PATTERN = re.compile(r"\b(?:tsp|tbsp)\b", re.IGNORECASE)
+
+
+def _preserve_spoon_measurements(source_ingredients: list[str], variant_ingredients: list[str]) -> list[str]:
+    return [
+        source_ingredient if _SPOON_UNIT_PATTERN.search(source_ingredient) else variant_ingredient
+        for source_ingredient, variant_ingredient in zip(source_ingredients, variant_ingredients)
+    ]
+
+
 def _repair_enrichment_alignment(
     source: RecipeSourceExtraction,
     enrichment: RecipeEnrichment,
@@ -217,13 +229,16 @@ def _repair_enrichment_alignment(
         if len(valid_step_refs) != len(component.step_refs):
             repairs.append(f"component {index} contains out-of-range step_refs")
 
+        metric_ingredients = aligned_or_fallback(
+            "metric_ingredients", component.metric_ingredients, ingredient_fallback,
+        )
+        imperial_ingredients = aligned_or_fallback(
+            "imperial_ingredients", component.imperial_ingredients, ingredient_fallback,
+        )
+
         repaired_components.append(component.model_copy(update={
-            "metric_ingredients": aligned_or_fallback(
-                "metric_ingredients", component.metric_ingredients, ingredient_fallback,
-            ),
-            "imperial_ingredients": aligned_or_fallback(
-                "imperial_ingredients", component.imperial_ingredients, ingredient_fallback,
-            ),
+            "metric_ingredients": _preserve_spoon_measurements(ingredient_fallback, metric_ingredients),
+            "imperial_ingredients": _preserve_spoon_measurements(ingredient_fallback, imperial_ingredients),
             "shopping_list_values": aligned_or_fallback(
                 "shopping_list_values", component.shopping_list_values, ingredient_fallback,
             ),
@@ -473,7 +488,30 @@ async def estimate_unit_variants(
     )
     if usage is not None:
         usage.add(response)
-    return RecipeUnitVariants.model_validate(json.loads(response.text))
+    variants = RecipeUnitVariants.model_validate(json.loads(response.text))
+    repaired_components = list(variants.components)
+    for index, source_component in enumerate(components):
+        if index >= len(variants.components):
+            break
+
+        variant_component = variants.components[index]
+        source_ingredients = source_component.get("ingredients", [])
+        if (
+            len(source_ingredients) != len(variant_component.metric_ingredients)
+            or len(source_ingredients) != len(variant_component.imperial_ingredients)
+        ):
+            continue
+
+        repaired_components[index] = variant_component.model_copy(update={
+            "metric_ingredients": _preserve_spoon_measurements(
+                source_ingredients, variant_component.metric_ingredients,
+            ),
+            "imperial_ingredients": _preserve_spoon_measurements(
+                source_ingredients, variant_component.imperial_ingredients,
+            ),
+        })
+
+    return variants.model_copy(update={"components": repaired_components})
 
 
 class _IngredientFlag(BaseModel):

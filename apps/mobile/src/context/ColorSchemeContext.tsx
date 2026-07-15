@@ -10,7 +10,7 @@ type ColorSchemeContextValue = {
 }
 
 const ColorSchemeContext = createContext<ColorSchemeContextValue>({
-  mode: 'system',
+  mode: 'light',
   setMode: () => {},
 })
 
@@ -22,10 +22,10 @@ const applyAppearanceMode = (mode: AppearanceMode) => {
 }
 
 export const ColorSchemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const [mode, setModeState] = useState<AppearanceMode>('system')
+  const [mode, setModeState] = useState<AppearanceMode>('light')
 
   useLayoutEffect(() => {
-    applyAppearanceMode('system')
+    applyAppearanceMode('light')
   }, [])
 
   useEffect(() => {

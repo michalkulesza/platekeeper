@@ -60,7 +60,7 @@ const ViewComponent = ({
   showGroupHeader = true,
 }: ViewComponentProps) => {
   const { t } = useTranslation()
-  const [expanded, setExpanded] = useState(!collapsible)
+  const [ingredientsExpanded, setIngredientsExpanded] = useState(!collapsible)
   const ingredients = useMemo(
     () => getScaledIngredientValues(comp, unitSystem, servingScale),
     [comp, servingScale, unitSystem]
@@ -87,12 +87,12 @@ const ViewComponent = ({
       {showGroupHeader && collapsible ? (
         <button
           type="button"
-          onClick={() => setExpanded((current) => !current)}
-          aria-expanded={expanded}
+          onClick={() => setIngredientsExpanded((current) => !current)}
+          aria-expanded={ingredientsExpanded}
           className="w-full min-h-11 flex items-center justify-between text-left text-sm font-semibold text-zinc-600"
         >
           <span>{comp.name || t('recipes.sectionIngredients')}</span>
-          {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          {ingredientsExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
         </button>
       ) : (
         showGroupHeader && !single && (
@@ -101,7 +101,7 @@ const ViewComponent = ({
           </h3>
         )
       )}
-      {showIngredients && expanded && ingredients.length > 0 && (
+      {showIngredients && ingredientsExpanded && ingredients.length > 0 && (
         <>
           <div className="flex items-center justify-between mb-1">
             <p className="text-xs font-semibold uppercase text-zinc-400">
@@ -185,7 +185,7 @@ const ViewComponent = ({
           </ul>
         </>
       )}
-      {expanded && steps.length > 0 && (
+      {steps.length > 0 && (
         <>
           <p className="text-xs font-semibold uppercase text-zinc-400 mb-1">
             {t('recipes.steps')}
