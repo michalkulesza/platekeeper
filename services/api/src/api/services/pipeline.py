@@ -28,14 +28,19 @@ log = logging.getLogger(__name__)
 IMPORT_ERROR_CODE = "extraction_failed"
 
 
+# Reused across calls: opening a new CurlAsyncSession per request under
+# concurrency caused severe contention (requests timing out after 15-30s that
+# resolve in well under a second on a shared session).
+_curl_session = CurlAsyncSession()
+
+
 async def _fetch_html(url: str) -> str:
     # Recipe sites (notably Shopify-hosted ones like andy-cooks.com) fingerprint
     # the TLS handshake and block plain httpx/requests clients with a 429 even
     # with a browser User-Agent header, so impersonate a real Chrome client.
-    async with CurlAsyncSession() as client:
-        r = await client.get(url, impersonate="chrome", timeout=15, allow_redirects=True)
-        r.raise_for_status()
-        return r.text
+    r = await _curl_session.get(url, impersonate="chrome", timeout=15, allow_redirects=True)
+    r.raise_for_status()
+    return r.text
 
 
 async def _run_gemini(
