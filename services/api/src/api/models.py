@@ -34,14 +34,6 @@ class UnitEnum(StrEnum):
 
 # ── Allergen helpers ──────────────────────────────────────────────────────────
 
-class AllergenData(BaseModel):
-    predefined: list[str] = []
-    custom: list[str] = []
-
-    def all_allergens(self) -> list[str]:
-        return self.predefined + self.custom
-
-
 class AllergenFlag(BaseModel):
     allergen: str | None = None
     substitute: str | None = None
@@ -83,7 +75,7 @@ class Household(Base):
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     color: Mapped[str] = mapped_column(String(20), nullable=False, default="#6366f1")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    allergens: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    allergens: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
 
 
 class HouseholdMember(Base):
@@ -169,13 +161,6 @@ class Tag(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(30), nullable=False)
-    is_default: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    user_id: Mapped[uuid.UUID | None] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=True
-    )
-    household_id: Mapped[uuid.UUID | None] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("households.id", ondelete="CASCADE"), nullable=True
-    )
     category: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
 
@@ -332,8 +317,6 @@ class TagOut(BaseModel):
 
     id: uuid.UUID
     name: str
-    is_default: bool
-    household_id: uuid.UUID | None = None
     category: str | None = None
 
 
@@ -473,7 +456,7 @@ class UserPreferences(Base):
     )
     week_start_day: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     auto_substitute: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    personal_allergens: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    personal_allergens: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     language: Mapped[str] = mapped_column(String(10), default="en", nullable=False)
     unit_system: Mapped[str] = mapped_column(String(20), default="metric", nullable=False)
     share_imports_to_personal: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
@@ -484,7 +467,7 @@ class UserPreferencesOut(BaseModel):
 
     week_start_day: int
     auto_substitute: bool = False
-    personal_allergens: dict | None = None
+    personal_allergens: list[str] | None = None
     language: str = "en"
     unit_system: str = "metric"
     share_imports_to_personal: bool = False
@@ -493,7 +476,7 @@ class UserPreferencesOut(BaseModel):
 class UserPreferencesUpdate(BaseModel):
     week_start_day: int | None = None
     auto_substitute: bool | None = None
-    personal_allergens: dict | None = None
+    personal_allergens: list[str] | None = None
     language: str | None = None
     unit_system: str | None = None
     share_imports_to_personal: bool | None = None

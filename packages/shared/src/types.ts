@@ -6,10 +6,6 @@ export const UNITS = [
 
 export type Unit = typeof UNITS[number]
 
-export interface AllergenData {
-  predefined: string[]
-  custom: string[]
-}
 export interface AllergenFlag {
   allergen: string | null
   substitute: string | null
@@ -51,8 +47,6 @@ export type TagCategory = 'protein' | 'carb' | 'cuisine' | 'time'
 export interface Tag {
   id: string
   name: string
-  is_default: boolean
-  household_id: string | null
   category: TagCategory | null
 }
 
@@ -220,7 +214,7 @@ export interface MealPlanEntry {
 export interface UserPreferences {
   week_start_day: number // 0=Sun 1=Mon 6=Sat
   auto_substitute: boolean
-  personal_allergens: AllergenData | null
+  personal_allergens: string[] | null
   language: string
   unit_system: string // "metric" | "imperial"
   share_imports_to_personal: boolean
@@ -238,7 +232,7 @@ export interface HouseholdOut {
   name: string
   color: string
   created_at: string
-  allergens: AllergenData | null
+  allergens: string[] | null
 }
 
 export interface MemberOut {

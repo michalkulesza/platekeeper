@@ -20,6 +20,25 @@ export const getHeaderBg = (mode: Mode): string => {
   return 'transition-colors duration-200'
 }
 
+// Recipe-level allergen badges are derived from the per-ingredient flags
+// Gemini already computed against the full predefined allergen list at
+// import time — no extra call needed to know what's in a recipe.
+export const getRecipeAllergens = (recipe: RecipeOut): string[] => {
+  const seen = new Set<string>()
+  const allergens: string[] = []
+  for (const component of recipe.components as SaveComponent[]) {
+    for (const flag of component.ingredient_flags ?? []) {
+      if (!flag.allergen || flag.substitute_applied) continue
+      const key = flag.allergen.toLowerCase()
+      if (seen.has(key)) continue
+      seen.add(key)
+      allergens.push(flag.allergen)
+    }
+  }
+
+  return allergens
+}
+
 export interface EditState {
   title: string
   servings: string

@@ -66,6 +66,20 @@ export const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   tagText: { color: colors.brand, fontSize: 12, fontWeight: '500' },
+  allergenBadgeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 12,
+  },
+  allergenBadgePill: {
+    flexDirection: 'row',
+    backgroundColor: '#fef3c7',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  allergenBadgeText: { fontSize: 12, fontWeight: '500', color: '#92400e' },
   householdRow: {
     flexDirection: 'row',
     alignItems: 'center',

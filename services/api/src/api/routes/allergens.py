@@ -9,8 +9,9 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.constants import ALLERGENS
 from api.database import get_async_session
-from api.models import AllergenFlag, Household, Recipe, UserPreferences
+from api.models import AllergenFlag, Recipe
 from api.routes.context import get_active_household_id
 from api.services import gemini as gemini_svc
 from api.users import User, current_active_user
@@ -38,21 +39,6 @@ async def reanalyze_allergens(
     household_id: uuid.UUID | None = Depends(get_active_household_id),
     session: AsyncSession = Depends(get_async_session),
 ) -> StreamingResponse:
-    allergens: list[str] = []
-    if household_id:
-        household = await session.get(Household, household_id)
-        if household and household.allergens:
-            a = household.allergens
-            allergens = list(a.get("predefined") or []) + list(a.get("custom") or [])
-    else:
-        prefs_result = await session.execute(
-            select(UserPreferences).where(UserPreferences.user_id == user.id)
-        )
-        prefs = prefs_result.scalar_one_or_none()
-        if prefs and prefs.personal_allergens:
-            a = prefs.personal_allergens
-            allergens = list(a.get("predefined") or []) + list(a.get("custom") or [])
-
     if household_id:
         query = select(Recipe).where(Recipe.household_id == household_id)
     else:
@@ -70,9 +56,9 @@ async def reanalyze_allergens(
                 components = list(recipe.components) if recipe.components else []
                 flat = _get_ingredient_strings(components)
 
-                if flat and allergens:
+                if flat:
                     ing_strings = [s for _, _, s in flat]
-                    flags = await gemini_svc.analyze_allergens(ing_strings, allergens)
+                    flags = await gemini_svc.analyze_allergens(ing_strings, ALLERGENS)
 
                     new_components = [dict(c) if isinstance(c, dict) else c for c in components]
                     for (ci, ii, _), flag in zip(flat, flags):

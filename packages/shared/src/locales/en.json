@@ -254,8 +254,6 @@
     "allergenDisclaimer": "Allergen flags are AI-assisted estimates, not a substitute for reading full ingredient labels.",
     "allergens": "Allergens",
     "intolerances": "Intolerances",
-    "custom": "Custom",
-    "customPlaceholder": "e.g. nightshades",
     "allergensSaved": "Allergens saved",
     "failedToSave": "Failed to save",
     "reAnalyzeRecipes": "Re-analyze recipes",

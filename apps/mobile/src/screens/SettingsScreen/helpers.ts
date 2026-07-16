@@ -25,17 +25,6 @@ export const APPEARANCE_OPTIONS: { value: AppearanceMode; labelKey: string }[] =
 
 export const DEVELOPER_SETTINGS_EMAIL = 'kulesza.michal@gmail.com'
 
-export const ALLERGEN_KEYS = [
-  'gluten', 'crustaceans', 'tree nuts', 'celery', 'mustard',
-  'sulphites', 'lupin', 'molluscs', 'eggs', 'fish',
-  'peanuts', 'soybeans', 'milk', 'sesame',
-]
-
-export const INTOLERANCE_KEYS = [
-  'lactose', 'ncgs', 'fructose', 'histamine', 'fodmap',
-  'caffeine', 'sulphite-sensitivity', 'sorbitol', 'salicylates', 'msg',
-]
-
 export const iKey = (k: string) => k.replace(/[- ]/g, '_')
 
 export const KEEP_AWAKE_STORAGE_KEY = 'recipe-keep-screen-default'

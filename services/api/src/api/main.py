@@ -84,12 +84,12 @@ async def _seed_demo_user() -> None:
 
 async def _seed_default_tags() -> None:
     async with async_session_maker() as session:
-        existing = await session.execute(select(Tag).where(Tag.is_default.is_(True)))
+        existing = await session.execute(select(Tag))
         existing_by_name = {t.name: t for t in existing.scalars().all()}
         for name, category in _DEFAULT_TAGS:
             tag = existing_by_name.get(name)
             if tag is None:
-                session.add(Tag(name=name, is_default=True, user_id=None, category=category))
+                session.add(Tag(name=name, category=category))
             elif tag.category != category:
                 tag.category = category
         await session.commit()
@@ -137,6 +137,31 @@ async def lifespan(app: FastAPI):
             "SELECT user_id, id, updated_at FROM recipes "
             "WHERE household_id IS NOT NULL AND shared_to_personal = TRUE "
             "ON CONFLICT DO NOTHING"
+        ))
+        # Tags are predefined-only now — drop the custom-tag ownership columns,
+        # discarding any stray non-default rows created before this change.
+        await conn.execute(text(
+            "DO $$ BEGIN "
+            "IF EXISTS (SELECT 1 FROM information_schema.columns "
+            "WHERE table_name = 'tags' AND column_name = 'is_default') THEN "
+            "DELETE FROM tags WHERE is_default = FALSE; "
+            "END IF; "
+            "END $$"
+        ))
+        await conn.execute(text("ALTER TABLE tags DROP COLUMN IF EXISTS is_default"))
+        await conn.execute(text("ALTER TABLE tags DROP COLUMN IF EXISTS user_id"))
+        await conn.execute(text("ALTER TABLE tags DROP COLUMN IF EXISTS household_id"))
+        # Allergen preferences are predefined-only now — flatten the old
+        # {predefined, custom} shape into a plain array of keys.
+        await conn.execute(text(
+            "UPDATE households SET allergens = "
+            "COALESCE(allergens->'predefined', '[]'::jsonb) || COALESCE(allergens->'custom', '[]'::jsonb) "
+            "WHERE allergens IS NOT NULL AND jsonb_typeof(allergens) = 'object'"
+        ))
+        await conn.execute(text(
+            "UPDATE user_preferences SET personal_allergens = "
+            "COALESCE(personal_allergens->'predefined', '[]'::jsonb) || COALESCE(personal_allergens->'custom', '[]'::jsonb) "
+            "WHERE personal_allergens IS NOT NULL AND jsonb_typeof(personal_allergens) = 'object'"
         ))
     await _seed_demo_user()
     await _seed_default_tags()

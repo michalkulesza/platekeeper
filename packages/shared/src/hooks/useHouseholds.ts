@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useApiClient } from '../api/context'
-import type { AllergenData } from '../types'
 
 export const useHouseholds = () => {
   const api = useApiClient()
@@ -35,7 +34,7 @@ export const useHouseholds = () => {
   })
 
   const updateAllergens = useMutation({
-    mutationFn: ({ householdId, allergens }: { householdId: string; allergens: AllergenData }) =>
+    mutationFn: ({ householdId, allergens }: { householdId: string; allergens: string[] }) =>
       api.updateHouseholdAllergens(householdId, allergens),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['households'] }),
   })

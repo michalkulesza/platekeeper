@@ -363,12 +363,11 @@ async def _with_allergens(
 
 
 async def run_import_stream(url: str, model: str | None = None, available_tags: list[str] | None = None, allergens: list[str] | None = None) -> AsyncGenerator[dict[str, Any], None]:
-    if not allergens:
-        cached = cache_svc.get(url)
-        if cached is not None:
-            log.debug("Cache hit for %s", url)
-            yield _done_event(cached)
-            return
+    cached = cache_svc.get(url)
+    if cached is not None:
+        log.debug("Cache hit for %s", url)
+        yield _done_event(cached)
+        return
 
     usage = gemini_svc.UsageTracker()
 
@@ -621,55 +620,3 @@ async def run_image_import_stream(
         ))
 
 
-async def run_import(url: str, model: str | None = None) -> ImportResult:
-    result: ImportResult | None = None
-    async for event in run_import_stream(url, model=model):
-        if event["type"] == "done":
-            result = ImportResult.model_validate(event["result"])
-    assert result is not None
-    return result
-
-
-async def run_image_import(
-    image_data: bytes,
-    mime_type: str,
-    model: str | None = None,
-    available_tags: list[str] | None = None,
-    allergens: list[str] | None = None,
-) -> ImportResult:
-    result: ImportResult | None = None
-    async for event in run_image_import_stream(
-        image_data, mime_type, model=model, available_tags=available_tags, allergens=allergens,
-    ):
-        if event["type"] == "done":
-            result = ImportResult.model_validate(event["result"])
-    assert result is not None
-    return result
-
-
-async def run_url_import(
-    url: str,
-    model: str | None = None,
-    available_tags: list[str] | None = None,
-    allergens: list[str] | None = None,
-) -> ImportResult:
-    result: ImportResult | None = None
-    async for event in run_import_stream(url, model=model, available_tags=available_tags, allergens=allergens):
-        if event["type"] == "done":
-            result = ImportResult.model_validate(event["result"])
-    assert result is not None
-    return result
-
-
-async def run_text_import(
-    text: str,
-    model: str | None = None,
-    available_tags: list[str] | None = None,
-    allergens: list[str] | None = None,
-) -> ImportResult:
-    result: ImportResult | None = None
-    async for event in run_text_import_stream(text, model=model, available_tags=available_tags, allergens=allergens):
-        if event["type"] == "done":
-            result = ImportResult.model_validate(event["result"])
-    assert result is not None
-    return result

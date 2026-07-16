@@ -31,7 +31,6 @@ RERUN PROD FULL EXTRACTION
 
 - [ ] **Move add recipe to bottom drawer**
 - [ ] **Anythign to do with top position px that is a hook that takes a while to reload ie jump when importing via share**
-- [ ] **Simplify tags and allergens** — Remove custom tags and allergens if the predefined systems provide a clearer product experience.
 - [ ] **Haptics and native context menus** — Add meaningful haptic feedback and long-press recipe actions (favourite, plan, share, delete) with a peek preview.
 - [ ] **Delightful empty and loading states** — Extend shimmers to recipe lists and meal plans; add friendly empty states, restrained Carrot mascot moments, import-stage animation, haptics, and completion feedback.
 - [ ] **Colours and themes** — Define and apply a cohesive theme system.
@@ -42,6 +41,7 @@ RERUN PROD FULL EXTRACTION
 - [x] **Review dark mode** — Fix automati/clearc appearance detection and verify all screens in dark mode.
 - [x] **Preserve tsp and tbsp units** — Do not convert teaspoon or tablespoon measurements to grams or millilitres.
 - [x] **Collapse only extra ingredient groups** — For recipes with groups beyond Main, collapse each additional group’s ingredients only; keep the recipe steps visible.
+- [x] **Simplify tags and allergens** — Removed all custom-tag/custom-allergen support (predefined-only now); the full predefined tag and allergen lists are always sent to Gemini during import, and matched allergens show as badges on the recipe, independent of the viewer's own allergen preferences.
 
 ## Quality, release, and growth
 

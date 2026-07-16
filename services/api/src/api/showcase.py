@@ -119,7 +119,6 @@ async def reset_showcase_account() -> None:
             user_recipe_favourites_table.delete().where(user_recipe_favourites_table.c.user_id == user_id)
         )
         await session.execute(delete(Recipe).where(Recipe.user_id == user_id))
-        await session.execute(delete(Tag).where(Tag.user_id == user_id, Tag.is_default.is_(False)))
 
         recipe_id_map: dict[str, uuid.UUID] = {}
         for recipe_fixture in fixture.get("recipes", []):

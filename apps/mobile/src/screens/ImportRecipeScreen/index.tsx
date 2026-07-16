@@ -74,10 +74,10 @@ const ImportRecipeScreen = () => {
   const skipGuardRef = useRef(false)
   const sharedUrlImportRef = useRef<string | null>(null)
 
-  const activeAllergens = useMemo(() => {
-    const p = preferences?.personal_allergens
-    return p ? [...(p.predefined ?? []), ...(p.custom ?? [])] : []
-  }, [preferences])
+  const activeAllergens = useMemo(
+    () => preferences?.personal_allergens ?? [],
+    [preferences]
+  )
 
   const autoSubstitute = preferences?.auto_substitute ?? false
 

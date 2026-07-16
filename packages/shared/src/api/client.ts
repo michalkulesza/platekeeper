@@ -5,7 +5,6 @@ import type {
   Tag,
   MealPlanEntry,
   UserPreferences,
-  AllergenData,
   HouseholdOut,
   MemberOut,
   InvitationOut,
@@ -237,7 +236,7 @@ export const createApiClient = (config: ApiClientConfig) => {
 
   const updateHouseholdAllergens = async (
     householdId: string,
-    allergens: AllergenData
+    allergens: string[]
   ): Promise<HouseholdOut> => {
     const res = await apiFetch(`/api/households/${householdId}`, {
       method: 'PATCH',

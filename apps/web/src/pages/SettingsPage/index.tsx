@@ -2,7 +2,6 @@ import { useCallback, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ChangeEvent } from 'react'
 import type {
-  AllergenData,
   HouseholdOut,
   RecipeStats,
   UserPreferences,
@@ -28,7 +27,6 @@ import TimerSettingsSection from './TimerSettingsSection'
 import CreateHouseholdModal from './CreateHouseholdModal'
 import ManageHouseholdModal from './ManageHouseholdModal'
 import LogoutConfirmModal from './LogoutConfirmModal'
-import { emptyAllergenData } from './helpers'
 
 interface SettingsPageProps {
   stats: RecipeStats | null
@@ -109,7 +107,7 @@ const SettingsPage = ({
   )
 
   const handleSaveAllergens = useCallback(
-    async (data: AllergenData) => {
+    async (data: string[]) => {
       if (activeHousehold) {
         await updateHouseholdAllergens(activeHousehold.id, data)
         refetchHouseholds()
@@ -138,9 +136,7 @@ const SettingsPage = ({
     : t('settings.personalScope')
 
   const currentAllergens =
-    activeHousehold?.allergens ??
-    preferences?.personal_allergens ??
-    emptyAllergenData
+    activeHousehold?.allergens ?? preferences?.personal_allergens ?? []
 
   return (
     <>

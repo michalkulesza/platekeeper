@@ -1,7 +1,6 @@
 import { createApiClient } from '@carrot/shared/api/client'
 export type {
   Unit,
-  AllergenData,
   AllergenFlag,
   Ingredient,
   StepRef,

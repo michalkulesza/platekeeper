@@ -258,8 +258,6 @@
     "allergenDisclaimer": "Oznaczenia alergenów to szacunki wspomagane przez AI, a nie zamiennik czytania pełnej listy składników.",
     "allergens": "Alergeny",
     "intolerances": "Nietolerancje",
-    "custom": "Niestandardowe",
-    "customPlaceholder": "np. psiankowate",
     "allergensSaved": "Alergeny zapisane",
     "failedToSave": "Nie udało się zapisać",
     "reAnalyzeRecipes": "Przeanalizuj przepisy ponownie",

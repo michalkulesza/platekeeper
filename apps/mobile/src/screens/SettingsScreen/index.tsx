@@ -23,7 +23,7 @@ import { useCookingMode } from '../../context/CookingModeContext'
 import { usePreferences } from '@carrot/shared/hooks/usePreferences'
 import { useHouseholds } from '@carrot/shared/hooks/useHouseholds'
 import { useApiClient } from '@carrot/shared/api/context'
-import type { UserPreferences, AllergenData, HouseholdOut } from '@carrot/shared/types'
+import type { UserPreferences, HouseholdOut } from '@carrot/shared/types'
 import { useAuth } from '../../context/AuthContext'
 import { useScreenLoading } from '../../hooks/useScreenLoading'
 import { useHousehold } from '../../context/HouseholdContext'
@@ -222,7 +222,7 @@ const SettingsScreen = () => {
   )
 
   const handleSaveAllergens = useCallback(
-    async (data: AllergenData) => {
+    async (data: string[]) => {
       if (activeHousehold) {
         await api.updateHouseholdAllergens(activeHousehold.id, data)
         refetchHouseholds()
@@ -244,10 +244,8 @@ const SettingsScreen = () => {
     ? t('settings.householdScope', { name: activeHousehold.name })
     : t('settings.personalScope')
 
-  const currentAllergens: AllergenData = activeHousehold?.allergens ?? preferences?.personal_allergens ?? {
-    predefined: [],
-    custom: [],
-  }
+  const currentAllergens: string[] =
+    activeHousehold?.allergens ?? preferences?.personal_allergens ?? []
 
   const appearanceLabel = t(
     APPEARANCE_OPTIONS.find((o) => o.value === appearanceMode)?.labelKey ?? 'settings.appearanceSystem',

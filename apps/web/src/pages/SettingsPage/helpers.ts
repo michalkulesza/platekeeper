@@ -1,5 +1,4 @@
 import type { CSSProperties } from 'react'
-import type { AllergenData } from '@carrot/shared/types'
 
 export const WEEK_DAY_OPTIONS = [
   { key: '1', labelKey: 'settings.monday' },
@@ -16,36 +15,6 @@ export const PRESET_COLORS = [
   '#ef4444',
   '#8b5cf6',
   '#06b6d4',
-]
-
-export const ALLERGEN_KEYS = [
-  'gluten',
-  'crustaceans',
-  'tree nuts',
-  'celery',
-  'mustard',
-  'sulphites',
-  'lupin',
-  'molluscs',
-  'eggs',
-  'fish',
-  'peanuts',
-  'soybeans',
-  'milk',
-  'sesame',
-]
-
-export const INTOLERANCE_KEYS = [
-  'lactose',
-  'ncgs',
-  'fructose',
-  'histamine',
-  'fodmap',
-  'caffeine',
-  'sulphite-sensitivity',
-  'sorbitol',
-  'salicylates',
-  'msg',
 ]
 
 export const LANGUAGE_CODES = ['en', 'de', 'pl', 'fr', 'es'] as const
@@ -67,8 +36,6 @@ export const truncateStepText = (text: string) =>
   text.length > STEP_TEXT_TRUNCATE_LENGTH
     ? text.slice(0, STEP_TEXT_TRUNCATE_LENGTH - 3) + '…'
     : text
-
-export const emptyAllergenData: AllergenData = { predefined: [], custom: [] }
 
 export const buildColorSwatchStyle = (
   color: string,

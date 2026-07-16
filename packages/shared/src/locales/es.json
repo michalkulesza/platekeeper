@@ -253,8 +253,6 @@
     "allergenDisclaimer": "Los avisos de alérgenos son estimaciones asistidas por IA, no un sustituto de leer la etiqueta completa de ingredientes.",
     "allergens": "Alérgenos",
     "intolerances": "Intolerancias",
-    "custom": "Personalizado",
-    "customPlaceholder": "ej. solanáceas",
     "allergensSaved": "Alérgenos guardados",
     "failedToSave": "Error al guardar",
     "reAnalyzeRecipes": "Re-analizar recetas",

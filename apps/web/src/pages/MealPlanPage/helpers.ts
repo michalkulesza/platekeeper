@@ -1,9 +1,5 @@
 import type { CalendarDate } from '@internationalized/date'
-import type {
-  AllergenData,
-  MealPlanEntry,
-  RecipeOut,
-} from '@carrot/shared/types'
+import type { MealPlanEntry, RecipeOut } from '@carrot/shared/types'
 import {
   ymToYYYYMM,
   ymdToISODate,
@@ -13,14 +9,9 @@ import {
 import i18n from '../../i18n'
 
 export const getActiveAllergens = (
-  householdAllergens: AllergenData | null | undefined,
-  personalAllergens: AllergenData | null | undefined
-): string[] => {
-  const source = householdAllergens ?? personalAllergens
-  if (!source) return []
-
-  return [...(source.predefined ?? []), ...(source.custom ?? [])]
-}
+  householdAllergens: string[] | null | undefined,
+  personalAllergens: string[] | null | undefined
+): string[] => householdAllergens ?? personalAllergens ?? []
 
 export interface CalendarCell {
   dateStr: string

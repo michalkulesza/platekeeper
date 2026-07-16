@@ -254,8 +254,6 @@
     "allergenDisclaimer": "Allergen-Hinweise sind KI-gestützte Schätzungen und ersetzen nicht das Lesen der vollständigen Zutatenliste.",
     "allergens": "Allergene",
     "intolerances": "Unverträglichkeiten",
-    "custom": "Benutzerdefiniert",
-    "customPlaceholder": "z. B. Nachtschattengewächse",
     "allergensSaved": "Allergene gespeichert",
     "failedToSave": "Speichern fehlgeschlagen",
     "reAnalyzeRecipes": "Rezepte neu analysieren",

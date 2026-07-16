@@ -14,22 +14,8 @@ export interface IngredientMatch {
 export const getActiveAllergens = (
   activeHousehold: HouseholdOut | null,
   preferences: UserPreferences | null
-): string[] => {
-  if (activeHousehold?.allergens) {
-    return [
-      ...(activeHousehold.allergens.predefined ?? []),
-      ...(activeHousehold.allergens.custom ?? []),
-    ]
-  }
-  if (preferences?.personal_allergens) {
-    return [
-      ...(preferences.personal_allergens.predefined ?? []),
-      ...(preferences.personal_allergens.custom ?? []),
-    ]
-  }
-
-  return []
-}
+): string[] =>
+  activeHousehold?.allergens ?? preferences?.personal_allergens ?? []
 
 export const applyFavouriteOverrides = (
   recipes: RecipeOut[],

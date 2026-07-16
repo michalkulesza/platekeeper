@@ -26,11 +26,12 @@ import NutritionBoxGrid, { TooltipPopover } from '../../components/NutritionBoxG
 import { colors } from '../../theme/colors'
 import { proxyThumbnailUrl, PLACEHOLDER_URL } from '../../api/thumbnailUrl'
 import { styles } from './styles'
-import { FONT_SIZES, LINE_HEIGHTS } from './helpers'
+import { FONT_SIZES, LINE_HEIGHTS, getRecipeAllergens } from './helpers'
 import ComponentSection from './ComponentSection'
 import UnifiedIngredientsSection from './UnifiedIngredientsSection'
 import NotesSection from './NotesSection'
 import TagsSection from './TagsSection'
+import AllergenBadges from './AllergenBadges'
 import ServingStepper from './ServingStepper'
 
 const formatCookingTime = (minutes: number | null, t: (key: string) => string) => {
@@ -171,6 +172,7 @@ const ReadView = ({
           </View>
 
           <TagsSection recipe={recipe} />
+          <AllergenBadges allergens={getRecipeAllergens(recipe)} />
 
           <NutritionBoxGrid
             editing={false}

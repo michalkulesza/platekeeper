@@ -1,15 +1,15 @@
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Switch } from '@heroui/react'
-import type { AllergenData, UserPreferences } from '@carrot/shared/types'
+import type { UserPreferences } from '@carrot/shared/types'
 import { updatePreferences } from '../../api/client'
 import AllergenSection from './AllergenSection'
 
 interface AllergiesSectionProps {
   remountKey: string
-  allergens: AllergenData
+  allergens: string[]
   scopeLabel: string
-  onSaveAllergens: (data: AllergenData) => Promise<void>
+  onSaveAllergens: (data: string[]) => Promise<void>
   autoSubstitute: boolean
   onPreferencesChange: (prefs: UserPreferences) => void
 }

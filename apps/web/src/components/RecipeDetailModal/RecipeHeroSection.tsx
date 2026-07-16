@@ -1,11 +1,24 @@
 import type { ChangeEvent, RefObject } from 'react'
-import { Calendar, Edit2, Link, ShoppingCart, Star, Trash2 } from 'react-feather'
+import {
+  Calendar,
+  Edit2,
+  Link,
+  ShoppingCart,
+  Star,
+  Trash2,
+} from 'react-feather'
 import { useTranslation } from 'react-i18next'
 import type { RecipeOut, Tag } from '@carrot/shared/types'
 import { proxyUrl, PLACEHOLDER_URL } from '../../utils/imageUtils'
 import NetworkImage from '../NetworkImage'
 import TagRow from '../TagRow'
-import { getHeaderBg, type EditState, type Mode } from './helpers'
+import AllergenBadges from './AllergenBadges'
+import {
+  getHeaderBg,
+  getRecipeAllergens,
+  type EditState,
+  type Mode,
+} from './helpers'
 import EditLine from './EditLine'
 
 interface RecipeHeroSectionProps {
@@ -53,6 +66,7 @@ const RecipeHeroSection = ({
     mode === 'editing' ? draft.thumbnail_url : r.thumbnail_url
   const proxied = proxyUrl(displayThumb)
   const headerBg = getHeaderBg(mode)
+  const allergens = getRecipeAllergens(r)
 
   const tagRow = (
     <div className="mt-2">
@@ -189,6 +203,7 @@ const RecipeHeroSection = ({
           )}
         </div>
         {tagRow}
+        {mode === 'view' && <AllergenBadges allergens={allergens} />}
       </div>
 
       {mode === 'editing' && !proxied && (

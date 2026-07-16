@@ -33,7 +33,7 @@ class HouseholdCreate(BaseModel):
 class HouseholdUpdate(BaseModel):
     name: str | None = None
     color: str | None = None
-    allergens: dict | None = None
+    allergens: list[str] | None = None
 
 
 class HouseholdOut(BaseModel):
@@ -42,7 +42,7 @@ class HouseholdOut(BaseModel):
     name: str
     color: str
     created_at: datetime
-    allergens: dict | None = None
+    allergens: list[str] | None = None
 
 
 class MemberOut(BaseModel):
