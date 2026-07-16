@@ -15,6 +15,13 @@ export const parseIngredient = (s: string): StructuredIngredient => {
   let qty = ''
   if (parts[idx] && /^[\d¼½¾⅓⅔⅛⅜⅝⅞.,/]+$/.test(parts[idx])) {
     qty = parts[idx++]
+    if (
+      /^\d+(?:[.,]\d+)?$/.test(qty) &&
+      parts[idx] &&
+      /^(?:\d+[\/⁄]\d+|[¼½¾⅓⅔⅛⅜⅝⅞])$/.test(parts[idx])
+    ) {
+      qty += ` ${parts[idx++]}`
+    }
   }
   let unit = ''
   if (parts[idx] && (UNITS as readonly string[]).includes(parts[idx].toLowerCase())) {
@@ -25,6 +32,32 @@ export const parseIngredient = (s: string): StructuredIngredient => {
 
 export const serializeIngredient = (ing: StructuredIngredient): string =>
   [ing.qty, ing.unit, ing.name].filter(Boolean).join(' ')
+
+export const FRACTION_OPTIONS = ['0', '1/8', '1/4', '1/3', '3/8', '1/2', '5/8', '2/3', '3/4', '7/8'] as const
+
+const UNICODE_FRACTIONS: Record<string, string> = {
+  '¼': '1/4', '½': '1/2', '¾': '3/4', '⅓': '1/3', '⅔': '2/3', '⅛': '1/8', '⅜': '3/8', '⅝': '5/8', '⅞': '7/8',
+}
+
+export const parseQtyParts = (qty: string): { whole: number; fraction: string } => {
+  const parts = (qty ?? '').trim().split(/\s+/)
+  let whole = 0
+  let fraction = '0'
+  for (const part of parts) {
+    if (/^\d+$/.test(part)) {
+      whole = parseInt(part, 10)
+      continue
+    }
+    const normalized = UNICODE_FRACTIONS[part] ?? part
+    if ((FRACTION_OPTIONS as readonly string[]).includes(normalized)) fraction = normalized
+  }
+  return { whole, fraction }
+}
+
+export const serializeQtyParts = (whole: number, fraction: string): string => {
+  if (fraction === '0') return whole > 0 ? String(whole) : ''
+  return whole > 0 ? `${whole} ${fraction}` : fraction
+}
 
 export const displayIngredient = (s: string): string => {
   const parsed = parseIngredient(s)

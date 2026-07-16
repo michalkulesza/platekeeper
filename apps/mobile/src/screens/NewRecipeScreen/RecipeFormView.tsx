@@ -4,7 +4,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import * as ImagePicker from 'expo-image-picker'
 import NutritionBoxGrid from '../../components/NutritionBoxGrid'
-import { UnitPickerModal, TagPickerModal, IngredientEditor } from '../../components/RecipeFieldEditors'
+import { TagPickerModal, IngredientEditor } from '../../components/RecipeFieldEditors'
+import { QuantityUnitPickerModal } from '../../components/QuantityUnitPickerModal'
 import type { Tag } from '@carrot/shared/types'
 import { parseIngredient, serializeIngredient } from '@carrot/shared/utils/ingredientUtils'
 import type { StructuredIngredient } from '@carrot/shared/utils/ingredientUtils'
@@ -38,7 +39,7 @@ const RecipeFormView = ({
 }) => {
   const { t } = useTranslation()
   const insets = useSafeAreaInsets()
-  const [unitPickerTarget, setUnitPickerTarget] = useState<{ ci: number; ii: number } | null>(null)
+  const [qtyUnitPickerTarget, setQtyUnitPickerTarget] = useState<{ ci: number; ii: number } | null>(null)
   const [showTagPicker, setShowTagPicker] = useState(false)
   const [uploadingThumb, setUploadingThumb] = useState(false)
   const tempRecipeIdRef = useRef(makeTempRecipeId())
@@ -173,17 +174,20 @@ const RecipeFormView = ({
     onChange({ ...recipe, [key]: value })
   }, [recipe, onChange])
 
-  const handleUnitSelect = useCallback((unit: string) => {
-    if (unitPickerTarget == null) return
-    setIngredient(unitPickerTarget.ci, unitPickerTarget.ii, {
-      ...recipe.components[unitPickerTarget.ci].ingredients[unitPickerTarget.ii],
+  const handleQtyUnitChange = useCallback((qty: string, unit: string) => {
+    if (qtyUnitPickerTarget == null) return
+    setIngredient(qtyUnitPickerTarget.ci, qtyUnitPickerTarget.ii, {
+      ...recipe.components[qtyUnitPickerTarget.ci].ingredients[qtyUnitPickerTarget.ii],
+      qty,
       unit,
     })
-  }, [unitPickerTarget, recipe, setIngredient])
+  }, [qtyUnitPickerTarget, recipe, setIngredient])
 
-  const currentUnit = unitPickerTarget != null
-    ? (recipe.components[unitPickerTarget.ci]?.ingredients[unitPickerTarget.ii]?.unit ?? '')
-    : ''
+  const currentQtyUnitIngredient = qtyUnitPickerTarget != null
+    ? recipe.components[qtyUnitPickerTarget.ci]?.ingredients[qtyUnitPickerTarget.ii]
+    : null
+  const currentQty = currentQtyUnitIngredient?.qty ?? ''
+  const currentUnit = currentQtyUnitIngredient?.unit ?? ''
 
   const emptyHeroSpacerHeight = insets.top + 56
 
@@ -297,11 +301,12 @@ const RecipeFormView = ({
           onRemove={onTagRemove}
           onClose={() => setShowTagPicker(false)}
         />
-        <UnitPickerModal
-          visible={unitPickerTarget != null}
-          selected={currentUnit}
-          onSelect={handleUnitSelect}
-          onClose={() => setUnitPickerTarget(null)}
+        <QuantityUnitPickerModal
+          visible={qtyUnitPickerTarget != null}
+          qty={currentQty}
+          unit={currentUnit}
+          onChange={handleQtyUnitChange}
+          onClose={() => setQtyUnitPickerTarget(null)}
         />
 
         {recipe.components.map((comp, ci) => (
@@ -321,7 +326,7 @@ const RecipeFormView = ({
                       flag={comp.ingredient_flags[ii] ?? null}
                       activeAllergens={activeAllergens}
                       onChange={(v) => setIngredient(ci, ii, v)}
-                      onUnitPress={() => setUnitPickerTarget({ ci, ii })}
+                      onQtyUnitPress={() => setQtyUnitPickerTarget({ ci, ii })}
                       onReplace={() => handleReplaceAllergen(ci, ii)}
                       onRestore={() => handleRestoreAllergen(ci, ii)}
                       onRemove={comp.ingredients.length > 1 ? () => removeIngredient(ci, ii) : undefined}

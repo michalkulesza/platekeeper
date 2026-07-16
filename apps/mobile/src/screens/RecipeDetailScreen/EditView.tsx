@@ -5,7 +5,8 @@ import { Feather } from '@expo/vector-icons'
 import type { EdgeInsets } from 'react-native-safe-area-context'
 import type { RecipeOut } from '@carrot/shared/types'
 import { colors } from '../../theme/colors'
-import { UnitPickerModal, IngredientEditor } from '../../components/RecipeFieldEditors'
+import { IngredientEditor } from '../../components/RecipeFieldEditors'
+import { QuantityUnitPickerModal } from '../../components/QuantityUnitPickerModal'
 import NutritionBoxGrid from '../../components/NutritionBoxGrid'
 import { proxyThumbnailUrl } from '../../api/thumbnailUrl'
 import { styles } from './styles'
@@ -25,7 +26,7 @@ const EditView = ({
   handlePickThumbnail,
   handleCancelEdit,
   handleSaveEdit,
-  handleUnitSelect,
+  handleQtyUnitChange,
   handleNutritionChange,
   updateComp,
   setIngredient,
@@ -36,10 +37,11 @@ const EditView = ({
   removeStep,
   setDraft,
   setThumbErrored,
-  setUnitPickerTarget,
+  setQtyUnitPickerTarget,
   uploadingThumb,
   thumbErrored,
-  unitPickerTarget,
+  qtyUnitPickerTarget,
+  currentQty,
   currentUnit,
 }: {
   recipe: RecipeOut
@@ -52,7 +54,7 @@ const EditView = ({
   | 'handlePickThumbnail'
   | 'handleCancelEdit'
   | 'handleSaveEdit'
-  | 'handleUnitSelect'
+  | 'handleQtyUnitChange'
   | 'handleNutritionChange'
   | 'updateComp'
   | 'setIngredient'
@@ -63,10 +65,11 @@ const EditView = ({
   | 'removeStep'
   | 'setDraft'
   | 'setThumbErrored'
-  | 'setUnitPickerTarget'
+  | 'setQtyUnitPickerTarget'
   | 'uploadingThumb'
   | 'thumbErrored'
-  | 'unitPickerTarget'
+  | 'qtyUnitPickerTarget'
+  | 'currentQty'
   | 'currentUnit'
 >) => {
   const { t } = useTranslation()
@@ -150,11 +153,12 @@ const EditView = ({
             disclaimerText={t('recipes.nutritionEstimateDisclaimer')}
           />
 
-          <UnitPickerModal
-            visible={unitPickerTarget != null}
-            selected={currentUnit}
-            onSelect={handleUnitSelect}
-            onClose={() => setUnitPickerTarget(null)}
+          <QuantityUnitPickerModal
+            visible={qtyUnitPickerTarget != null}
+            qty={currentQty}
+            unit={currentUnit}
+            onChange={handleQtyUnitChange}
+            onClose={() => setQtyUnitPickerTarget(null)}
           />
 
           <NotesSection recipe={recipe} fontSizeIndex={fontSizeIndex} />
@@ -172,7 +176,7 @@ const EditView = ({
               setStep={setStep}
               addStep={addStep}
               removeStep={removeStep}
-              setUnitPickerTarget={setUnitPickerTarget}
+              setQtyUnitPickerTarget={setQtyUnitPickerTarget}
             />
           ))}
         </View>
@@ -215,7 +219,7 @@ const EditComponentBlock = ({
   setStep,
   addStep,
   removeStep,
-  setUnitPickerTarget,
+  setQtyUnitPickerTarget,
 }: {
   comp: EditComponent
   ci: number
@@ -229,7 +233,7 @@ const EditComponentBlock = ({
   | 'setStep'
   | 'addStep'
   | 'removeStep'
-  | 'setUnitPickerTarget'
+  | 'setQtyUnitPickerTarget'
 >) => {
   const { t } = useTranslation()
 
@@ -253,7 +257,7 @@ const EditComponentBlock = ({
             flag={null}
             activeAllergens={[]}
             onChange={(v) => setIngredient(ci, ii, v)}
-            onUnitPress={() => setUnitPickerTarget({ ci, ii })}
+            onQtyUnitPress={() => setQtyUnitPickerTarget({ ci, ii })}
             onReplace={() => {}}
             onRestore={() => {}}
             onRemove={comp.ingredients.length > 1 ? () => removeIngredient(ci, ii) : undefined}

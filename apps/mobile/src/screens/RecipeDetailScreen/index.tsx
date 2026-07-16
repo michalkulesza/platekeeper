@@ -183,7 +183,7 @@ const RecipeDetailScreen = () => {
         handlePickThumbnail={editDraft.handlePickThumbnail}
         handleCancelEdit={editDraft.handleCancelEdit}
         handleSaveEdit={editDraft.handleSaveEdit}
-        handleUnitSelect={editDraft.handleUnitSelect}
+        handleQtyUnitChange={editDraft.handleQtyUnitChange}
         handleNutritionChange={editDraft.handleNutritionChange}
         updateComp={editDraft.updateComp}
         setIngredient={editDraft.setIngredient}
@@ -194,10 +194,11 @@ const RecipeDetailScreen = () => {
         removeStep={editDraft.removeStep}
         setDraft={editDraft.setDraft}
         setThumbErrored={editDraft.setThumbErrored}
-        setUnitPickerTarget={editDraft.setUnitPickerTarget}
+        setQtyUnitPickerTarget={editDraft.setQtyUnitPickerTarget}
         uploadingThumb={editDraft.uploadingThumb}
         thumbErrored={editDraft.thumbErrored}
-        unitPickerTarget={editDraft.unitPickerTarget}
+        qtyUnitPickerTarget={editDraft.qtyUnitPickerTarget}
+        currentQty={editDraft.currentQty}
         currentUnit={editDraft.currentUnit}
       />
     )

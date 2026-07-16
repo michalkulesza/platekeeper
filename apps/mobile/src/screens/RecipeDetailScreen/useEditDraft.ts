@@ -30,7 +30,7 @@ export const useEditDraft = ({
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState<EditDraft | null>(null)
   const [saving, setSaving] = useState(false)
-  const [unitPickerTarget, setUnitPickerTarget] = useState<{ ci: number; ii: number } | null>(null)
+  const [qtyUnitPickerTarget, setQtyUnitPickerTarget] = useState<{ ci: number; ii: number } | null>(null)
   const [uploadingThumb, setUploadingThumb] = useState(false)
   const [thumbErrored, setThumbErrored] = useState(false)
   const savedDraftRef = useRef<EditDraft | null>(null)
@@ -152,17 +152,20 @@ export const useEditDraft = ({
     })
   }, [])
 
-  const currentUnit = unitPickerTarget != null
-    ? (draft?.components[unitPickerTarget.ci]?.ingredients[unitPickerTarget.ii]?.unit ?? '')
-    : ''
+  const currentQtyUnitIngredient = qtyUnitPickerTarget != null
+    ? draft?.components[qtyUnitPickerTarget.ci]?.ingredients[qtyUnitPickerTarget.ii]
+    : null
+  const currentQty = currentQtyUnitIngredient?.qty ?? ''
+  const currentUnit = currentQtyUnitIngredient?.unit ?? ''
 
-  const handleUnitSelect = useCallback((unit: string) => {
-    if (unitPickerTarget == null || !draft) return
-    setIngredient(unitPickerTarget.ci, unitPickerTarget.ii, {
-      ...draft.components[unitPickerTarget.ci].ingredients[unitPickerTarget.ii],
+  const handleQtyUnitChange = useCallback((qty: string, unit: string) => {
+    if (qtyUnitPickerTarget == null || !draft) return
+    setIngredient(qtyUnitPickerTarget.ci, qtyUnitPickerTarget.ii, {
+      ...draft.components[qtyUnitPickerTarget.ci].ingredients[qtyUnitPickerTarget.ii],
+      qty,
       unit,
     })
-  }, [unitPickerTarget, draft, setIngredient])
+  }, [qtyUnitPickerTarget, draft, setIngredient])
 
   const handleNutritionChange = useCallback((index: number, value: string) => {
     const key = (['totalTimeMinutes', 'servings', 'kcal', 'protein', 'fat', 'carbs'] as const)[index]
@@ -237,15 +240,16 @@ export const useEditDraft = ({
     draft,
     setDraft,
     saving,
-    unitPickerTarget,
-    setUnitPickerTarget,
+    qtyUnitPickerTarget,
+    setQtyUnitPickerTarget,
     uploadingThumb,
     thumbErrored,
     setThumbErrored,
+    currentQty,
     currentUnit,
     handleEdit,
     handleCancelEdit,
-    handleUnitSelect,
+    handleQtyUnitChange,
     handleNutritionChange,
     updateComp,
     setIngredient,

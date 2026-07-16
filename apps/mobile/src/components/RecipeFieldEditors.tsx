@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import {
   Alert,
-  FlatList,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -16,7 +15,6 @@ import {
 import { Ionicons } from '@expo/vector-icons'
 import { useTranslation } from 'react-i18next'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { UNITS } from '@carrot/shared/types'
 import type { AllergenFlag, Tag } from '@carrot/shared/types'
 import type { StructuredIngredient } from '@carrot/shared/utils/ingredientUtils'
 import { tTag } from '@carrot/shared/utils/tagUtils'
@@ -24,77 +22,6 @@ import { TAG_CATEGORIES, groupTagsByCategory } from '@carrot/shared/utils/tagFil
 import { colors } from '../theme/colors'
 
 // Shared editing controls used by both the import flow and in-place recipe editing.
-
-export const UNIT_OPTIONS: string[] = ['', ...UNITS]
-
-export const UnitPickerModal = ({
-  visible,
-  selected,
-  onSelect,
-  onClose,
-}: {
-  visible: boolean
-  selected: string
-  onSelect: (u: string) => void
-  onClose: () => void
-}) => {
-  const { t } = useTranslation()
-
-  const getUnitOptionStyle = useCallback(
-    (item: string) =>
-      ({ pressed }: { pressed: boolean }) => [
-        styles.unitOption,
-        item === selected && styles.unitOptionSel,
-        pressed && styles.pressedLight,
-      ],
-    [selected],
-  )
-
-  const handleSelect = useCallback(
-    (item: string) => {
-      onSelect(item)
-      onClose()
-    },
-    [onSelect, onClose],
-  )
-
-  const renderUnitOption = useCallback(
-    ({ item }: { item: string }) => {
-      const isSelected = item === selected
-      const unitLabel = item ? t(`units.${item}`) : '—'
-      const unitDisplayText = item ? `${item}  ·  ${unitLabel}` : '—'
-
-      return (
-        <Pressable
-          style={getUnitOptionStyle(item)}
-          onPress={() => handleSelect(item)}
-          accessibilityLabel={unitLabel}
-          accessibilityState={{ selected: isSelected }}
-        >
-          <Text style={[styles.unitOptionText, isSelected && styles.unitOptionTextSel]}>
-            {unitDisplayText}
-          </Text>
-        </Pressable>
-      )
-    },
-    [selected, getUnitOptionStyle, handleSelect, t],
-  )
-
-  return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.modalOverlay} onPress={onClose} />
-      <View style={styles.unitSheet}>
-        <View style={styles.sheetHandle} />
-        <FlatList
-          data={UNIT_OPTIONS}
-          keyExtractor={(item) => item || '__none__'}
-          renderItem={renderUnitOption}
-          contentContainerStyle={styles.unitListContent}
-        />
-      </View>
-    </Modal>
-  )
-}
 
 export const TagPickerModal = ({
   visible,
@@ -230,7 +157,7 @@ export const IngredientEditor = ({
   flag,
   activeAllergens,
   onChange,
-  onUnitPress,
+  onQtyUnitPress,
   onReplace,
   onRestore,
   onRemove,
@@ -239,7 +166,7 @@ export const IngredientEditor = ({
   flag: AllergenFlag | null
   activeAllergens: string[]
   onChange: (v: StructuredIngredient) => void
-  onUnitPress: () => void
+  onQtyUnitPress: () => void
   onReplace: () => void
   onRestore: () => void
   onRemove?: () => void
@@ -280,8 +207,8 @@ export const IngredientEditor = ({
     ({ pressed }: { pressed: boolean }) => [styles.ingRemoveBtn, pressed && styles.pressedMedium],
     [],
   )
-  const getUnitButtonStyle = useCallback(
-    ({ pressed }: { pressed: boolean }) => [styles.ingUnitBtn, pressed && styles.pressedLight],
+  const getQtyUnitButtonStyle = useCallback(
+    ({ pressed }: { pressed: boolean }) => [styles.ingQtyUnitBtn, pressed && styles.pressedLight],
     [],
   )
   const getAllergenBadgeStyle = useCallback(
@@ -289,10 +216,10 @@ export const IngredientEditor = ({
     [],
   )
 
-  const handleQtyChange = useCallback((qty: string) => onChange({ ...value, qty }), [value, onChange])
   const handleNameChange = useCallback((name: string) => onChange({ ...value, name }), [value, onChange])
 
-  const unitLabel = value.unit ? t(`units.${value.unit}`) : t('units.unitLabel')
+  const qtyUnitLabel = [value.qty, value.unit].filter(Boolean).join(' ')
+  const qtyUnitAccessibilityLabel = qtyUnitLabel || `${t('units.qtyLabel')} ${t('units.unitLabel')}`
   const allergenAccessibilityLabel = flag?.allergen ? `${t('recipes.contains')} ${flag.allergen}` : ''
 
   return (
@@ -308,26 +235,14 @@ export const IngredientEditor = ({
             <Text style={styles.ingRemoveText}>−</Text>
           </Pressable>
         )}
-        <TextInput
-          style={styles.ingQty}
-          value={value.qty}
-          onChangeText={handleQtyChange}
-          placeholder={t('units.qtyLabel')}
-          keyboardType="decimal-pad"
-          returnKeyType="done"
-          autoCapitalize="none"
-          autoCorrect={false}
-          textContentType="none"
-          accessibilityLabel={t('units.qtyLabel')}
-        />
         <Pressable
-          style={getUnitButtonStyle}
-          onPress={onUnitPress}
+          style={getQtyUnitButtonStyle}
+          onPress={onQtyUnitPress}
           hitSlop={10}
-          accessibilityLabel={unitLabel}
+          accessibilityLabel={qtyUnitAccessibilityLabel}
         >
-          <Text style={[styles.ingUnitText, !value.unit && styles.ingPlaceholder]}>
-            {value.unit || '—'}
+          <Text style={[styles.ingQtyUnitText, !qtyUnitLabel && styles.ingPlaceholder]}>
+            {qtyUnitLabel || '—'}
           </Text>
         </Pressable>
         <TextInput
@@ -413,15 +328,6 @@ const styles = StyleSheet.create({
   tagCheck: { fontSize: 16, color: colors.brand },
   tagEmpty: { padding: 16, fontSize: 13, lineHeight: 18, color: PlatformColor('tertiaryLabel') as unknown as string, textAlign: 'center' },
 
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' },
-  unitSheet: {
-    backgroundColor: PlatformColor('systemBackground') as unknown as string,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    paddingTop: 8,
-    maxHeight: '60%',
-  },
-  unitListContent: { paddingBottom: 32 },
   sheetHandle: {
     width: 36,
     height: 4,
@@ -430,15 +336,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginBottom: 8,
   },
-  unitOption: {
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: PlatformColor('separator') as unknown as string,
-  },
-  unitOptionSel: { backgroundColor: colors.brandLight },
-  unitOptionText: { fontSize: 16, color: PlatformColor('secondaryLabel') as unknown as string },
-  unitOptionTextSel: { color: colors.brand, fontWeight: '600' },
 
   ingEditor: {
     paddingVertical: 8,
@@ -456,24 +353,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   ingRemoveText: { fontSize: 16, color: '#fff', fontWeight: '600', lineHeight: 20 },
-  ingQty: {
-    width: 44,
-    borderBottomWidth: 1,
-    borderColor: PlatformColor('opaqueSeparator') as unknown as string,
-    fontSize: 16,
-    color: PlatformColor('label') as unknown as string,
-    textAlign: 'center',
-    paddingVertical: 4,
-    paddingHorizontal: 4,
-  },
-  ingUnitBtn: {
+  ingQtyUnitBtn: {
     borderBottomWidth: 1,
     borderColor: PlatformColor('opaqueSeparator') as unknown as string,
     paddingVertical: 4,
     paddingHorizontal: 4,
-    minWidth: 36,
+    minWidth: 56,
   },
-  ingUnitText: { fontSize: 13, lineHeight: 18, color: colors.brand, fontWeight: '600' },
+  ingQtyUnitText: { fontSize: 13, lineHeight: 18, color: colors.brand, fontWeight: '600' },
   ingPlaceholder: { color: PlatformColor('tertiaryLabel') as unknown as string },
   ingName: {
     flex: 1,

@@ -88,6 +88,13 @@ export const parseIngredient = (s: string): StructuredIngredient => {
   let qty = ''
   if (parts[idx] && /^[\d¼½¾⅓⅔⅛⅜⅝⅞.,/]+$/.test(parts[idx])) {
     qty = parts[idx++]
+    if (
+      /^\d+(?:[.,]\d+)?$/.test(qty) &&
+      parts[idx] &&
+      /^(?:\d+[\/⁄]\d+|[¼½¾⅓⅔⅛⅜⅝⅞])$/.test(parts[idx])
+    ) {
+      qty += ` ${parts[idx++]}`
+    }
   }
   let unit = ''
   if (
