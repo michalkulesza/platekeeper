@@ -13,11 +13,15 @@ export type AppearanceMode = 'light' | 'dark' | 'system'
 type ColorSchemeContextValue = {
   mode: AppearanceMode
   setMode: (mode: AppearanceMode) => void
+  isAppearanceReady: boolean
+  revealApp: () => void
 }
 
 const ColorSchemeContext = createContext<ColorSchemeContextValue>({
   mode: 'system',
   setMode: () => {},
+  isAppearanceReady: false,
+  revealApp: () => {},
 })
 
 const STORAGE_KEY = 'color-scheme-preference'
@@ -29,6 +33,7 @@ const applyAppearanceMode = (mode: AppearanceMode) => {
 
 export const ColorSchemeProvider = ({ children }: { children: React.ReactNode }) => {
   const [mode, setModeState] = useState<AppearanceMode>('system')
+  const [isAppearanceReady, setIsAppearanceReady] = useState(false)
   const [showPostSplashAnimation, setShowPostSplashAnimation] = useState(false)
 
   useLayoutEffect(() => {
@@ -46,10 +51,14 @@ export const ColorSchemeProvider = ({ children }: { children: React.ReactNode })
       .finally(() => {
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
-            setShowPostSplashAnimation(true)
+            setIsAppearanceReady(true)
           })
         })
       })
+  }, [])
+
+  const revealApp = useCallback(() => {
+    setShowPostSplashAnimation(true)
   }, [])
 
   const handlePostSplashReady = useCallback(() => {
@@ -67,7 +76,7 @@ export const ColorSchemeProvider = ({ children }: { children: React.ReactNode })
   }, [])
 
   return (
-    <ColorSchemeContext.Provider value={{ mode, setMode }}>
+    <ColorSchemeContext.Provider value={{ mode, setMode, isAppearanceReady, revealApp }}>
       {children}
       {showPostSplashAnimation && (
         <PostSplashAnimation onReady={handlePostSplashReady} onFinish={handlePostSplashFinish} />
@@ -77,6 +86,11 @@ export const ColorSchemeProvider = ({ children }: { children: React.ReactNode })
 }
 
 export const useAppearanceMode = () => useContext(ColorSchemeContext)
+
+export const useAppLaunch = () => {
+  const { isAppearanceReady, revealApp } = useContext(ColorSchemeContext)
+  return { isAppearanceReady, revealApp }
+}
 
 // Native modules that expose their own explicit light/dark override (e.g. expo-glass-effect's
 // GlassView) need a resolved 'light' | 'dark' value rather than 'system', since relying on

@@ -4,6 +4,7 @@ Items are grouped by purpose and ordered from highest to lowest importance withi
 
 ## Core product features
 
+- [ ] **Add related recipes** - Add ability to attach recipe to another recipe as mayb related or other better wording
 - [ ] **Guided Cook Mode** — Full-screen, big-type, swipeable steps; keep the screen awake, surface timers from step text, and allow ingredient checkoff while cooking.
 - [ ] **Visual recipe library / grid view** — Let users switch between the compact list and a photo-forward card or grid view with useful metadata such as tags, cooking time, and favourite status.
 
@@ -28,10 +29,10 @@ Items are grouped by purpose and ordered from highest to lowest importance withi
 
 ## Experience and product polish
 
-- [ ] **Move add recipe to bottom drawer**
 - [ ] **Anythign to do with top position px that is a hook that takes a while to reload ie jump when importing via share**
 - [ ] **Haptics and native context menus** — Add meaningful haptic feedback and long-press recipe actions (favourite, plan, share, delete) with a peek preview.
 - [ ] **Delightful empty and loading states** — Extend shimmers to recipe lists and meal plans; add friendly empty states, restrained Carrot mascot moments, import-stage animation, haptics, and completion feedback.
+
 - [ ] **Colours and themes** — Define and apply a cohesive theme system.
 - [x] **When loading from an empty state** — Wait for authentication before loading recipes and the next planned meal, rather than showing an unauthenticated error.
 - [x] **Correct household recipe contributor avatars** — Show the actual contributor alongside the household avatar when the recipe is also in a personal library.
@@ -41,6 +42,7 @@ Items are grouped by purpose and ordered from highest to lowest importance withi
 - [x] **Preserve tsp and tbsp units** — Do not convert teaspoon or tablespoon measurements to grams or millilitres.
 - [x] **Collapse only extra ingredient groups** — For recipes with groups beyond Main, collapse each additional group’s ingredients only; keep the recipe steps visible.
 - [x] **Simplify tags and allergens** — Removed all custom-tag/custom-allergen support (predefined-only now); the full predefined tag and allergen lists are always sent to Gemini during import, and matched allergens show as badges on the recipe, independent of the viewer's own allergen preferences.
+- [x] **Move add recipe to bottom drawer**
 
 ## Quality, release, and growth
 

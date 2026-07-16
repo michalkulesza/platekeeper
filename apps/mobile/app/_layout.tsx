@@ -7,7 +7,7 @@ import { Stack, useRouter, useSegments } from 'expo-router'
 import { DefaultTheme, ThemeProvider, type Theme } from '@react-navigation/native'
 import * as Sentry from '@sentry/react-native'
 import * as Notifications from 'expo-notifications'
-import { useQueryClient } from '@tanstack/react-query'
+import { useIsRestoring, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNotificationHistory } from '../src/context/NotificationHistoryContext'
 import BugReportButton from '../src/components/BugReportButton'
 import HeaderTitle from '../src/components/HeaderTitle'
@@ -33,7 +33,7 @@ import { AuthProvider, useAuth } from '../src/context/AuthContext'
 import { NotificationHistoryProvider } from '../src/context/NotificationHistoryContext'
 import { TimerProvider } from '../src/context/TimerContext'
 import { HouseholdProvider } from '../src/context/HouseholdContext'
-import { ColorSchemeProvider } from '../src/context/ColorSchemeContext'
+import { ColorSchemeProvider, useAppLaunch } from '../src/context/ColorSchemeContext'
 import { CookingModeProvider } from '../src/context/CookingModeContext'
 import { mobileClient } from '../src/api/client'
 import { configureGoogleSignin } from '../src/utils/googleAuth'
@@ -67,6 +67,33 @@ const asyncStoragePersister = createAsyncStoragePersister({ storage: AsyncStorag
 // Bump when the cached query data shape changes in a way older persisted caches can't handle.
 const QUERY_CACHE_BUSTER = '1'
 const PUSH_INSTALLATION_ID_KEY = 'push-installation-id'
+
+const AppStartupGate = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading: authLoading } = useAuth()
+  const { isAppearanceReady, revealApp } = useAppLaunch()
+  const api = useApiClient()
+  const isRestoring = useIsRestoring()
+  const hasRevealedRef = useRef(false)
+  const { isLoading: isLoadingRecipes } = useQuery({
+    queryKey: ['recipes'],
+    queryFn: api.listRecipes,
+    enabled: isAppearanceReady && !isRestoring && !authLoading && user !== null,
+  })
+  const isReady =
+    isAppearanceReady &&
+    !isRestoring &&
+    !authLoading &&
+    (user === null || !isLoadingRecipes)
+
+  useEffect(() => {
+    if (!isReady || hasRevealedRef.current) return
+
+    hasRevealedRef.current = true
+    revealApp()
+  }, [isReady, revealApp])
+
+  return children
+}
 
 function RootLayoutNav() {
   const { t } = useTranslation()
@@ -258,7 +285,9 @@ const RootLayout = () => {
                     <NotificationHistoryProvider>
                       <TimerProvider>
                         <HouseholdProvider>
-                          <RootLayoutNav />
+                          <AppStartupGate>
+                            <RootLayoutNav />
+                          </AppStartupGate>
                         </HouseholdProvider>
                       </TimerProvider>
                     </NotificationHistoryProvider>
