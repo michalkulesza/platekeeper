@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useApiClient } from '../api/context'
-import type { ImportJob } from '../types'
+import type { ImportJob, RecipeOut } from '../types'
 
 const queryKey = ['importJobs'] as const
 
@@ -20,6 +20,7 @@ export const useImportJobs = (scopeKey: string | null) => {
   const lastEventId = useRef(0)
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const attempt = useRef(0)
+  const completedRecipeIds = useRef(new Set<string>())
   const query = useQuery<ImportJob[]>({ queryKey, queryFn: async () => [], enabled: false, initialData: [] })
 
   const seed = useCallback((job: ImportJob) => {
@@ -38,8 +39,23 @@ export const useImportJobs = (scopeKey: string | null) => {
         (snapshot) => qc.setQueryData(queryKey, snapshot.jobs),
         (event) => {
           lastEventId.current = Math.max(lastEventId.current, event.id)
+          if (event.type === 'import_job.succeeded') {
+            if (event.job.result_recipe_id) completedRecipeIds.current.add(event.job.result_recipe_id)
+            void api.listRecipes()
+              .then((recipes) => {
+                if (closed) return
+                qc.setQueryData<RecipeOut[]>(['recipes'], recipes)
+                qc.setQueryData<ImportJob[]>(queryKey, (jobs = []) => applyJob(jobs, event.type, event.job))
+                void qc.invalidateQueries({ queryKey: ['recipes', 'stats'] })
+              })
+              .catch(() => {
+                if (closed) return
+                qc.setQueryData<ImportJob[]>(queryKey, (jobs = []) => applyJob(jobs, event.type, event.job))
+                void qc.invalidateQueries({ queryKey: ['recipes'] })
+              })
+            return
+          }
           qc.setQueryData<ImportJob[]>(queryKey, (jobs = []) => applyJob(jobs, event.type, event.job))
-          if (event.type === 'import_job.succeeded') void qc.invalidateQueries({ queryKey: ['recipes'] })
         },
         lastEventId.current || undefined,
         () => {
@@ -73,5 +89,5 @@ export const useImportJobs = (scopeKey: string | null) => {
     },
   })
 
-  return { jobs: query.data ?? [], seed, retry, cancel, dismiss }
+  return { jobs: query.data ?? [], seed, retry, cancel, dismiss, completedRecipeIds }
 }

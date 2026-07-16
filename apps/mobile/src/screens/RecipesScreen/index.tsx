@@ -105,6 +105,9 @@ const RecipesScreen = () => {
   const { busy, showSpinner } = useScreenLoading(isLoading || switchingHousehold)
   const { tags } = useTags()
   const { households, isLoadingHouseholds, activeHouseholdId, activeHousehold, switchHousehold } = useHousehold()
+  const { jobs: importJobs, retry, cancel, dismiss, completedRecipeIds } = useImportJobs(
+    user ? `${user.id}:${activeHouseholdId ?? 'personal'}` : null,
+  )
   const api = useApiClient()
   const qc = useQueryClient()
   const personalName = useMemo(() => user?.nickname || user?.email || t('households.personal'), [user, t])
@@ -401,9 +404,6 @@ const RecipesScreen = () => {
     [recipes, favouriteOverrides],
   )
 
-  const { jobs: importJobs, retry, cancel, dismiss } = useImportJobs(
-    user ? `${user.id}:${activeHouseholdId ?? 'personal'}` : null,
-  )
   const pendingJobs = useMemo(
     () => importJobs,
     [importJobs],
@@ -519,8 +519,9 @@ const RecipesScreen = () => {
       const isFav = favouriteOverrides.has(item.id)
         ? favouriteOverrides.get(item.id)!
         : item.is_favourite
-      const isNew = initialLoadDoneRef.current && !seenIdsRef.current.has(item.id)
-      if (isNew) seenIdsRef.current.add(item.id)
+      const completedImport = completedRecipeIds.current.has(item.id)
+      const isNew = initialLoadDoneRef.current && !seenIdsRef.current.has(item.id) && !completedImport
+      if (isNew || completedImport) seenIdsRef.current.add(item.id)
       return (
         <Reanimated.View
           entering={isNew ? FadeInDown.duration(250) : undefined}
@@ -616,7 +617,7 @@ const RecipesScreen = () => {
         </Reanimated.View>
       )
     },
-    [handleRecipePress, handleToggleFavourite, renderSwipeActions, favouriteOverrides, recipeHouseholdAvatars, t],
+    [completedRecipeIds, handleRecipePress, handleToggleFavourite, renderSwipeActions, favouriteOverrides, recipeHouseholdAvatars, t],
   )
 
   const favChip = useMemo(
