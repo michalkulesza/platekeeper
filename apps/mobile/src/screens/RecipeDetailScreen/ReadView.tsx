@@ -30,6 +30,7 @@ import { FONT_SIZES, LINE_HEIGHTS, getRecipeAllergens } from './helpers'
 import ComponentSection from './ComponentSection'
 import UnifiedIngredientsSection from './UnifiedIngredientsSection'
 import NotesSection from './NotesSection'
+import RelatedRecipesSection from './RelatedRecipesSection'
 import TagsSection from './TagsSection'
 import AllergenBadges from './AllergenBadges'
 import ServingStepper from './ServingStepper'
@@ -250,6 +251,7 @@ const ReadView = ({
             </View>
           </View>
 
+          <RelatedRecipesSection recipeId={recipe.id} />
           <NotesSection recipe={recipe} fontSizeIndex={fontSizeIndex} />
 
           {recipe.components.length > 0 && (

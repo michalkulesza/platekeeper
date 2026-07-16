@@ -130,6 +130,14 @@ async def lifespan(app: FastAPI):
         await conn.execute(text("ALTER TABLE import_jobs ALTER COLUMN model DROP DEFAULT"))
         await conn.execute(text("ALTER TABLE meal_plan_entries ALTER COLUMN recipe_id DROP NOT NULL"))
         await conn.execute(text("ALTER TABLE meal_plan_entries ADD COLUMN IF NOT EXISTS text VARCHAR(200)"))
+        await conn.execute(text(
+            "CREATE TABLE IF NOT EXISTS recipe_related_recipes ("
+            "recipe_id UUID NOT NULL REFERENCES recipes(id) ON DELETE CASCADE, "
+            "related_recipe_id UUID NOT NULL REFERENCES recipes(id) ON DELETE CASCADE, "
+            "PRIMARY KEY (recipe_id, related_recipe_id), "
+            "CONSTRAINT ck_recipe_related_recipes_order CHECK (recipe_id < related_recipe_id)"
+            ")"
+        ))
         await conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS uq_import_jobs_user_idempotency_key ON import_jobs (user_id, idempotency_key)"))
         await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_import_jobs_household_status ON import_jobs (household_id, status)"))
         await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_import_jobs_user_status ON import_jobs (user_id, status)"))

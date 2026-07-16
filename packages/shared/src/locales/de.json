@@ -566,6 +566,7 @@
     "qtyLabel": "Menge",
     "unitLabel": "Einheit"
   },
+  "relatedRecipes": { "title": "Ähnliche Rezepte", "add": "Ähnliche Rezepte hinzufügen" },
   "ads": {
     "advertisement": "Werbung",
     "placeholder": "Anzeige"

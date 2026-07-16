@@ -245,6 +245,10 @@ const RecipesPage = ({
         onClose={handleModalClose}
         onUpdated={handleUpdated}
         onDeleted={handleModalDeleted}
+        onOpenRecipe={(id) => {
+          const related = recipes.find((recipe) => recipe.id === id)
+          if (related) openView(related)
+        }}
         initialMode={openInEdit ? 'editing' : 'view'}
         activeAllergens={activeAllergens}
         scrollToStep={scrollToStep}

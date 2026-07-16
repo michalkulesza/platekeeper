@@ -18,9 +18,11 @@ from api.models import (
     Recipe,
     RecipeOrderRequest,
     RecipeOut,
+    RelatedRecipeRequest,
     RecipeSaveRequest,
     Tag,
     recipe_personal_links_table,
+    recipe_related_recipes_table,
     user_recipe_favourites_table,
 )
 from api.routes.context import get_active_household_id, get_scope_key
@@ -452,6 +454,60 @@ async def link_recipe_to_household(
     await session.commit()
     await session.refresh(recipe)
     return _build_recipe_out(recipe, user.id)
+
+
+@router.get("/{recipe_id}/related", response_model=list[RecipeOut])
+async def list_related_recipes(
+    recipe_id: uuid.UUID,
+    user: User = Depends(current_active_user),
+    session: AsyncSession = Depends(get_async_session),
+    household_id: uuid.UUID | None = Depends(get_active_household_id),
+) -> list[RecipeOut]:
+    related_ids = select(recipe_related_recipes_table.c.related_recipe_id).where(
+        recipe_related_recipes_table.c.recipe_id == recipe_id
+    ).union(select(recipe_related_recipes_table.c.recipe_id).where(
+        recipe_related_recipes_table.c.related_recipe_id == recipe_id
+    ))
+    recipes = list((await session.scalars(
+        select(Recipe).where(_recipe_filter(user.id, household_id), Recipe.id.in_(related_ids))
+    )).all())
+    favourite_ids = await _get_favourite_ids(session, user.id)
+    personal_link_ids = await _get_personal_link_ids(session, user.id)
+    return [_build_recipe_out(recipe, user.id, favourite_ids, personal_link_ids) for recipe in recipes]
+
+
+@router.put("/{recipe_id}/related", response_model=list[RecipeOut])
+async def set_related_recipes(
+    recipe_id: uuid.UUID,
+    body: RelatedRecipeRequest,
+    user: User = Depends(current_active_user),
+    session: AsyncSession = Depends(get_async_session),
+    household_id: uuid.UUID | None = Depends(get_active_household_id),
+) -> list[RecipeOut]:
+    source = await session.scalar(select(Recipe).where(_recipe_write_filter(user.id, household_id, recipe_id)))
+    if source is None:
+        raise HTTPException(status_code=404, detail="Recipe not found")
+    target_ids = set(body.recipe_ids)
+    if recipe_id in target_ids:
+        raise HTTPException(status_code=422, detail="recipe_cannot_relate_to_itself")
+    targets = list((await session.scalars(select(Recipe).where(_recipe_filter(user.id, household_id), Recipe.id.in_(target_ids)))).all())
+    if len(targets) != len(target_ids):
+        raise HTTPException(status_code=404, detail="Related recipe not found")
+    await session.execute(delete(recipe_related_recipes_table).where(
+        (recipe_related_recipes_table.c.recipe_id == recipe_id) |
+        (recipe_related_recipes_table.c.related_recipe_id == recipe_id)
+    ))
+    if targets:
+        await session.execute(insert(recipe_related_recipes_table), [
+            {"recipe_id": min(recipe_id, target.id), "related_recipe_id": max(recipe_id, target.id)}
+            for target in targets
+        ])
+    await session.commit()
+    scope = get_scope_key("recipes", user.id, household_id)
+    await broadcaster.publish(scope, {"type": "recipe_changed", "id": str(recipe_id)})
+    favourite_ids = await _get_favourite_ids(session, user.id)
+    personal_link_ids = await _get_personal_link_ids(session, user.id)
+    return [_build_recipe_out(recipe, user.id, favourite_ids, personal_link_ids) for recipe in targets]
 
 
 @router.post("/{recipe_id}/link-to-personal", response_model=RecipeOut)

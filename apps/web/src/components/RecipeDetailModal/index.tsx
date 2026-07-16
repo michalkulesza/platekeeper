@@ -36,6 +36,7 @@ import { useScreenWakeLock } from './useScreenWakeLock'
 import RecipeHeroSection from './RecipeHeroSection'
 import RecipeMetaBar from './RecipeMetaBar'
 import RecipeNotesSection from './RecipeNotesSection'
+import RelatedRecipesSection from './RelatedRecipesSection'
 import RecipeModalFooter from './RecipeModalFooter'
 import ViewComponent from './ViewComponent'
 import UnifiedIngredientList from './UnifiedIngredientList'
@@ -47,6 +48,7 @@ interface RecipeDetailModalProps {
   onClose: () => void
   onUpdated?: (r: RecipeOut) => void
   onDeleted?: (id: string) => void
+  onOpenRecipe?: (id: string) => void
   initialMode?: Mode
   activeAllergens?: string[]
   scrollToStep?: { componentIndex: number; stepIndex: number } | null
@@ -58,6 +60,7 @@ const RecipeDetailModal = ({
   onClose,
   onUpdated,
   onDeleted,
+  onOpenRecipe,
   initialMode,
   activeAllergens = [],
   scrollToStep,
@@ -428,6 +431,8 @@ const RecipeDetailModal = ({
                       {error}
                     </div>
                   )}
+
+                  <RelatedRecipesSection recipeId={r.id} onOpen={(id) => onOpenRecipe?.(id)} />
 
                   <RecipeNotesSection
                     value={localNotes}

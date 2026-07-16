@@ -94,6 +94,22 @@ export const createApiClient = (config: ApiClientConfig) => {
     return res.json() as Promise<RecipeOut>
   }
 
+  const listRelatedRecipes = async (id: string): Promise<RecipeOut[]> => {
+    const res = await apiFetch(`/api/recipes/${id}/related`)
+    await throwOnError(res, 'Failed to load related recipes')
+    return res.json() as Promise<RecipeOut[]>
+  }
+
+  const setRelatedRecipes = async (id: string, recipeIds: string[]): Promise<RecipeOut[]> => {
+    const res = await apiFetch(`/api/recipes/${id}/related`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recipe_ids: recipeIds }),
+    })
+    await throwOnError(res, 'Failed to update related recipes')
+    return res.json() as Promise<RecipeOut[]>
+  }
+
   const deleteRecipe = async (id: string): Promise<void> => {
     const res = await apiFetch(`/api/recipes/${id}`, { method: 'DELETE' })
     await throwOnError(res, 'Failed to delete recipe')
@@ -717,6 +733,8 @@ export const createApiClient = (config: ApiClientConfig) => {
   return {
     saveRecipe,
     updateRecipe,
+    listRelatedRecipes,
+    setRelatedRecipes,
     deleteRecipe,
     fetchStats,
     listRecipes,

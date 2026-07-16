@@ -6,7 +6,7 @@ from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
-from sqlalchemy import JSON, Boolean, Column, Date, ForeignKey, Index, Integer, String, DateTime, Table, UniqueConstraint, text
+from sqlalchemy import JSON, Boolean, CheckConstraint, Column, Date, ForeignKey, Index, Integer, String, DateTime, Table, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import JSONB, UUID as PG_UUID
 
@@ -63,6 +63,14 @@ recipe_personal_links_table = Table(
     Column("user_id", PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
     Column("recipe_id", PG_UUID(as_uuid=True), ForeignKey("recipes.id", ondelete="CASCADE"), primary_key=True),
     Column("linked_at", DateTime, default=datetime.utcnow, nullable=False),
+)
+
+recipe_related_recipes_table = Table(
+    "recipe_related_recipes",
+    Base.metadata,
+    Column("recipe_id", PG_UUID(as_uuid=True), ForeignKey("recipes.id", ondelete="CASCADE"), primary_key=True),
+    Column("related_recipe_id", PG_UUID(as_uuid=True), ForeignKey("recipes.id", ondelete="CASCADE"), primary_key=True),
+    CheckConstraint("recipe_id < related_recipe_id", name="ck_recipe_related_recipes_order"),
 )
 
 
@@ -381,6 +389,10 @@ class RecipeOut(BaseModel):
     shared_to_personal: bool = True
     added_by: str | None = None
     is_favourite: bool = False
+
+
+class RelatedRecipeRequest(BaseModel):
+    recipe_ids: list[uuid.UUID]
 
 
 class RecipeOrderRequest(BaseModel):

@@ -18,6 +18,7 @@
     "./hooks/useMembers": "./src/hooks/useMembers.ts",
     "./hooks/useShoppingList": "./src/hooks/useShoppingList.ts",
     "./hooks/useImportJobs": "./src/hooks/useImportJobs.ts",
+    "./hooks/useRelatedRecipes": "./src/hooks/useRelatedRecipes.ts",
     "./utils/*": "./src/utils/*.ts",
     "./i18n": "./src/i18n.ts",
     "./locales/*": "./src/locales/*.json"
