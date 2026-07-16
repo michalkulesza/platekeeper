@@ -254,7 +254,12 @@ const AddRecipeDrawer = forwardRef<AddRecipeDrawerHandle>((_props, ref) => {
           {errorBox}
         </BottomSheetView>
       ) : (
-        <BottomSheetScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+        // Pinned to the picker's measured height (once known) so switching to the text
+        // subview doesn't resize the sheet either.
+        <BottomSheetScrollView
+          style={[styles.container, subview !== 'picker' && pickerHeight != null && { height: pickerHeight }]}
+          keyboardShouldPersistTaps="handled"
+        >
           {subviewHeader}
 
           {subview === 'picker' && (

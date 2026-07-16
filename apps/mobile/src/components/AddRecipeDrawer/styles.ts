@@ -155,6 +155,7 @@ export const styles = StyleSheet.create({
     borderCurve: 'continuous',
     paddingHorizontal: 16,
     paddingVertical: 14,
+    marginBottom: 16,
   },
   shareTipText: {
     fontSize: 13,
