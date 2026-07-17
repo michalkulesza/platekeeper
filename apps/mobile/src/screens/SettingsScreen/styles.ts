@@ -77,10 +77,6 @@ export const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'flex-start',
   },
-  logoutRowDivider: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.separator,
-  },
   logoutText: { color: colors.red, fontSize: 16, fontWeight: '500' },
   privacyPolicyText: { color: colors.blue, fontSize: 16 },
   loadingRow: { padding: 24, alignItems: 'center' },
