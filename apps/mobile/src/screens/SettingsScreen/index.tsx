@@ -330,7 +330,6 @@ const SettingsScreen = () => {
         <Pressable
           style={({ pressed }) => [
             styles.logoutRow,
-            styles.logoutRowDivider,
             pressed && { opacity: 0.7 },
           ]}
           onPress={handleLogout}
@@ -338,22 +337,6 @@ const SettingsScreen = () => {
           accessibilityRole="button"
         >
           <Text style={styles.logoutText}>{t("settings.logOut")}</Text>
-        </Pressable>
-        <Pressable
-          style={({ pressed }) => [
-            styles.logoutRow,
-            pressed && { opacity: 0.7 },
-          ]}
-          onPress={handleDeleteAccount}
-          disabled={isDeletingAccount}
-          accessibilityLabel={t("settings.deleteAccount")}
-          accessibilityRole="button"
-        >
-          {isDeletingAccount ? (
-            <ActivityIndicator />
-          ) : (
-            <Text style={styles.logoutText}>{t("settings.deleteAccount")}</Text>
-          )}
         </Pressable>
       </View>
 
@@ -428,23 +411,6 @@ const SettingsScreen = () => {
 
       <SectionHeader label={t("settings.shoppingList")} />
       <View style={styles.card}>
-        <Pressable
-          style={({ pressed }) => [
-            styles.pickerRow,
-            pressed && { opacity: 0.7 },
-          ]}
-          onPress={handleWeekStartPicker}
-          accessibilityLabel={t("settings.weekStartsOn")}
-          accessibilityRole="button"
-        >
-          <Text style={styles.pickerLabel}>{t("settings.weekStartsOn")}</Text>
-          <View style={styles.pickerRight}>
-            <Text style={styles.pickerValue}>{weekStartLabel}</Text>
-            <Text style={styles.pickerChevron}>›</Text>
-          </View>
-        </Pressable>
-      </View>
-      <View style={styles.card}>
         <View style={styles.switchRow}>
           <View style={styles.switchLabelBlock}>
             <Text style={styles.switchLabel}>
@@ -461,6 +427,23 @@ const SettingsScreen = () => {
           />
         </View>
       </View>
+      <View style={styles.card}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.pickerRow,
+            pressed && { opacity: 0.7 },
+          ]}
+          onPress={handleWeekStartPicker}
+          accessibilityLabel={t("settings.weekStartsOn")}
+          accessibilityRole="button"
+        >
+          <Text style={styles.pickerLabel}>{t("settings.weekStartsOn")}</Text>
+          <View style={styles.pickerRight}>
+            <Text style={styles.pickerValue}>{weekStartLabel}</Text>
+            <Text style={styles.pickerChevron}>›</Text>
+          </View>
+        </Pressable>
+      </View>
 
       <SectionHeader label={t("settings.allergiesIntolerances")} />
       <View style={styles.card}>
@@ -473,6 +456,25 @@ const SettingsScreen = () => {
             onReanalyze={api.streamReanalyze}
           />
         </View>
+      </View>
+
+      <View style={styles.card}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.logoutRow,
+            pressed && { opacity: 0.7 },
+          ]}
+          onPress={handleDeleteAccount}
+          disabled={isDeletingAccount}
+          accessibilityLabel={t("settings.deleteAccount")}
+          accessibilityRole="button"
+        >
+          {isDeletingAccount ? (
+            <ActivityIndicator />
+          ) : (
+            <Text style={styles.logoutText}>{t("settings.deleteAccount")}</Text>
+          )}
+        </Pressable>
       </View>
     </ScrollView>
   );

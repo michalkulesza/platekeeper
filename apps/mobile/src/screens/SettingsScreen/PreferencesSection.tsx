@@ -51,6 +51,20 @@ const PreferencesSection = ({
   return (
     <>
       <View style={styles.card}>
+        <View style={styles.switchRow}>
+          <View style={styles.switchLabelBlock}>
+            <Text style={styles.switchLabel}>{t('settings.useMetricSystem')}</Text>
+            <Text style={styles.cardDesc}>{t('settings.useMetricSystemDesc')}</Text>
+          </View>
+          <Switch
+            value={preferences?.unit_system !== 'imperial'}
+            onValueChange={onUnitSystemToggle}
+            accessibilityLabel={t('settings.useMetricSystem')}
+          />
+        </View>
+      </View>
+
+      <View style={styles.card}>
         <Pressable
           style={({ pressed }) => [styles.pickerRow, pressed && { opacity: 0.7 }]}
           onPress={onLanguagePicker}
@@ -63,20 +77,6 @@ const PreferencesSection = ({
             <Text style={styles.pickerChevron}>›</Text>
           </View>
         </Pressable>
-      </View>
-
-      <View style={styles.card}>
-        <View style={styles.switchRow}>
-          <View style={styles.switchLabelBlock}>
-            <Text style={styles.switchLabel}>{t('settings.useMetricSystem')}</Text>
-            <Text style={styles.cardDesc}>{t('settings.useMetricSystemDesc')}</Text>
-          </View>
-          <Switch
-            value={preferences?.unit_system !== 'imperial'}
-            onValueChange={onUnitSystemToggle}
-            accessibilityLabel={t('settings.useMetricSystem')}
-          />
-        </View>
       </View>
 
       <View style={styles.card}>
