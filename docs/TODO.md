@@ -4,7 +4,6 @@ Items are grouped by purpose and ordered from highest to lowest importance withi
 
 ## Core product features
 
-- [ ] **Custom tags** - Bring back custom tags
 - [ ] **Visual recipe library / grid view** — Let users switch between the compact list and a photo-forward card or grid view with useful metadata such as tags, cooking time, and favourite status.
 
 - [ ] **Round up fractional shopping-list quantities** — Display purchasable whole-item amounts while retaining the precise underlying quantity to prevent over-buying.
@@ -28,11 +27,12 @@ Items are grouped by purpose and ordered from highest to lowest importance withi
 - [x] **RE RUN PRODUCTION** recipes
 - [x] **Add related recipes** — Add reciprocal links between recipes, with a related-recipes section on web and mobile.
 - [x] **Guided Cook Mode** — Full-screen, big-type, swipeable steps; keep the screen awake, surface timers from step text, and allow ingredient checkoff while cooking.
+- [x] **Custom tags** - Bring back custom tags
 
 ## Experience and product polish
 
-- [ ] **Anythign to do with top position px that is a hook that takes a while to reload ie jump when importing via share**
 - [ ] **Haptics and native context menus** — Add meaningful haptic feedback and long-press recipe actions (favourite, plan, share, delete) with a peek preview.
+- [ ] **Anythign to do with top position px that is a hook that takes a while to reload ie jump when importing via share**
 - [ ] **Delightful empty and loading states** — Extend shimmers to recipe lists and meal plans; add friendly empty states, restrained Carrot mascot moments, import-stage animation, haptics, and completion feedback.
 
 - [ ] **Colours and themes** — Define and apply a cohesive theme system.

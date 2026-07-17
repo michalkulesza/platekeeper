@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Apps & platform
 
 - 🐛 **Bug** — Fixed recipe tag chips being invisible in dark mode.
+- 🐛 **Bug** — Fixed the mobile Add tag button so its picker opens reliably on first tap.
 - 🐛 **Bug** — Refined the mobile Recipes filter chips for reliable contrast and a flatter native appearance.
 - 🐛 **Bug** — Renamed the recipe detail stat label from “Total time” to “Time”.
 

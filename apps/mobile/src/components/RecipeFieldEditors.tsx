@@ -40,6 +40,7 @@ export const TagPickerModal = ({
   const [query, setQuery] = useState('')
   const [creating, setCreating] = useState(false)
   const sheetRef = useRef<BottomSheetModal>(null)
+  const wasPresentedRef = useRef(false)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -80,9 +81,18 @@ export const TagPickerModal = ({
     [],
   )
   useEffect(() => {
-    if (visible) sheetRef.current?.present()
-    else sheetRef.current?.dismiss()
+    if (visible) {
+      wasPresentedRef.current = true
+      sheetRef.current?.present()
+    } else if (wasPresentedRef.current) {
+      sheetRef.current?.dismiss()
+    }
   }, [visible])
+
+  const handleDismiss = useCallback(() => {
+    wasPresentedRef.current = false
+    onClose()
+  }, [onClose])
 
   const renderBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
@@ -97,7 +107,7 @@ export const TagPickerModal = ({
       snapPoints={['72%']}
       enableDynamicSizing={false}
       enablePanDownToClose
-      onDismiss={onClose}
+      onDismiss={handleDismiss}
       backdropComponent={renderBackdrop}
       backgroundStyle={styles.sheetBackground}
       handleIndicatorStyle={styles.sheetHandle}
