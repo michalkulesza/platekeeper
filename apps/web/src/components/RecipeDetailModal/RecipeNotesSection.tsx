@@ -1,4 +1,4 @@
-import type { ChangeEvent, CSSProperties, FocusEventHandler } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type FocusEventHandler } from 'react'
 import { useTranslation } from 'react-i18next'
 
 interface RecipeNotesSectionProps {
@@ -30,8 +30,19 @@ const RecipeNotesSection = ({
   fontSizeIndex,
 }: RecipeNotesSectionProps) => {
   const { t } = useTranslation()
+  const [editing, setEditing] = useState(false)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    if (editing) inputRef.current?.focus()
+  }, [editing])
+
   const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) =>
     onChange(e.target.value)
+  const handleBlur: FocusEventHandler<HTMLTextAreaElement> = (e) => {
+    setEditing(false)
+    onBlur(e)
+  }
 
   return (
     <div className="pt-2 pb-4 border-b border-zinc-100">
@@ -43,15 +54,26 @@ const RecipeNotesSection = ({
           </span>
         )}
       </p>
-      <textarea
-        value={value}
-        onChange={handleChange}
-        onBlur={onBlur}
-        placeholder={t('common.tapToAddNotes')}
-        rows={3}
-        className={`w-full ${TEXT_SIZE_CLASSES[fontSizeIndex]} bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:border-primary resize-none leading-relaxed placeholder:text-zinc-400`}
-        style={textareaStyle}
-      />
+      {editing ? (
+        <textarea
+          ref={inputRef}
+          value={value}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          placeholder={t('common.tapToAddNotes')}
+          rows={3}
+          className={`w-full ${TEXT_SIZE_CLASSES[fontSizeIndex]} bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:border-primary resize-none leading-relaxed placeholder:text-zinc-400`}
+          style={textareaStyle}
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          className={`w-full min-h-16 text-left ${TEXT_SIZE_CLASSES[fontSizeIndex]} rounded-lg px-3 py-2 leading-relaxed text-zinc-700 hover:bg-zinc-50`}
+        >
+          {value || <span className="text-zinc-400">{t('common.tapToAddNotes')}</span>}
+        </button>
+      )}
     </div>
   )
 }

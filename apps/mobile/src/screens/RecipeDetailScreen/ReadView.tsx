@@ -1,6 +1,7 @@
 import { useCallback, useState, type RefObject } from "react";
 import {
   ActivityIndicator,
+  Keyboard,
   Linking,
   Pressable,
   ScrollView,
@@ -155,6 +156,8 @@ const ReadView = ({
         style={styles.scroll}
         contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}
         contentInsetAdjustmentBehavior="never"
+        keyboardShouldPersistTaps="never"
+        onTouchStart={Keyboard.dismiss}
       >
         {hasImage && !heroImageErrored ? (
           <NetworkImage

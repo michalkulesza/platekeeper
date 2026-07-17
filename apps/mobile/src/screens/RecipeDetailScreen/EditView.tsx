@@ -1,4 +1,4 @@
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
+import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import NetworkImage from '../../components/NetworkImage'
 import { useTranslation } from 'react-i18next'
 import { Feather } from '@expo/vector-icons'
@@ -83,7 +83,8 @@ const EditView = ({
         style={styles.scroll}
         contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}
         contentInsetAdjustmentBehavior="never"
-        keyboardShouldPersistTaps="handled"
+        keyboardShouldPersistTaps="never"
+        onTouchStart={Keyboard.dismiss}
       >
         {draft.thumbnail_url && !thumbErrored ? (
           <View>

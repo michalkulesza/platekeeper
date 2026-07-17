@@ -40,6 +40,7 @@ const NotesSection = ({ recipe, fontSizeIndex }: { recipe: RecipeOut; fontSizeIn
           style={[styles.notesText, styles.notesInput]}
           value={value}
           onChangeText={setValue}
+          onTouchStart={(event) => event.stopPropagation()}
           onBlur={handleBlur}
           autoFocus
           multiline
