@@ -10,7 +10,7 @@ const GlassViewSafe = (props: ComponentProps<typeof GlassView>) => {
   return glassAvailable ? (
     <GlassView colorScheme={resolvedColorScheme} {...props} />
   ) : (
-    <View {...props} />
+    <View style={[props.style, { backgroundColor: props.tintColor }]} />
   )
 }
 
