@@ -372,7 +372,7 @@ export const styles = StyleSheet.create({
     overflow: "hidden",
   },
   relatedRecipeImage: { width: 36, height: 36, backgroundColor: colors.gray6 },
-  relatedRecipeTitleContainer: { width: 108, paddingRight: 8 },
+  relatedRecipeTitleContainer: { maxWidth: 108, paddingRight: 8 },
   relatedRecipeTitle: { fontSize: 13, color: colors.label },
   relatedRecipeAdd: {
     width: 90,
