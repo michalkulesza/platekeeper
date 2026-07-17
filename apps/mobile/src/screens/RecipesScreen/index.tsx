@@ -37,7 +37,6 @@ import { tTag } from '@carrot/shared/utils/tagUtils'
 import Avatar from '../../components/Avatar'
 import { TAG_CATEGORIES, groupTagsByCategory, matchesTagFilters } from '@carrot/shared/utils/tagFilters'
 import CategoryFilterChip from './CategoryFilterChip'
-import GlassViewSafe from '../../components/GlassViewSafe'
 import MarqueeText from '../../components/MarqueeText'
 import MarqueeRow from '../../components/MarqueeRow'
 import { MarqueeSyncProvider, MarqueeSyncSlots } from '../../components/MarqueeSync'
@@ -105,9 +104,6 @@ const RecipesScreen = () => {
   const { busy, showSpinner } = useScreenLoading(isLoading || switchingHousehold)
   const { tags } = useTags()
   const { households, isLoadingHouseholds, activeHouseholdId, activeHousehold, switchHousehold } = useHousehold()
-  const { jobs: importJobs, retry, cancel, dismiss, completedRecipeIds } = useImportJobs(
-    user ? `${user.id}:${activeHouseholdId ?? 'personal'}` : null,
-  )
   const api = useApiClient()
   const qc = useQueryClient()
   const personalName = useMemo(() => user?.nickname || user?.email || t('households.personal'), [user, t])
@@ -404,6 +400,9 @@ const RecipesScreen = () => {
     [recipes, favouriteOverrides],
   )
 
+  const { jobs: importJobs, retry, cancel, dismiss } = useImportJobs(
+    user ? `${user.id}:${activeHouseholdId ?? 'personal'}` : null,
+  )
   const pendingJobs = useMemo(
     () => importJobs,
     [importJobs],
@@ -475,16 +474,11 @@ const RecipesScreen = () => {
         <Pressable
           key={item.id}
           onPress={() => toggleTagId(item.id)}
-          style={({ pressed }) => [styles.chip, pressed && { opacity: 0.7 }]}
+          style={({ pressed }) => [styles.chip, isSelected && styles.chipActive, pressed && { opacity: 0.7 }]}
           accessibilityLabel={item.name}
           accessibilityRole="button"
           accessibilityState={{ selected: isSelected }}
         >
-          <GlassViewSafe
-            style={StyleSheet.absoluteFill}
-            glassEffectStyle="clear"
-            tintColor={isSelected ? colors.blue : colors.gray5}
-          />
           <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
             {tTag(item.name, t)}
           </Text>
@@ -519,9 +513,8 @@ const RecipesScreen = () => {
       const isFav = favouriteOverrides.has(item.id)
         ? favouriteOverrides.get(item.id)!
         : item.is_favourite
-      const completedImport = completedRecipeIds.current.has(item.id)
-      const isNew = initialLoadDoneRef.current && !seenIdsRef.current.has(item.id) && !completedImport
-      if (isNew || completedImport) seenIdsRef.current.add(item.id)
+      const isNew = initialLoadDoneRef.current && !seenIdsRef.current.has(item.id)
+      if (isNew) seenIdsRef.current.add(item.id)
       return (
         <Reanimated.View
           entering={isNew ? FadeInDown.duration(250) : undefined}
@@ -617,23 +610,18 @@ const RecipesScreen = () => {
         </Reanimated.View>
       )
     },
-    [completedRecipeIds, handleRecipePress, handleToggleFavourite, renderSwipeActions, favouriteOverrides, recipeHouseholdAvatars, t],
+    [handleRecipePress, handleToggleFavourite, renderSwipeActions, favouriteOverrides, recipeHouseholdAvatars, t],
   )
 
   const favChip = useMemo(
     () => (
       <Pressable
         onPress={() => setFilterFavourites((v) => !v)}
-        style={({ pressed }) => [styles.favChip, pressed && { opacity: 0.7 }]}
+        style={({ pressed }) => [styles.favChip, filterFavourites && styles.chipActive, pressed && { opacity: 0.7 }]}
         accessibilityLabel={t('recipes.filterFavourites')}
         accessibilityRole="button"
         accessibilityState={{ selected: filterFavourites }}
       >
-        <GlassViewSafe
-          style={StyleSheet.absoluteFill}
-          glassEffectStyle="clear"
-          tintColor={filterFavourites ? colors.blue : colors.gray5}
-        />
         <Text style={[styles.favChipText, filterFavourites && styles.chipTextSelected]}>★</Text>
       </Pressable>
     ),
@@ -687,9 +675,9 @@ const RecipesScreen = () => {
                     <PendingJobCard
                       key={job.id}
                       job={job}
-                      onRetry={() => retry.mutateAsync(job.id)}
-                      onCancel={() => cancel.mutateAsync(job.id)}
-                      onDismiss={() => dismiss.mutateAsync(job.id)}
+                      onRetry={() => retry.mutate(job.id)}
+                      onCancel={() => cancel.mutate(job.id)}
+                      onDismiss={() => dismiss.mutate(job.id)}
                     />
                   ))}
                 </View>
