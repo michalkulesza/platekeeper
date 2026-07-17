@@ -4,7 +4,7 @@ Items are grouped by purpose and ordered from highest to lowest importance withi
 
 ## Core product features
 
-- [ ] **Guided Cook Mode** — Full-screen, big-type, swipeable steps; keep the screen awake, surface timers from step text, and allow ingredient checkoff while cooking.
+- [ ] **Custom tags** - Bring back custom tags
 - [ ] **Visual recipe library / grid view** — Let users switch between the compact list and a photo-forward card or grid view with useful metadata such as tags, cooking time, and favourite status.
 
 - [ ] **Round up fractional shopping-list quantities** — Display purchasable whole-item amounts while retaining the precise underlying quantity to prevent over-buying.
@@ -27,6 +27,7 @@ Items are grouped by purpose and ordered from highest to lowest importance withi
 - [x] **Unified ingredient list with collapsible groups** — When a recipe has multiple ingredient groups (e.g. Main and Sauce), show one combined "Ingredients" list of everything at the top, then render each group as its own collapsible section that is collapsed by default, with a caret/chevron at the end of each group header.
 - [x] **RE RUN PRODUCTION** recipes
 - [x] **Add related recipes** — Add reciprocal links between recipes, with a related-recipes section on web and mobile.
+- [x] **Guided Cook Mode** — Full-screen, big-type, swipeable steps; keep the screen awake, surface timers from step text, and allow ingredient checkoff while cooking.
 
 ## Experience and product polish
 

@@ -38,6 +38,18 @@
     "search": "Szukaj",
     "remove": "Usuń"
   },
+  "cookMode": {
+    "start": "Tryb gotowania",
+    "decreaseTextSize": "Zmniejsz tekst w trybie gotowania",
+    "increaseTextSize": "Zwiększ tekst w trybie gotowania",
+    "ingredients": "Składniki",
+    "close": "Zamknij tryb gotowania",
+    "readyToStart": "Gotowy do uruchomienia",
+    "tapToPause": "Dotknij, aby wstrzymać",
+    "tapToResume": "Dotknij, aby wznowić",
+    "startTimer": "Uruchom minutnik",
+    "stepProgress": "Krok {{current}} z {{total}}"
+  },
   "recipes": {
     "searchPlaceholder": "Wyszukaj",
     "noResults": "Brak wyników",
@@ -322,8 +334,8 @@
     "recipeDetail": "Szczegóły przepisu",
     "showIntelligentIngredients": "Pokaż inteligentne składniki",
     "showIntelligentIngredientsDesc": "Automatycznie pokazuje ilości składników pod pasującym krokiem",
-    "cookingMode": "Tryb gotowania",
-    "cookingModeDesc": "Utrzymuje ekran włączony, gdy przepis jest otwarty",
+    "screenAwake": "Ekran zawsze włączony",
+    "screenAwakeDesc": "Utrzymuje ekran włączony, gdy przepis jest otwarty",
     "recipeImport": "Import przepisów",
     "shareImportsToPersonal": "Dodawaj też importowane przepisy do mojej osobistej biblioteki",
     "shareImportsToPersonalDesc": "Podczas dodawania przepisu w gospodarstwie zapisz też kopię w Twoich prywatnych przepisach",
@@ -504,8 +516,22 @@
     "addAll": "Dodaj wszystko"
   },
   "importJobs": {
-    "queued": "Import przepisu dodany do kolejki", "pending": "Import rozpocznie się wkrótce", "running": "Wyodrębnianie przepisu…", "takingLonger": "To trwa dłużej niż zwykle…", "retry": "Spróbuj ponownie", "cancel": "Anuluj", "dismiss": "Odrzuć", "enqueueFailed": "Nie udało się rozpocząć importu. Spróbuj ponownie.", "someone": "Ktoś",
-    "failure": { "extraction_failed": "Nie udało się wyodrębnić przepisu.", "invalid_input": "Ten format importu nie jest obsługiwany.", "household_access_changed": "Nie masz już dostępu do tego gospodarstwa.", "retries_exhausted": "Import nie zakończył się po kilku próbach.", "unexpected": "Import nie powiódł się. Spróbuj ponownie." }
+    "queued": "Import przepisu dodany do kolejki",
+    "pending": "Import rozpocznie się wkrótce",
+    "running": "Wyodrębnianie przepisu…",
+    "takingLonger": "To trwa dłużej niż zwykle…",
+    "retry": "Spróbuj ponownie",
+    "cancel": "Anuluj",
+    "dismiss": "Odrzuć",
+    "enqueueFailed": "Nie udało się rozpocząć importu. Spróbuj ponownie.",
+    "someone": "Ktoś",
+    "failure": {
+      "extraction_failed": "Nie udało się wyodrębnić przepisu.",
+      "invalid_input": "Ten format importu nie jest obsługiwany.",
+      "household_access_changed": "Nie masz już dostępu do tego gospodarstwa.",
+      "retries_exhausted": "Import nie zakończył się po kilku próbach.",
+      "unexpected": "Import nie powiódł się. Spróbuj ponownie."
+    }
   },
   "defaultTags": {
     "Vegetarian": "Wegetariańskie",
@@ -575,7 +601,10 @@
     "qtyLabel": "ilość",
     "unitLabel": "jednostka"
   },
-  "relatedRecipes": { "title": "Powiązane przepisy", "add": "Edytuj powiązane przepisy" },
+  "relatedRecipes": {
+    "title": "Powiązane przepisy",
+    "add": "Edytuj powiązane przepisy"
+  },
   "ads": {
     "advertisement": "Reklama",
     "placeholder": "Reklama"

@@ -38,6 +38,18 @@
     "search": "Rechercher",
     "remove": "Supprimer"
   },
+  "cookMode": {
+    "start": "Mode cuisine",
+    "decreaseTextSize": "Réduire la taille du texte du mode cuisine",
+    "increaseTextSize": "Augmenter la taille du texte du mode cuisine",
+    "ingredients": "Ingrédients",
+    "close": "Fermer le mode cuisine",
+    "readyToStart": "Prêt à démarrer",
+    "tapToPause": "Touchez pour mettre en pause",
+    "tapToResume": "Touchez pour reprendre",
+    "startTimer": "Démarrer le minuteur",
+    "stepProgress": "Étape {{current}} sur {{total}}"
+  },
   "recipes": {
     "searchPlaceholder": "Chercher des recettes…",
     "noResults": "Aucun résultat",
@@ -314,8 +326,8 @@
     "recipeDetail": "Détail de la recette",
     "showIntelligentIngredients": "Afficher les ingrédients intelligents",
     "showIntelligentIngredientsDesc": "Affiche automatiquement les quantités d'ingrédients sous l'étape correspondante",
-    "cookingMode": "Mode cuisine",
-    "cookingModeDesc": "L'écran reste actif lorsqu'une recette est ouverte",
+    "screenAwake": "Écran allumé",
+    "screenAwakeDesc": "L'écran reste actif lorsqu'une recette est ouverte",
     "recipeImport": "Import de recettes",
     "shareImportsToPersonal": "Ajouter aussi les recettes importées à ma bibliothèque personnelle",
     "shareImportsToPersonalDesc": "Lors de l'ajout d'une recette dans un foyer, enregistre aussi une copie dans tes recettes privées",
@@ -496,8 +508,22 @@
     "addAll": "Tout ajouter"
   },
   "importJobs": {
-    "queued": "Importation de recette mise en file d’attente", "pending": "L’importation commencera bientôt", "running": "Extraction de la recette…", "takingLonger": "Cela prend plus de temps que prévu…", "retry": "Réessayer", "cancel": "Annuler", "dismiss": "Masquer", "enqueueFailed": "Impossible de démarrer l’importation. Réessayez.", "someone": "Quelqu’un",
-    "failure": { "extraction_failed": "Impossible d’extraire une recette de cette importation.", "invalid_input": "Cette entrée d’importation n’est pas prise en charge.", "household_access_changed": "Vous n’avez plus accès à ce foyer.", "retries_exhausted": "L’importation n’a pas pu être terminée après plusieurs tentatives.", "unexpected": "L’importation a échoué. Réessayez." }
+    "queued": "Importation de recette mise en file d’attente",
+    "pending": "L’importation commencera bientôt",
+    "running": "Extraction de la recette…",
+    "takingLonger": "Cela prend plus de temps que prévu…",
+    "retry": "Réessayer",
+    "cancel": "Annuler",
+    "dismiss": "Masquer",
+    "enqueueFailed": "Impossible de démarrer l’importation. Réessayez.",
+    "someone": "Quelqu’un",
+    "failure": {
+      "extraction_failed": "Impossible d’extraire une recette de cette importation.",
+      "invalid_input": "Cette entrée d’importation n’est pas prise en charge.",
+      "household_access_changed": "Vous n’avez plus accès à ce foyer.",
+      "retries_exhausted": "L’importation n’a pas pu être terminée après plusieurs tentatives.",
+      "unexpected": "L’importation a échoué. Réessayez."
+    }
   },
   "defaultTags": {
     "Vegetarian": "Végétarien",
@@ -567,7 +593,10 @@
     "qtyLabel": "qté",
     "unitLabel": "unité"
   },
-  "relatedRecipes": { "title": "Recettes associées", "add": "Modifier les recettes associées" },
+  "relatedRecipes": {
+    "title": "Recettes associées",
+    "add": "Modifier les recettes associées"
+  },
   "ads": {
     "advertisement": "Publicité",
     "placeholder": "Publicité"

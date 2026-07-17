@@ -38,6 +38,18 @@
     "search": "Suche",
     "remove": "Entfernen"
   },
+  "cookMode": {
+    "start": "Kochmodus",
+    "decreaseTextSize": "Textgröße im Kochmodus verkleinern",
+    "increaseTextSize": "Textgröße im Kochmodus vergrößern",
+    "ingredients": "Zutaten",
+    "close": "Kochmodus schließen",
+    "readyToStart": "Bereit zum Starten",
+    "tapToPause": "Zum Pausieren tippen",
+    "tapToResume": "Zum Fortsetzen tippen",
+    "startTimer": "Timer starten",
+    "stepProgress": "Schritt {{current}} von {{total}}"
+  },
   "recipes": {
     "searchPlaceholder": "Rezepte suchen…",
     "noResults": "Keine Ergebnisse",
@@ -314,8 +326,8 @@
     "recipeDetail": "Rezeptdetails",
     "showIntelligentIngredients": "Intelligente Zutaten anzeigen",
     "showIntelligentIngredientsDesc": "Zeigt automatisch Zutatenmengen unter dem passenden Schritt an",
-    "cookingMode": "Kochmodus",
-    "cookingModeDesc": "Bildschirm bleibt wach, wenn ein Rezept geöffnet ist",
+    "screenAwake": "Bildschirm aktiv",
+    "screenAwakeDesc": "Bildschirm bleibt wach, wenn ein Rezept geöffnet ist",
     "recipeImport": "Rezeptimport",
     "shareImportsToPersonal": "Importierte Rezepte auch zu meiner persönlichen Rezeptbibliothek hinzufügen",
     "shareImportsToPersonalDesc": "Beim Hinzufügen eines Rezepts in einem Haushalt auch eine Kopie in deinen privaten Rezepten speichern",
@@ -496,8 +508,22 @@
     "addAll": "Alle hinzufügen"
   },
   "importJobs": {
-    "queued": "Rezeptimport vorgemerkt", "pending": "Der Import startet bald", "running": "Rezept wird extrahiert…", "takingLonger": "Es dauert länger als gewöhnlich…", "retry": "Erneut versuchen", "cancel": "Abbrechen", "dismiss": "Ausblenden", "enqueueFailed": "Der Import konnte nicht gestartet werden. Bitte versuche es erneut.", "someone": "Jemand",
-    "failure": { "extraction_failed": "Aus diesem Import konnte kein Rezept extrahiert werden.", "invalid_input": "Diese Import-Eingabe wird nicht unterstützt.", "household_access_changed": "Du hast keinen Zugriff mehr auf diesen Haushalt.", "retries_exhausted": "Der Import konnte nach mehreren Versuchen nicht abgeschlossen werden.", "unexpected": "Der Import ist fehlgeschlagen. Bitte versuche es erneut." }
+    "queued": "Rezeptimport vorgemerkt",
+    "pending": "Der Import startet bald",
+    "running": "Rezept wird extrahiert…",
+    "takingLonger": "Es dauert länger als gewöhnlich…",
+    "retry": "Erneut versuchen",
+    "cancel": "Abbrechen",
+    "dismiss": "Ausblenden",
+    "enqueueFailed": "Der Import konnte nicht gestartet werden. Bitte versuche es erneut.",
+    "someone": "Jemand",
+    "failure": {
+      "extraction_failed": "Aus diesem Import konnte kein Rezept extrahiert werden.",
+      "invalid_input": "Diese Import-Eingabe wird nicht unterstützt.",
+      "household_access_changed": "Du hast keinen Zugriff mehr auf diesen Haushalt.",
+      "retries_exhausted": "Der Import konnte nach mehreren Versuchen nicht abgeschlossen werden.",
+      "unexpected": "Der Import ist fehlgeschlagen. Bitte versuche es erneut."
+    }
   },
   "defaultTags": {
     "Vegetarian": "Vegetarisch",
@@ -567,7 +593,10 @@
     "qtyLabel": "Menge",
     "unitLabel": "Einheit"
   },
-  "relatedRecipes": { "title": "Ähnliche Rezepte", "add": "Ähnliche Rezepte bearbeiten" },
+  "relatedRecipes": {
+    "title": "Ähnliche Rezepte",
+    "add": "Ähnliche Rezepte bearbeiten"
+  },
   "ads": {
     "advertisement": "Werbung",
     "placeholder": "Anzeige"

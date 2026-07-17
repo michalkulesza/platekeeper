@@ -37,7 +37,7 @@ export const useDisplayPrefs = () => {
   const handleFontSizeChange = useCallback((index: number) => {
     setFontSizeIndex(index)
     void AsyncStorage.setItem(FONT_SIZE_STORAGE_KEY, String(index))
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid)
   }, [])
 
   return {

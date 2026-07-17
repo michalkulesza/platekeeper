@@ -1,20 +1,16 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Alert,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
   PlatformColor,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native'
+import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView, BottomSheetTextInput, type BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { Ionicons } from '@expo/vector-icons'
 import { useTranslation } from 'react-i18next'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import type { AllergenFlag, Tag } from '@carrot/shared/types'
 import type { StructuredIngredient } from '@carrot/shared/utils/ingredientUtils'
 import { tTag } from '@carrot/shared/utils/tagUtils'
@@ -39,10 +35,8 @@ export const TagPickerModal = ({
   onClose: () => void
 }) => {
   const { t } = useTranslation()
-  const insets = useSafeAreaInsets()
   const [query, setQuery] = useState('')
-
-  const tagModalPaddingBottom = useMemo(() => ({ paddingBottom: insets.bottom + 24 }), [insets.bottom])
+  const sheetRef = useRef<BottomSheetModal>(null)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -75,38 +69,42 @@ export const TagPickerModal = ({
     [selectedIds, onAdd, onRemove],
   )
 
-  const getCloseButtonStyle = useCallback(
-    ({ pressed }: { pressed: boolean }) => [pressed && styles.pressedLight],
-    [],
-  )
   const getTagListRowStyle = useCallback(
     ({ pressed }: { pressed: boolean }) => [styles.tagListRow, pressed && styles.pressedLight],
     [],
   )
+  useEffect(() => {
+    if (visible) sheetRef.current?.present()
+    else sheetRef.current?.dismiss()
+  }, [visible])
+
+  const renderBackdrop = useCallback(
+    (props: BottomSheetBackdropProps) => (
+      <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} />
+    ),
+    [],
+  )
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={styles.tagModalKeyboardWrap}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <Pressable style={styles.tagModalOverlay} onPress={onClose} />
-        <View style={[styles.tagModal, tagModalPaddingBottom]}>
-          <View style={styles.sheetHandle} />
+    <BottomSheetModal
+      ref={sheetRef}
+      snapPoints={['72%']}
+      enableDynamicSizing={false}
+      enablePanDownToClose
+      onDismiss={onClose}
+      backdropComponent={renderBackdrop}
+      backgroundStyle={styles.sheetBackground}
+      handleIndicatorStyle={styles.sheetHandle}
+      keyboardBehavior="interactive"
+      keyboardBlurBehavior="restore"
+    >
+      <View style={styles.tagModal}>
           <View style={styles.tagModalHeader}>
             <Text style={styles.tagModalTitle}>{t('tags.editTags')}</Text>
-            <Pressable
-              style={getCloseButtonStyle}
-              onPress={onClose}
-              hitSlop={12}
-              accessibilityLabel={t('common.close')}
-            >
-              <Text style={styles.tagModalClose}>✕</Text>
-            </Pressable>
           </View>
           <View style={styles.tagSearchContainer}>
             <Ionicons name="search" size={16} color={PlatformColor('secondaryLabel') as unknown as string} />
-            <TextInput
+            <BottomSheetTextInput
               style={styles.tagSearchInput}
               placeholder={t('common.search')}
               placeholderTextColor={PlatformColor('placeholderText') as unknown as string}
@@ -121,7 +119,7 @@ export const TagPickerModal = ({
               accessibilityLabel={t('common.search')}
             />
           </View>
-          <ScrollView style={styles.tagScrollList} keyboardShouldPersistTaps="handled">
+          <BottomSheetScrollView style={styles.tagScrollList} keyboardShouldPersistTaps="handled">
             {groupedSections.map((section) => (
               <View key={section.key}>
                 <Text style={styles.tagSectionHeader}>{section.title}</Text>
@@ -145,10 +143,9 @@ export const TagPickerModal = ({
             {filtered.length === 0 && (
               <Text style={styles.tagEmpty}>{t('tags.noTagsAvailable')}</Text>
             )}
-          </ScrollView>
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
+          </BottomSheetScrollView>
+      </View>
+    </BottomSheetModal>
   )
 }
 
@@ -275,22 +272,12 @@ const styles = StyleSheet.create({
   pressedLight: { opacity: 0.7 },
   pressedMedium: { opacity: 0.6 },
 
-  tagModalKeyboardWrap: { flex: 1 },
-  tagModalOverlay: { flex: 1, backgroundColor: 'transparent' },
-  tagModal: {
-    backgroundColor: PlatformColor('systemBackground') as unknown as string,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+  sheetBackground: { backgroundColor: PlatformColor('secondarySystemBackground') as unknown as string },
+  tagModal: { flex: 1,
     paddingTop: 8,
-    maxHeight: '72%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
   },
-  tagModalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8 },
+  tagModalHeader: { alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8 },
   tagModalTitle: { fontSize: 17, lineHeight: 22, fontWeight: '600', color: PlatformColor('label') as unknown as string },
-  tagModalClose: { fontSize: 17, color: PlatformColor('secondaryLabel') as unknown as string, padding: 4 },
   tagSearchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -303,7 +290,7 @@ const styles = StyleSheet.create({
     backgroundColor: PlatformColor('systemGray6') as unknown as string,
   },
   tagSearchInput: { flex: 1, paddingVertical: 0, fontSize: 16, color: PlatformColor('label') as unknown as string },
-  tagScrollList: { maxHeight: 320 },
+  tagScrollList: { flex: 1 },
   tagSectionHeader: {
     fontSize: 13,
     lineHeight: 18,
@@ -333,8 +320,6 @@ const styles = StyleSheet.create({
     height: 4,
     backgroundColor: PlatformColor('opaqueSeparator') as unknown as string,
     borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 8,
   },
 
   ingEditor: {

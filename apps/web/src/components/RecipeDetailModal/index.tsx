@@ -41,6 +41,7 @@ import RecipeModalFooter from './RecipeModalFooter'
 import ViewComponent from './ViewComponent'
 import UnifiedIngredientList from './UnifiedIngredientList'
 import EditComponent from './EditComponent'
+import CookMode from './CookMode'
 
 interface RecipeDetailModalProps {
   recipe: RecipeOut | null
@@ -82,6 +83,7 @@ const RecipeDetailModal = ({
   const [notesSaving, setNotesSaving] = useState(false)
   const [fontSizeIndex, setFontSizeIndex] = useState(2)
   const [selectedServings, setSelectedServings] = useState<number | null>(null)
+  const [cookModeOpen, setCookModeOpen] = useState(false)
   const savedNotesRef = useRef(recipe?.notes ?? '')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const activeRecipeId = recipe?.id
@@ -98,6 +100,7 @@ const RecipeDetailModal = ({
       setMealPlanOpen(false)
       setSessionAdded(new Set())
       setError(null)
+      setCookModeOpen(false)
     }
   }, [recipe?.id, initialMode])
 
@@ -423,6 +426,7 @@ const RecipeDetailModal = ({
                   selectedServings={selectedServings}
                   onDecreaseServings={handleDecreaseServings}
                   onIncreaseServings={handleIncreaseServings}
+                  onOpenCookMode={() => setCookModeOpen(true)}
                 />
 
                 <div className="px-5">
@@ -432,7 +436,10 @@ const RecipeDetailModal = ({
                     </div>
                   )}
 
-                  <RelatedRecipesSection recipeId={r.id} onOpen={(id) => onOpenRecipe?.(id)} />
+                  <RelatedRecipesSection
+                    recipeId={r.id}
+                    onOpen={(id) => onOpenRecipe?.(id)}
+                  />
 
                   <RecipeNotesSection
                     value={localNotes}
@@ -521,6 +528,9 @@ const RecipeDetailModal = ({
           </ModalContainer>
         </ModalBackdrop>
       </Modal>
+      {recipe && cookModeOpen && (
+        <CookMode recipe={recipe} onClose={() => setCookModeOpen(false)} />
+      )}
 
       <AssignToMealPlanModal
         isOpen={mealPlanOpen}

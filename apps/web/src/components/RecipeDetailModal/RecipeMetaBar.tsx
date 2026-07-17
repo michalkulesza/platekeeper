@@ -1,4 +1,4 @@
-import { Type } from 'react-feather'
+import { PlayCircle, Type } from 'react-feather'
 import { useTranslation } from 'react-i18next'
 import type { RecipeOut } from '@carrot/shared/types'
 import HouseholdAvatarIndicators from '../HouseholdAvatarIndicators'
@@ -35,6 +35,7 @@ interface RecipeMetaBarProps {
   selectedServings: number | null
   onDecreaseServings: () => void
   onIncreaseServings: () => void
+  onOpenCookMode: () => void
 }
 
 const TEXT_SIZES = [14, 16, 17, 20, 22] as const
@@ -65,6 +66,7 @@ const RecipeMetaBar = ({
   selectedServings,
   onDecreaseServings,
   onIncreaseServings,
+  onOpenCookMode,
 }: RecipeMetaBarProps) => {
   const { t } = useTranslation()
   const r = recipe
@@ -139,7 +141,7 @@ const RecipeMetaBar = ({
           {'wakeLock' in navigator && (
             <div className="flex items-center justify-between py-2.5">
               <span className="text-sm text-zinc-700">
-                {t('settings.cookingMode')}
+                {t('settings.screenAwake')}
               </span>
               <label className="relative inline-flex cursor-pointer items-center">
                 <input
@@ -147,7 +149,7 @@ const RecipeMetaBar = ({
                   checked={wakeLockActive}
                   onChange={onToggleWakeLock}
                   className="peer sr-only"
-                  aria-label={t('settings.cookingMode')}
+                  aria-label={t('settings.screenAwake')}
                 />
                 <span className="h-6 w-11 rounded-full bg-zinc-200 transition-colors peer-checked:bg-primary peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow-sm after:transition-transform peer-checked:after:translate-x-5" />
               </label>
@@ -173,6 +175,15 @@ const RecipeMetaBar = ({
             </div>
           </label>
         </div>
+      )}
+      {mode === 'view' && (
+        <button
+          type="button"
+          onClick={onOpenCookMode}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition hover:brightness-95"
+        >
+          <PlayCircle size={18} /> {t('cookMode.start')}
+        </button>
       )}
       {mode === 'editing' && (
         <div className="flex items-center gap-2 pt-0.5">

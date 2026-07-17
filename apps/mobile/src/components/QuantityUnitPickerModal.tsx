@@ -1,5 +1,6 @@
-import { useCallback, useMemo } from 'react'
-import { Modal, PlatformColor, Pressable, StyleSheet, Text, View } from 'react-native'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { PlatformColor, StyleSheet, View } from 'react-native'
+import { BottomSheetBackdrop, BottomSheetModal, type BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { Picker } from '@react-native-picker/picker'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
@@ -9,7 +10,6 @@ import {
   QUANTITY_REMAINDER_OPTIONS,
   serializeQtyParts,
 } from '@carrot/shared/utils/ingredientUtils'
-import { colors } from '../theme/colors'
 
 const WHOLE_OPTIONS = Array.from({ length: 21 }, (_, i) => i)
 
@@ -28,6 +28,7 @@ export const QuantityUnitPickerModal = ({
 }) => {
   const { t, i18n } = useTranslation()
   const insets = useSafeAreaInsets()
+  const sheetRef = useRef<BottomSheetModal>(null)
   const { whole, remainder } = useMemo(() => parseQtyParts(qty), [qty])
   const decimalSeparator = useMemo<'.' | ','>(() =>
     new Intl.NumberFormat(i18n.language).format(1.1).includes(',') ? ',' : '.',
@@ -50,26 +51,30 @@ export const QuantityUnitPickerModal = ({
     [qty, onChange],
   )
 
-  const getDoneButtonStyle = useCallback(
-    ({ pressed }: { pressed: boolean }) => [styles.doneButton, pressed && styles.pressedLight],
+  useEffect(() => {
+    if (visible) sheetRef.current?.present()
+    else sheetRef.current?.dismiss()
+  }, [visible])
+
+  const renderBackdrop = useCallback(
+    (props: BottomSheetBackdropProps) => (
+      <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} />
+    ),
     [],
   )
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.overlay} onPress={onClose} />
+    <BottomSheetModal
+      ref={sheetRef}
+      snapPoints={[340]}
+      enableDynamicSizing={false}
+      enablePanDownToClose
+      onDismiss={onClose}
+      backdropComponent={renderBackdrop}
+      backgroundStyle={styles.sheetBackground}
+      handleIndicatorStyle={styles.sheetHandle}
+    >
       <View style={sheetStyle}>
-        <View style={styles.header}>
-          <View style={styles.sheetHandle} />
-          <Pressable
-            style={getDoneButtonStyle}
-            onPress={onClose}
-            hitSlop={10}
-            accessibilityLabel={t('common.done')}
-          >
-            <Text style={styles.doneText}>{t('common.done')}</Text>
-          </Pressable>
-        </View>
         <View style={styles.wheelRow}>
           <Picker
             style={styles.wheel}
@@ -108,21 +113,14 @@ export const QuantityUnitPickerModal = ({
           </Picker>
         </View>
       </View>
-    </Modal>
+    </BottomSheetModal>
   )
 }
 
 const styles = StyleSheet.create({
-  pressedLight: { opacity: 0.7 },
-  overlay: { flex: 1 },
-  sheet: {
-    backgroundColor: PlatformColor('systemBackground') as unknown as string,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-  },
-  header: {
-    paddingTop: 8,
-    paddingHorizontal: 16,
+  sheet: {},
+  sheetBackground: {
+    backgroundColor: PlatformColor('secondarySystemBackground') as unknown as string,
   },
   sheetHandle: {
     width: 36,
@@ -130,14 +128,7 @@ const styles = StyleSheet.create({
     backgroundColor: PlatformColor('opaqueSeparator') as unknown as string,
     borderRadius: 2,
     alignSelf: 'center',
-    marginBottom: 8,
   },
-  doneButton: {
-    alignSelf: 'flex-end',
-    paddingVertical: 4,
-    paddingHorizontal: 4,
-  },
-  doneText: { fontSize: 17, lineHeight: 22, fontWeight: '600', color: colors.brand },
   wheelRow: { flexDirection: 'row', height: 280 },
   wheel: { flex: 1 },
 })
