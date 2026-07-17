@@ -25,6 +25,7 @@ export const TagPickerModal = ({
   selectedIds,
   onAdd,
   onRemove,
+  onCreate,
   onClose,
 }: {
   visible: boolean
@@ -32,10 +33,12 @@ export const TagPickerModal = ({
   selectedIds: Set<string>
   onAdd: (tag: Tag) => void
   onRemove: (tagId: string) => void
+  onCreate: (name: string) => Promise<Tag>
   onClose: () => void
 }) => {
   const { t } = useTranslation()
   const [query, setQuery] = useState('')
+  const [creating, setCreating] = useState(false)
   const sheetRef = useRef<BottomSheetModal>(null)
 
   const filtered = useMemo(() => {
@@ -56,6 +59,9 @@ export const TagPickerModal = ({
       { key: 'other', title: t('tags.category.other'), tags: selectedFirst(grouped.other) },
     ].filter((section) => section.tags.length > 0)
   }, [filtered, t, selectedIds])
+  const trimmedQuery = query.trim()
+  const canCreate = trimmedQuery.length > 0 && !allTags.some((tag) => tag.name.toLowerCase() === trimmedQuery.toLowerCase())
+  const handleCreate = useCallback(async () => { setCreating(true); try { const tag = await onCreate(trimmedQuery); onAdd(tag); setQuery('') } finally { setCreating(false) } }, [onAdd, onCreate, trimmedQuery])
 
   const handleTagRowPress = useCallback(
     (tag: Tag) => {
@@ -120,6 +126,7 @@ export const TagPickerModal = ({
             />
           </View>
           <BottomSheetScrollView style={styles.tagScrollList} keyboardShouldPersistTaps="handled">
+            {canCreate && <Pressable style={styles.tagListRow} onPress={handleCreate} disabled={creating}><Text style={styles.tagListText}>{creating ? t('tags.creating') : t('tags.createTag', { name: trimmedQuery })}</Text></Pressable>}
             {groupedSections.map((section) => (
               <View key={section.key}>
                 <Text style={styles.tagSectionHeader}>{section.title}</Text>
@@ -140,7 +147,7 @@ export const TagPickerModal = ({
                 })}
               </View>
             ))}
-            {filtered.length === 0 && (
+            {filtered.length === 0 && !canCreate && (
               <Text style={styles.tagEmpty}>{t('tags.noTagsAvailable')}</Text>
             )}
           </BottomSheetScrollView>

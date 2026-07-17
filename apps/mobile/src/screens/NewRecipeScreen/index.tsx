@@ -22,7 +22,7 @@ const NewRecipeScreen = () => {
   const insets = useSafeAreaInsets()
   const api = useApiClient()
   const qc = useQueryClient()
-  const { tags } = useTags()
+  const { tags, create: createTagMutation } = useTags()
   const { preferences } = usePreferences()
   const { activeHouseholdId } = useHousehold()
 
@@ -55,6 +55,7 @@ const NewRecipeScreen = () => {
 
   const handleTagAdd = useCallback((tag: Tag) => setSelectedTags((prev) => [...prev, tag]), [])
   const handleTagRemove = useCallback((id: string) => setSelectedTags((prev) => prev.filter((tag) => tag.id !== id)), [])
+  const handleTagCreate = useCallback(async (name: string): Promise<Tag> => createTagMutation.mutateAsync(name), [createTagMutation])
 
   return (
     <KeyboardAvoidingView
@@ -77,6 +78,7 @@ const NewRecipeScreen = () => {
           allTags={tags}
           onTagAdd={handleTagAdd}
           onTagRemove={handleTagRemove}
+          onTagCreate={handleTagCreate}
           activeAllergens={activeAllergens}
         />
 

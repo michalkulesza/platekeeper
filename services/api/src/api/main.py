@@ -89,9 +89,13 @@ async def _seed_default_tags() -> None:
         for name, category in _DEFAULT_TAGS:
             tag = existing_by_name.get(name)
             if tag is None:
-                session.add(Tag(name=name, category=category))
-            elif tag.category != category:
-                tag.category = category
+                session.add(Tag(name=name, is_default=True, user_id=None, category=category))
+            else:
+                tag.is_default = True
+                tag.user_id = None
+                tag.household_id = None
+                if tag.category != category:
+                    tag.category = category
         await session.commit()
 
 
@@ -116,6 +120,9 @@ async def lifespan(app: FastAPI):
         await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS google_account BOOLEAN NOT NULL DEFAULT FALSE"))
         await conn.execute(text("ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS share_imports_to_personal BOOLEAN NOT NULL DEFAULT FALSE"))
         await conn.execute(text("ALTER TABLE tags ADD COLUMN IF NOT EXISTS category VARCHAR(20)"))
+        await conn.execute(text("ALTER TABLE tags ADD COLUMN IF NOT EXISTS is_default BOOLEAN NOT NULL DEFAULT FALSE"))
+        await conn.execute(text("ALTER TABLE tags ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE CASCADE"))
+        await conn.execute(text("ALTER TABLE tags ADD COLUMN IF NOT EXISTS household_id UUID REFERENCES households(id) ON DELETE CASCADE"))
         await conn.execute(text("ALTER TABLE import_jobs ADD COLUMN IF NOT EXISTS household_id UUID REFERENCES households(id) ON DELETE CASCADE"))
         await conn.execute(text("ALTER TABLE import_jobs ADD COLUMN IF NOT EXISTS idempotency_key UUID"))
         await conn.execute(text("ALTER TABLE import_jobs ADD COLUMN IF NOT EXISTS shared_to_personal BOOLEAN NOT NULL DEFAULT FALSE"))
@@ -148,19 +155,6 @@ async def lifespan(app: FastAPI):
             "WHERE household_id IS NOT NULL AND shared_to_personal = TRUE "
             "ON CONFLICT DO NOTHING"
         ))
-        # Tags are predefined-only now — drop the custom-tag ownership columns,
-        # discarding any stray non-default rows created before this change.
-        await conn.execute(text(
-            "DO $$ BEGIN "
-            "IF EXISTS (SELECT 1 FROM information_schema.columns "
-            "WHERE table_name = 'tags' AND column_name = 'is_default') THEN "
-            "DELETE FROM tags WHERE is_default = FALSE; "
-            "END IF; "
-            "END $$"
-        ))
-        await conn.execute(text("ALTER TABLE tags DROP COLUMN IF EXISTS is_default"))
-        await conn.execute(text("ALTER TABLE tags DROP COLUMN IF EXISTS user_id"))
-        await conn.execute(text("ALTER TABLE tags DROP COLUMN IF EXISTS household_id"))
         # Allergen preferences are predefined-only now — flatten the old
         # {predefined, custom} shape into a plain array of keys.
         await conn.execute(text(

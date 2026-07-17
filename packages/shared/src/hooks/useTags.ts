@@ -7,6 +7,11 @@ export const useTags = () => {
 
   const query = useQuery({ queryKey: ['tags'], queryFn: api.listTags })
 
+  const create = useMutation({
+    mutationFn: api.createTag,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['tags'] }),
+  })
+
   const addToRecipe = useMutation({
     mutationFn: ({ recipeId, tagId }: { recipeId: string; tagId: string }) =>
       api.addTagToRecipe(recipeId, tagId),
@@ -23,6 +28,7 @@ export const useTags = () => {
     tags: query.data ?? [],
     isLoading: query.isLoading,
     error: query.error,
+    create,
     addToRecipe,
     removeFromRecipe,
   }

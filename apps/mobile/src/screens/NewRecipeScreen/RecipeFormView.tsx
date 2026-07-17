@@ -25,6 +25,7 @@ const RecipeFormView = ({
   allTags,
   onTagAdd,
   onTagRemove,
+  onTagCreate,
   activeAllergens,
 }: {
   recipe: EditableRecipe
@@ -35,6 +36,7 @@ const RecipeFormView = ({
   allTags: Tag[]
   onTagAdd: (tag: Tag) => void
   onTagRemove: (tagId: string) => void
+  onTagCreate: (name: string) => Promise<Tag>
   activeAllergens: string[]
 }) => {
   const { t } = useTranslation()
@@ -299,6 +301,7 @@ const RecipeFormView = ({
           selectedIds={selectedTagIds}
           onAdd={onTagAdd}
           onRemove={onTagRemove}
+          onCreate={onTagCreate}
           onClose={() => setShowTagPicker(false)}
         />
         <QuantityUnitPickerModal

@@ -188,6 +188,16 @@ export const createApiClient = (config: ApiClientConfig) => {
     return res.json() as Promise<Tag[]>
   }
 
+  const createTag = async (name: string): Promise<Tag> => {
+    const res = await apiFetch('/api/tags', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    })
+    await throwOnError(res, 'Failed to create tag')
+    return res.json() as Promise<Tag>
+  }
+
   const addTagToRecipe = async (recipeId: string, tagId: string): Promise<void> => {
     const res = await apiFetch(`/api/recipes/${recipeId}/tags/${tagId}`, { method: 'POST' })
     if (!res.ok) throw new Error('Failed to add tag')
@@ -747,6 +757,7 @@ export const createApiClient = (config: ApiClientConfig) => {
     importRecipes,
     uploadThumbnail,
     listTags,
+    createTag,
     addTagToRecipe,
     removeTagFromRecipe,
     listMealPlan,

@@ -169,6 +169,13 @@ class Tag(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(30), nullable=False)
+    is_default: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=True
+    )
+    household_id: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("households.id", ondelete="CASCADE"), nullable=True
+    )
     category: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
 
@@ -325,7 +332,13 @@ class TagOut(BaseModel):
 
     id: uuid.UUID
     name: str
+    is_default: bool
+    household_id: uuid.UUID | None = None
     category: str | None = None
+
+
+class TagCreate(BaseModel):
+    name: str
 
 
 # ── Recipe save / list ────────────────────────────────────────────────────────

@@ -435,6 +435,7 @@
   "tags": {
     "tags": "Tagi",
     "noTags": "Brak tagów",
+    "searchOrCreate": "Szukaj lub utwórz…", "creating": "Tworzę…", "createTag": "Utwórz '{{name}}'",
     "noTagsAvailable": "Brak dostępnych tagów",
     "allTagsAdded": "Wszystkie tagi już dodane",
     "addTag": "Dodaj tag",

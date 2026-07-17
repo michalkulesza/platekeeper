@@ -10,10 +10,10 @@ from datetime import datetime, timedelta
 import httpx
 from sqlalchemy import func, select, update
 
-from api.constants import ALLERGENS
 from api.database import async_session_maker
 from api.models import (
     DeviceSubscription,
+    Household,
     HouseholdMember,
     ImportFailureCode,
     ImportJob,
@@ -28,6 +28,7 @@ from api.models import (
     UserPreferences,
 )
 from api.routes.imports import _event_for_job
+from api.routes.tags import _tag_filter
 from api.services import apns as apns_svc
 from api.services.pipeline import run_image_import_stream, run_import_stream, run_text_import_stream
 
@@ -65,9 +66,16 @@ def _normalize_ingredient_punctuation(value: str) -> str:
     return normalized
 
 
-async def _get_all_tag_names(session) -> list[str]:
-    tags = list((await session.scalars(select(Tag))).all())
-    return [tag.name for tag in tags]
+async def _get_tags_and_allergens(session, user_id: uuid.UUID, household_id: uuid.UUID | None):
+    tags = list((await session.scalars(select(Tag).where(_tag_filter(user_id, household_id)))).all())
+    allergens: list[str] = []
+    if household_id:
+        household = await session.get(Household, household_id)
+        allergens = list(household.allergens) if household and household.allergens else []
+    else:
+        preferences = await session.get(UserPreferences, user_id)
+        allergens = list(preferences.personal_allergens) if preferences and preferences.personal_allergens else []
+    return [tag.name for tag in tags], allergens
 
 
 def _flatten_ingredient(ingredient: Ingredient, auto_substitute: bool) -> str:
@@ -93,7 +101,7 @@ async def _save_recipe(session, job: ImportJob, result: ImportResult) -> Recipe:
     tags: list[Tag] = []
     if recipe_data.tags:
         tags = list((await session.scalars(
-            select(Tag).where(func.lower(Tag.name).in_([name.lower() for name in recipe_data.tags]))
+            select(Tag).where(_tag_filter(job.user_id, job.household_id), func.lower(Tag.name).in_([name.lower() for name in recipe_data.tags]))
         )).all())
     preferences = await session.get(UserPreferences, job.user_id)
     auto_substitute = bool(preferences and preferences.auto_substitute)
@@ -176,15 +184,15 @@ async def _is_member(session, job: ImportJob) -> bool:
     return await session.get(HouseholdMember, {"household_id": job.household_id, "user_id": job.user_id}) is not None
 
 
-async def _run_pipeline(job: ImportJob, available_tags: list[str]) -> ImportResult:
+async def _run_pipeline(job: ImportJob, available_tags: list[str], allergens: list[str]) -> ImportResult:
     result: ImportResult | None = None
     if job.kind == ImportJobKind.URL:
-        generator = run_import_stream(job.input["url"], model=job.model, available_tags=available_tags, allergens=ALLERGENS)
+        generator = run_import_stream(job.input["url"], model=job.model, available_tags=available_tags, allergens=allergens or None)
     elif job.kind == ImportJobKind.TEXT:
-        generator = run_text_import_stream(job.input["text"], model=job.model, available_tags=available_tags, allergens=ALLERGENS)
+        generator = run_text_import_stream(job.input["text"], model=job.model, available_tags=available_tags, allergens=allergens or None)
     else:
         image_data = base64.b64decode(job.input["image_base64"])
-        generator = run_image_import_stream(image_data, job.input.get("mime_type", "image/jpeg"), model=job.model, available_tags=available_tags, allergens=ALLERGENS)
+        generator = run_image_import_stream(image_data, job.input.get("mime_type", "image/jpeg"), model=job.model, available_tags=available_tags, allergens=allergens or None)
     async for event in generator:
         if event["type"] == "done":
             result = ImportResult.model_validate(event["result"])
@@ -238,9 +246,9 @@ async def _process_job(job_id: uuid.UUID) -> None:
                 await _event_for_job(session, job, "import_job.failed")
                 await session.commit()
                 return
-            available_tags = await _get_all_tag_names(session)
+            available_tags, allergens = await _get_tags_and_allergens(session, job.user_id, job.household_id)
             session.expunge(job)
-        result = await _run_pipeline(job, available_tags)
+        result = await _run_pipeline(job, available_tags, allergens)
         async with async_session_maker() as session:
             current = await session.scalar(select(ImportJob).where(ImportJob.id == job_id).with_for_update())
             if current is None or current.status == ImportJobStatus.CANCELLED:

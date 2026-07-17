@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useShoppingList } from '@carrot/shared/hooks/useShoppingList'
 import { usePreferences } from '@carrot/shared/hooks/usePreferences'
+import { useTags } from '@carrot/shared/hooks/useTags'
 import {
   Modal,
   ModalBackdrop,
@@ -70,6 +71,7 @@ const RecipeDetailModal = ({
   const wakeLock = useScreenWakeLock(Boolean(recipe))
   const { addItems: addShoppingListItems } = useShoppingList()
   const { preferences } = usePreferences()
+  const { create: createTagMutation } = useTags()
   const [mode, setMode] = useState<Mode>('view')
   const [addMode, setAddMode] = useState(false)
   const [mealPlanOpen, setMealPlanOpen] = useState(false)
@@ -199,6 +201,7 @@ const RecipeDetailModal = ({
       if (removed) setLocalTags((prev) => [...prev, removed])
     }
   }
+  const handleTagCreate = useCallback(async (name: string): Promise<Tag> => createTagMutation.mutateAsync(name), [createTagMutation])
 
   const handleNotesSave = async () => {
     const trimmed = localNotes.trim()
@@ -398,6 +401,7 @@ const RecipeDetailModal = ({
                   allTags={allTags}
                   onTagAdd={handleTagAdd}
                   onTagRemove={handleTagRemove}
+                  onTagCreate={handleTagCreate}
                   fileInputRef={fileInputRef}
                   onThumbnailFile={handleThumbnailFile}
                   imgUploading={imgUploading}

@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Recipes & cooking
 
+- ✨ **Feature** — Restored custom tags across web and mobile, with personal and household-shared scopes plus import support.
 - ✨ **Feature** — Added guided Cook mode on web and mobile: work through recipe steps one at a time with swipe/keyboard navigation, adjustable text size, ingredient checklists, inline timers, saved progress, and a screen wake lock while cooking.
 - ✨ **Feature** — Recipes can now be linked as related recipes and opened directly from compact, title-aware chips on the recipe detail view.
 - ✨ **Feature** — Mobile ingredient editing now uses a wheel picker for quantities and units, including mixed fractions such as 1 1/2.

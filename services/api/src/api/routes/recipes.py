@@ -64,12 +64,13 @@ def _recipe_write_filter(user_id: uuid.UUID, household_id: uuid.UUID | None, rec
     )
 
 
-async def _set_tags(session: AsyncSession, recipe: Recipe, tag_ids: list[uuid.UUID]) -> None:
+async def _set_tags(session: AsyncSession, recipe: Recipe, tag_ids: list[uuid.UUID], user_id: uuid.UUID, household_id: uuid.UUID | None) -> None:
     await session.refresh(recipe, attribute_names=["tags"])
     if not tag_ids:
         recipe.tags = []
         return
-    result = await session.execute(select(Tag).where(Tag.id.in_(tag_ids)))
+    tag_filter = or_(Tag.is_default.is_(True), Tag.household_id == household_id) if household_id else or_(Tag.is_default.is_(True), and_(Tag.user_id == user_id, Tag.household_id.is_(None)))
+    result = await session.execute(select(Tag).where(Tag.id.in_(tag_ids), tag_filter))
     recipe.tags = list(result.scalars().all())
 
 
@@ -302,7 +303,7 @@ async def save_recipe(
     )
     session.add(recipe)
     await session.flush()
-    await _set_tags(session, recipe, body.tag_ids)
+    await _set_tags(session, recipe, body.tag_ids, user.id, household_id)
     await session.commit()
     await session.refresh(recipe)
 
@@ -360,7 +361,7 @@ async def update_recipe(
     recipe.components = [c.model_dump() for c in body.components]
     if household_id is not None:
         recipe.shared_to_personal = body.shared_to_personal
-    await _set_tags(session, recipe, body.tag_ids)
+    await _set_tags(session, recipe, body.tag_ids, user.id, household_id)
 
     await session.commit()
     await session.refresh(recipe)
@@ -391,7 +392,8 @@ async def add_tag_to_recipe(
     if recipe is None:
         raise HTTPException(status_code=404, detail="Recipe not found")
 
-    tag_result = await session.execute(select(Tag).where(Tag.id == tag_id))
+    tag_filter = or_(Tag.is_default.is_(True), Tag.household_id == household_id) if household_id else or_(Tag.is_default.is_(True), and_(Tag.user_id == user.id, Tag.household_id.is_(None)))
+    tag_result = await session.execute(select(Tag).where(Tag.id == tag_id, tag_filter))
     tag = tag_result.scalar_one_or_none()
     if tag is None:
         raise HTTPException(status_code=404, detail="Tag not found")

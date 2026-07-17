@@ -427,6 +427,7 @@
   "tags": {
     "tags": "Tags",
     "noTags": "Keine Tags",
+    "searchOrCreate": "Suchen oder erstellen…", "creating": "Erstelle…", "createTag": "\"{{name}}\" erstellen",
     "noTagsAvailable": "Keine Tags vorhanden",
     "allTagsAdded": "Alle Tags bereits hinzugefügt",
     "addTag": "Tag hinzufügen",
