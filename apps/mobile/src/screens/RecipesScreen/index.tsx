@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import {
+  ActionSheetIOS,
   ActivityIndicator,
   Alert,
   FlatList,
@@ -20,7 +21,7 @@ import Reanimated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated'
-import { MenuView, type MenuAction, type NativeActionEvent } from '@react-native-menu/menu'
+import type { NativeActionEvent } from '@react-native-menu/menu'
 import { useTranslation } from 'react-i18next'
 import * as Haptics from 'expo-haptics'
 import { useIsFocused, useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
@@ -46,10 +47,6 @@ import { useAuth } from '../../context/AuthContext'
 import {
   MANAGE_TIP_MENU_ID,
   PERSONAL_MENU_ID,
-  RECIPE_DELETE_ACTION,
-  RECIPE_EDIT_ACTION,
-  RECIPE_FAVOURITE_ACTION,
-  RECIPE_SHARE_ACTION,
   SEARCH_BAR_HEIGHT_DELTA_STORAGE_KEY,
   SORT_OPTIONS,
   learnedSearchBarHeightDelta,
@@ -180,43 +177,16 @@ const RecipesScreen = () => {
     [handleConfirmDelete, t],
   )
 
-  const buildRecipeMenuActions = useCallback(
-    (item: RecipeOut, isFav: boolean): MenuAction[] => {
-      const shareActions: MenuAction[] =
-        activeHouseholdId !== null && item.household_id === activeHouseholdId && !item.shared_to_personal
-          ? [{ id: SEND_TO_PERSONAL, title: t('recipes.sendToPersonalLibrary'), image: 'square.and.arrow.up' }]
-          : item.household_id !== null
-          ? []
-          : households.length === 0
-          ? [
-              {
-                id: RECIPE_SHARE_ACTION,
-                title: t('recipes.sendToHousehold'),
-                image: 'square.and.arrow.up',
-                attributes: { disabled: true },
-              },
-            ]
-          : [
-              {
-                id: RECIPE_SHARE_ACTION,
-                title: t('recipes.sendToHousehold'),
-                image: 'square.and.arrow.up',
-                subactions: households.map((h) => ({
-                  id: `${SEND_TO_HOUSEHOLD_PREFIX}${h.id}`,
-                  title: h.name,
-                })),
-              },
-            ]
-      return [
-        {
-          id: RECIPE_FAVOURITE_ACTION,
-          title: isFav ? t('recipes.removeFromFavourites') : t('recipes.addToFavourites'),
-          image: isFav ? 'star.slash' : 'star',
-        },
-        { id: RECIPE_EDIT_ACTION, title: t('common.edit'), image: 'pencil' },
-        ...shareActions,
-        { id: RECIPE_DELETE_ACTION, title: t('common.delete'), image: 'trash', attributes: { destructive: true } },
-      ]
+  const buildRecipeShareActions = useCallback(
+    (item: RecipeOut): { id: string; label: string }[] => {
+      if (activeHouseholdId !== null && item.household_id === activeHouseholdId && !item.shared_to_personal) {
+        return [{ id: SEND_TO_PERSONAL, label: t('recipes.sendToPersonalLibrary') }]
+      }
+      if (item.household_id !== null) return []
+      return households.map((h) => ({
+        id: `${SEND_TO_HOUSEHOLD_PREFIX}${h.id}`,
+        label: `${t('recipes.sendToHousehold')}: ${h.name}`,
+      }))
     },
     [activeHouseholdId, households, t],
   )
@@ -476,43 +446,62 @@ const RecipesScreen = () => {
     [router],
   )
 
-  const handleRecipeMenuAction = useCallback(
-    (item: RecipeOut) =>
-      ({ nativeEvent }: NativeActionEvent) => {
-        const eventId = nativeEvent.event
-        if (eventId === RECIPE_FAVOURITE_ACTION) {
-          handleToggleFavourite(item)
-          return
-        }
-        if (eventId === RECIPE_EDIT_ACTION) {
-          router.push({ pathname: '/recipe/[id]', params: { id: item.id, edit: '1' } })
-          return
-        }
-        if (eventId === RECIPE_DELETE_ACTION) {
-          handleDelete(item)
-          return
-        }
-        if (eventId === SEND_TO_PERSONAL) {
-          linkToPersonal.mutate(item.id, {
-            onSuccess: () => Alert.alert(t('recipes.recipeAddedToPersonalLibrary')),
-            onError: (err) =>
-              Alert.alert(t('common.ok'), err instanceof Error ? err.message : t('addRecipe.failedToAdd')),
-          })
-          return
-        }
-        if (eventId.startsWith(SEND_TO_HOUSEHOLD_PREFIX)) {
-          const householdId = eventId.slice(SEND_TO_HOUSEHOLD_PREFIX.length)
-          linkToHousehold.mutate(
-            { id: item.id, householdId },
-            {
-              onSuccess: () => Alert.alert(t('addRecipe.recipeAddedToHousehold')),
-              onError: (err) =>
-                Alert.alert(t('common.ok'), err instanceof Error ? err.message : t('addRecipe.failedToAdd')),
-            },
-          )
-        }
-      },
-    [handleToggleFavourite, router, handleDelete, linkToPersonal, linkToHousehold, t],
+  const handleShareAction = useCallback(
+    (item: RecipeOut, shareId: string) => {
+      if (shareId === SEND_TO_PERSONAL) {
+        linkToPersonal.mutate(item.id, {
+          onSuccess: () => Alert.alert(t('recipes.recipeAddedToPersonalLibrary')),
+          onError: (err) =>
+            Alert.alert(t('common.ok'), err instanceof Error ? err.message : t('addRecipe.failedToAdd')),
+        })
+        return
+      }
+      const householdId = shareId.slice(SEND_TO_HOUSEHOLD_PREFIX.length)
+      linkToHousehold.mutate(
+        { id: item.id, householdId },
+        {
+          onSuccess: () => Alert.alert(t('addRecipe.recipeAddedToHousehold')),
+          onError: (err) =>
+            Alert.alert(t('common.ok'), err instanceof Error ? err.message : t('addRecipe.failedToAdd')),
+        },
+      )
+    },
+    [linkToPersonal, linkToHousehold, t],
+  )
+
+  const handleRecipeLongPress = useCallback(
+    (item: RecipeOut) => {
+      const isFav = favouriteOverrides.has(item.id) ? favouriteOverrides.get(item.id)! : item.is_favourite
+      const shareActions = buildRecipeShareActions(item)
+      const favouriteLabel = isFav ? t('recipes.removeFromFavourites') : t('recipes.addToFavourites')
+      const labels = [favouriteLabel, t('common.edit'), ...shareActions.map((a) => a.label), t('common.delete')]
+      const deleteIndex = labels.length - 1
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: [...labels, t('common.cancel')],
+          destructiveButtonIndex: deleteIndex,
+          cancelButtonIndex: labels.length,
+        },
+        (index) => {
+          if (index === 0) {
+            handleToggleFavourite(item)
+            return
+          }
+          if (index === 1) {
+            router.push({ pathname: '/recipe/[id]', params: { id: item.id, edit: '1' } })
+            return
+          }
+          if (index === deleteIndex) {
+            handleDelete(item)
+            return
+          }
+          const share = shareActions[index - 2]
+          if (share) handleShareAction(item, share.id)
+        },
+      )
+    },
+    [buildRecipeShareActions, favouriteOverrides, handleToggleFavourite, router, handleDelete, handleShareAction, t],
   )
 
   const renderTag = useCallback(
@@ -569,15 +558,10 @@ const RecipesScreen = () => {
           exiting={FadeOut.duration(250)}
           layout={LinearTransition.duration(250)}
         >
-        <MenuView
-          title={item.title}
-          actions={buildRecipeMenuActions(item, isFav)}
-          onPressAction={handleRecipeMenuAction(item)}
-          shouldOpenOnLongPress
-        >
           <Pressable
             style={({ pressed }) => [styles.card, pressed && { opacity: 0.7 }]}
             onPress={() => handleRecipePress(item)}
+            onLongPress={() => handleRecipeLongPress(item)}
             accessibilityLabel={item.title}
             accessibilityRole="button"
           >
@@ -641,15 +625,13 @@ const RecipesScreen = () => {
               <Text style={[styles.favStar, isFav && styles.favStarActive]}>★</Text>
             </Pressable>
           </Pressable>
-        </MenuView>
         </Reanimated.View>
       )
     },
     [
       handleRecipePress,
+      handleRecipeLongPress,
       handleToggleFavourite,
-      buildRecipeMenuActions,
-      handleRecipeMenuAction,
       favouriteOverrides,
       recipeHouseholdAvatars,
       t,
