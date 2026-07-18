@@ -258,6 +258,19 @@ export const createApiClient = (config: ApiClientConfig) => {
     return res.json() as Promise<UserPreferences>
   }
 
+  const updateRecipeServingPreference = async (
+    recipeId: string,
+    servings: number
+  ): Promise<UserPreferences> => {
+    const res = await apiFetch(`/api/preferences/recipe-servings/${recipeId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ servings }),
+    })
+    if (!res.ok) throw new Error('Failed to save recipe serving preference')
+    return res.json() as Promise<UserPreferences>
+  }
+
   // ── Allergens ──────────────────────────────────────────────────────────────
 
   const updateHouseholdAllergens = async (
@@ -767,6 +780,7 @@ export const createApiClient = (config: ApiClientConfig) => {
     subscribeMealPlan,
     getPreferences,
     updatePreferences,
+    updateRecipeServingPreference,
     updateHouseholdAllergens,
     streamReanalyze,
     createHousehold,

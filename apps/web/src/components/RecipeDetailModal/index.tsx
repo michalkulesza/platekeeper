@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useShoppingList } from '@carrot/shared/hooks/useShoppingList'
-import { usePreferences } from '@carrot/shared/hooks/usePreferences'
+import { usePreferences, useRecipeServingPreference } from '@carrot/shared/hooks/usePreferences'
 import { useTags } from '@carrot/shared/hooks/useTags'
 import {
   Modal,
@@ -84,12 +84,14 @@ const RecipeDetailModal = ({
   const [localNotes, setLocalNotes] = useState(recipe?.notes ?? '')
   const [notesSaving, setNotesSaving] = useState(false)
   const [fontSizeIndex, setFontSizeIndex] = useState(2)
-  const [selectedServings, setSelectedServings] = useState<number | null>(null)
   const [cookModeOpen, setCookModeOpen] = useState(false)
   const savedNotesRef = useRef(recipe?.notes ?? '')
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const activeRecipeId = recipe?.id
   const originalServings = recipe?.servings ?? null
+  const { selectedServings, setServings } = useRecipeServingPreference(
+    recipe?.id,
+    originalServings,
+  )
 
   useEffect(() => {
     if (recipe) {
@@ -105,10 +107,6 @@ const RecipeDetailModal = ({
       setCookModeOpen(false)
     }
   }, [recipe?.id, initialMode])
-
-  useEffect(() => {
-    setSelectedServings(originalServings)
-  }, [activeRecipeId, originalServings])
 
   // Scroll to target step after modal opens (wait for open animation)
   useEffect(() => {
@@ -241,7 +239,7 @@ const RecipeDetailModal = ({
       )
       toast.success(t('recipes.recipeUpdated'), { timeout: 3000 })
       onUpdated?.(updated)
-      setSelectedServings(updated.servings)
+      if (updated.servings !== null) setServings(updated.servings)
       setMode('view')
     } catch (err) {
       setError(err instanceof Error ? err.message : t('recipes.failedToSave'))
@@ -311,15 +309,11 @@ const RecipeDetailModal = ({
   }
 
   const handleDecreaseServings = () => {
-    setSelectedServings((current) =>
-      current === null ? null : Math.max(1, current - 1)
-    )
+    if (selectedServings !== null) setServings(Math.max(1, selectedServings - 1))
   }
 
   const handleIncreaseServings = () => {
-    setSelectedServings((current) =>
-      current === null ? null : Math.min(99, current + 1)
-    )
+    if (selectedServings !== null) setServings(Math.min(99, selectedServings + 1))
   }
 
   const handleAddIngredient = (ci: number, ii: number) => {

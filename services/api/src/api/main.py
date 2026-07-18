@@ -119,6 +119,7 @@ async def lifespan(app: FastAPI):
         await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_activity_at TIMESTAMP"))
         await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS google_account BOOLEAN NOT NULL DEFAULT FALSE"))
         await conn.execute(text("ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS share_imports_to_personal BOOLEAN NOT NULL DEFAULT FALSE"))
+        await conn.execute(text("ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS recipe_serving_overrides JSONB NOT NULL DEFAULT '{}'::jsonb"))
         await conn.execute(text("ALTER TABLE tags ADD COLUMN IF NOT EXISTS category VARCHAR(20)"))
         await conn.execute(text("ALTER TABLE tags ADD COLUMN IF NOT EXISTS is_default BOOLEAN NOT NULL DEFAULT FALSE"))
         await conn.execute(text("ALTER TABLE tags ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE CASCADE"))

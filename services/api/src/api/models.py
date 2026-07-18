@@ -485,6 +485,7 @@ class UserPreferences(Base):
     language: Mapped[str] = mapped_column(String(10), default="en", nullable=False)
     unit_system: Mapped[str] = mapped_column(String(20), default="metric", nullable=False)
     share_imports_to_personal: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    recipe_serving_overrides: Mapped[dict[str, int]] = mapped_column(JSONB, default=dict, nullable=False)
 
 
 class UserPreferencesOut(BaseModel):
@@ -496,6 +497,7 @@ class UserPreferencesOut(BaseModel):
     language: str = "en"
     unit_system: str = "metric"
     share_imports_to_personal: bool = False
+    recipe_serving_overrides: dict[str, int] = Field(default_factory=dict)
 
 
 class UserPreferencesUpdate(BaseModel):
@@ -505,6 +507,10 @@ class UserPreferencesUpdate(BaseModel):
     language: str | None = None
     unit_system: str | None = None
     share_imports_to_personal: bool | None = None
+
+
+class RecipeServingPreferenceUpdate(BaseModel):
+    servings: int = Field(ge=1, le=99)
 
 
 # ── Shopping List ──────────────────────────────────────────────────────────────

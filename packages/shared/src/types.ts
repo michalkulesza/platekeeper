@@ -220,6 +220,7 @@ export interface UserPreferences {
   language: string
   unit_system: string // "metric" | "imperial"
   share_imports_to_personal: boolean
+  recipe_serving_overrides: Record<string, number>
 }
 
 export interface ReanalyzeProgress {

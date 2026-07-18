@@ -7,7 +7,7 @@ import { useNavigation, useLocalSearchParams } from "expo-router";
 import { useApiClient } from "@carrot/shared/api/context";
 import { useRecipes } from "@carrot/shared/hooks/useRecipes";
 import { useShoppingList } from "@carrot/shared/hooks/useShoppingList";
-import { usePreferences } from "@carrot/shared/hooks/usePreferences";
+import { usePreferences, useRecipeServingPreference } from "@carrot/shared/hooks/usePreferences";
 import type { RecipeOut } from "@carrot/shared/types";
 import { useHousehold } from "../../context/HouseholdContext";
 import { useResolvedColorScheme } from "../../context/ColorSchemeContext";
@@ -48,7 +48,6 @@ const RecipeDetailScreen = () => {
   const [heroImageErrored, setHeroImageErrored] = useState(false);
   const [addMode, setAddMode] = useState(false);
   const [sessionAdded, setSessionAdded] = useState<Set<string>>(new Set());
-  const [selectedServings, setSelectedServings] = useState<number | null>(null);
   const [cookModeOpen, setCookModeOpen] = useState(false);
   const insets = useSafeAreaInsets();
   const mealPlanSheetRef = useRef<AddToMealPlanSheetHandle>(null);
@@ -62,10 +61,14 @@ const RecipeDetailScreen = () => {
     () => recipes.find((r) => r.id === recipeId),
     [recipes, recipeId],
   );
+  const { selectedServings, setServings } = useRecipeServingPreference(
+    recipe?.id,
+    recipe?.servings ?? null,
+  );
 
   const handleEditSaveSuccess = useCallback((updated: RecipeOut) => {
-    setSelectedServings(updated.servings);
-  }, []);
+    if (updated.servings !== null) setServings(updated.servings);
+  }, [setServings]);
 
   const editDraft = useEditDraft({
     recipe,
@@ -75,10 +78,6 @@ const RecipeDetailScreen = () => {
     t,
     onSaveSuccess: handleEditSaveSuccess,
   });
-
-  useEffect(() => {
-    setSelectedServings(recipe?.servings ?? null);
-  }, [recipe?.id, recipe?.servings]);
 
   const handleOpenMealPlanSheet = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -97,18 +96,14 @@ const RecipeDetailScreen = () => {
   }, [recipe, toggleFavourite]);
 
   const handleDecreaseServings = useCallback(() => {
-    setSelectedServings((current) =>
-      current === null ? null : Math.max(1, current - 1),
-    );
+    if (selectedServings !== null) setServings(Math.max(1, selectedServings - 1));
     void Haptics.selectionAsync();
-  }, []);
+  }, [selectedServings, setServings]);
 
   const handleIncreaseServings = useCallback(() => {
-    setSelectedServings((current) =>
-      current === null ? null : Math.min(99, current + 1),
-    );
+    if (selectedServings !== null) setServings(Math.min(99, selectedServings + 1));
     void Haptics.selectionAsync();
-  }, []);
+  }, [selectedServings, setServings]);
 
   const handlePressRecipeAction = useCallback(
     ({ nativeEvent }: { nativeEvent: { event: string } }) => {
