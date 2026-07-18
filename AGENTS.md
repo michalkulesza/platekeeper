@@ -12,5 +12,11 @@ General code style, file-organization, mobile UI, and readability conventions li
 global `~/.claude/CLAUDE.md` (a symlink into the private `claude-conventions` repo) and apply
 here automatically — this file only holds what's specific to `carrot`.
 
+## Repeated user actions
+Design every user-triggered action to remain correct when the user taps or clicks it repeatedly
+or rapidly. Prevent duplicate/conflicting work using the mechanism that best fits the flow, such
+as a short debounce/grace period, a request queue or idempotency guard, or a blocking loading
+state; also ensure the backend safely tolerates duplicate requests.
+
 ## Translations
 This project's locale files: en, pl, de, fr, es. Add new keys to all 5 when introducing strings.
