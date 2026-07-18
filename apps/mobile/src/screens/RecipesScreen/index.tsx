@@ -456,6 +456,7 @@ const RecipesScreen = () => {
 
   const handleRecipePress = useCallback(
     (recipe: RecipeOut) => {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
       router.push({ pathname: '/recipe/[id]', params: { id: recipe.id, title: recipe.title } })
     },
     [router],
