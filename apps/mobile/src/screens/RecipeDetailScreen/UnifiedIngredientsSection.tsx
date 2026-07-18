@@ -25,6 +25,7 @@ const UnifiedIngredientsSection = ({
   sessionAdded,
   onAdd,
   onAddAll,
+  activeAllergens,
   fontSize,
   lineHeight,
 }: {
@@ -35,6 +36,7 @@ const UnifiedIngredientsSection = ({
   sessionAdded: Set<string>
   onAdd: (key: string, text: string) => void
   onAddAll: (keys: string[], texts: string[]) => void
+  activeAllergens: string[]
   fontSize: number
   lineHeight: number
 }) => {
@@ -138,6 +140,8 @@ const UnifiedIngredientsSection = ({
               addMode={addMode}
               isAdded={sessionAdded.has(key)}
               onAdd={() => onAdd(key, shoppingListValue)}
+              allergenFlag={components[componentIndex].ingredient_flags?.[ingredientIndex] ?? null}
+              activeAllergens={activeAllergens}
               fontSize={fontSize}
               lineHeight={lineHeight}
             />

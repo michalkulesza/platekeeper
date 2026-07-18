@@ -11,31 +11,16 @@ export const LINE_HEIGHTS = [18, 21, 22, 25, 28] as const
 
 export const capitalizeFirst = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
-// Recipe-level allergen badges are derived from the per-ingredient flags
-// Gemini already computed against the full predefined allergen list at
-// import time — no extra call needed to know what's in a recipe.
-export const getRecipeAllergens = (recipe: RecipeOut, activeAllergens: string[]): string[] => {
-  const seen = new Set<string>()
-  const allergens: string[] = []
-  for (const component of recipe.components) {
-    for (const flag of component.ingredient_flags ?? []) {
-      if (
-        !flag.allergen ||
-        flag.substitute_applied ||
-        !activeAllergens.some((allergen) => {
-          const flagged = flag.allergen!.toLowerCase()
-          const active = allergen.toLowerCase()
-          return flagged === active || flagged.includes(active) || active.includes(flagged)
-        })
-      ) continue
-      const key = flag.allergen.toLowerCase()
-      if (seen.has(key)) continue
-      seen.add(key)
-      allergens.push(flag.allergen)
-    }
-  }
-  return allergens
-}
+export const matchesActiveAllergen = (
+  allergen: string | null,
+  activeAllergens: string[],
+) =>
+  !!allergen &&
+  activeAllergens.some((activeAllergen) => {
+    const flagged = allergen.toLowerCase()
+    const active = activeAllergen.toLowerCase()
+    return flagged === active || flagged.includes(active) || active.includes(flagged)
+  })
 
 export interface EditComponent {
   name: string

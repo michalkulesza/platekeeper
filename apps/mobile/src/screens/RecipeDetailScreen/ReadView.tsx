@@ -31,13 +31,12 @@ import NutritionBoxGrid, {
 import { colors } from "../../theme/colors";
 import { proxyThumbnailUrl, PLACEHOLDER_URL } from "../../api/thumbnailUrl";
 import { styles } from "./styles";
-import { FONT_SIZES, LINE_HEIGHTS, getRecipeAllergens } from "./helpers";
+import { FONT_SIZES, LINE_HEIGHTS } from "./helpers";
 import ComponentSection from "./ComponentSection";
 import UnifiedIngredientsSection from "./UnifiedIngredientsSection";
 import NotesSection from "./NotesSection";
 import RelatedRecipesSection from "./RelatedRecipesSection";
 import TagsSection from "./TagsSection";
-import AllergenBadges from "./AllergenBadges";
 import ServingStepper from "./ServingStepper";
 
 const formatCookingTime = (
@@ -229,7 +228,6 @@ const ReadView = ({
           </View>
 
           <TagsSection recipe={recipe} />
-          <AllergenBadges allergens={getRecipeAllergens(recipe, activeAllergens)} />
 
           <NutritionBoxGrid
             editing={false}
@@ -369,6 +367,7 @@ const ReadView = ({
               sessionAdded={sessionAdded}
               onAdd={handleAddIngredient}
               onAddAll={handleAddAll}
+              activeAllergens={activeAllergens}
               fontSize={FONT_SIZES[fontSizeIndex]}
               lineHeight={LINE_HEIGHTS[fontSizeIndex]}
             />
@@ -392,6 +391,7 @@ const ReadView = ({
               collapsible={recipe.components.length > 1}
               showIngredients={recipe.components.length > 1}
               showGroupHeader={recipe.components.length > 1}
+              activeAllergens={activeAllergens}
             />
           ))}
         </View>

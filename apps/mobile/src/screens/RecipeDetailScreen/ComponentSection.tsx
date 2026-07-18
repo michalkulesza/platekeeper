@@ -30,6 +30,7 @@ const ComponentSection = ({
   collapsible = false,
   showIngredients = true,
   showGroupHeader = true,
+  activeAllergens = [],
 }: {
   component: SaveComponent
   index: number
@@ -46,6 +47,7 @@ const ComponentSection = ({
   collapsible?: boolean
   showIngredients?: boolean
   showGroupHeader?: boolean
+  activeAllergens?: string[]
 }) => {
   const { t } = useTranslation()
   const [ingredientsExpanded, setIngredientsExpanded] = useState(!collapsible)
@@ -158,6 +160,8 @@ const ComponentSection = ({
                 `${index}-${i}`,
                 getShoppingListValue(ingredient, i),
               )}
+              allergenFlag={component.ingredient_flags?.[i] ?? null}
+              activeAllergens={activeAllergens}
               fontSize={fontSize}
               lineHeight={lineHeight}
             />
