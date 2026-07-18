@@ -421,7 +421,7 @@ const CookMode = ({
                     <Ionicons
                       name={done ? "checkmark" : running ? "pause" : "play"}
                       size={25}
-                      color={done ? "#ea8e4e" : text}
+                      color={text}
                     />
                   </View>
                   <Text style={[styles.timerTime, { color: text }]}>
@@ -559,15 +559,19 @@ const styles = StyleSheet.create({
     marginTop: 22,
     lineHeight: 22,
   },
-  timerGrid: { width: "100%", gap: 6, marginTop: 24 },
+  timerGrid: { width: "100%", gap: 10, marginTop: 24 },
   timerRow: {
-    minHeight: 48,
+    minHeight: 54,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    borderRadius: 18,
+    backgroundColor: "#ea8e4e",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
   },
-  timerControl: { width: 48, alignItems: "center", justifyContent: "center" },
-  timerTime: { fontFamily: "Georgia", fontSize: 34 },
+  timerControl: { width: 36, alignItems: "center", justifyContent: "center" },
+  timerTime: { fontSize: 32, fontWeight: "700" },
   footer: {
     flexDirection: "row",
     justifyContent: "space-between",
