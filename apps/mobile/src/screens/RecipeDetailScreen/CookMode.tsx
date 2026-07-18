@@ -27,6 +27,7 @@ import {
   getRemainingSeconds,
   useTimers,
 } from "../../context/TimerContext";
+import { useIsAppActive } from "../../hooks/useIsAppActive";
 
 const KEEP_AWAKE_COOK_TAG = "cook-mode";
 const FONT_SCALE_STORAGE_KEY = "cook-mode-font-scale";
@@ -107,6 +108,7 @@ const CookMode = ({
   onClose: () => void;
   colorScheme: "light" | "dark";
 }) => {
+  const isAppActive = useIsAppActive();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
@@ -189,11 +191,20 @@ const CookMode = ({
         setChecked(new Set(saved.checked ?? []));
       } catch {}
     });
+  }, [visible, storageKey, steps.length]);
+
+  useEffect(() => {
+    if (!visible || !isAppActive) {
+      KeepAwake.deactivateKeepAwake(KEEP_AWAKE_COOK_TAG);
+      return;
+    }
+
     void KeepAwake.activateKeepAwakeAsync(KEEP_AWAKE_COOK_TAG);
+
     return () => {
       void KeepAwake.deactivateKeepAwake(KEEP_AWAKE_COOK_TAG);
     };
-  }, [visible, storageKey, steps.length]);
+  }, [isAppActive, visible]);
   useEffect(() => {
     void AsyncStorage.getItem(FONT_SCALE_STORAGE_KEY).then((value) => {
       const savedScale = Number(value);

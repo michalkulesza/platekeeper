@@ -63,7 +63,7 @@ const SettingsScreen = () => {
   const { create: createHousehold } = useHouseholds();
   const api = useApiClient();
   const insets = useSafeAreaInsets();
-  const { enabled: cookingMode, setEnabled: setCookingMode } = useCookingMode();
+  const { enabled: keepScreenAwake, setEnabled: setKeepScreenAwake } = useCookingMode();
   const [showStepQty, setShowStepQty] = useState(true);
   const [keepScreenOnShopping, setKeepScreenOnShopping] = useState(false);
 
@@ -78,9 +78,9 @@ const SettingsScreen = () => {
 
   const handleCookingModeToggle = useCallback(
     (val: boolean) => {
-      setCookingMode(val);
+      setKeepScreenAwake(val);
     },
-    [setCookingMode],
+    [setKeepScreenAwake],
   );
 
   const handleShowStepQtyToggle = useCallback((val: boolean) => {
@@ -387,7 +387,7 @@ const SettingsScreen = () => {
             <Text style={styles.cardDesc}>{t("settings.screenAwakeDesc")}</Text>
           </View>
           <Switch
-            value={cookingMode}
+            value={keepScreenAwake}
             onValueChange={handleCookingModeToggle}
             accessibilityLabel={t("settings.screenAwake")}
           />
@@ -414,7 +414,7 @@ const SettingsScreen = () => {
         <View style={styles.switchRow}>
           <View style={styles.switchLabelBlock}>
             <Text style={styles.switchLabel}>
-              {t("settings.keepScreenOnWhileShoppingList")}
+              {t("settings.screenAwake")}
             </Text>
             <Text style={styles.cardDesc}>
               {t("settings.keepScreenOnWhileShoppingListDesc")}
@@ -423,7 +423,7 @@ const SettingsScreen = () => {
           <Switch
             value={keepScreenOnShopping}
             onValueChange={handleKeepScreenShoppingToggle}
-            accessibilityLabel={t("settings.keepScreenOnWhileShoppingList")}
+            accessibilityLabel={t("settings.screenAwake")}
           />
         </View>
       </View>

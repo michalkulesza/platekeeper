@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import * as KeepAwake from 'expo-keep-awake'
 import {
   ActionSheetIOS,
   ActivityIndicator,
@@ -13,25 +15,56 @@ import { useTranslation } from 'react-i18next'
 import { Feather } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useIsFocused } from 'expo-router'
 import DraggableFlatList, { ScaleDecorator, RenderItemParams } from 'react-native-draggable-flatlist'
 import { Swipeable } from 'react-native-gesture-handler'
 import { useShoppingList } from '@carrot/shared/hooks/useShoppingList'
 import type { ShoppingListItem, PresenceUser } from '@carrot/shared/types'
 import { colors } from '../../theme/colors'
 import { useScreenLoading } from '../../hooks/useScreenLoading'
+import { useIsAppActive } from '../../hooks/useIsAppActive'
 import { styles } from './styles'
 import CheckCircle from './CheckCircle'
 import PresenceBar from './PresenceBar'
 import ShoppingListFooter from './ShoppingListFooter'
+import { KEEP_AWAKE_SHOPPING_STORAGE_KEY } from '../SettingsScreen/helpers'
 
 // Standard iOS tab bar chrome height. The native UITabBar overlays the content,
 // and contentInsetAdjustmentBehavior is disabled (DraggableFlatList breaks it),
 // so we inset the bottom manually — same as the top nav bar.
 const TAB_BAR_HEIGHT = 49
+const KEEP_AWAKE_SHOPPING_TAG = 'shopping-list'
 
 const ShoppingListScreen = () => {
   const { t } = useTranslation()
   const insets = useSafeAreaInsets()
+  const isFocused = useIsFocused()
+  const isAppActive = useIsAppActive()
+  const [keepScreenOn, setKeepScreenOn] = useState(false)
+
+  useEffect(() => {
+    if (!isFocused) {
+      setKeepScreenOn(false)
+      return
+    }
+
+    AsyncStorage.getItem(KEEP_AWAKE_SHOPPING_STORAGE_KEY).then((value) => {
+      setKeepScreenOn(value === '1')
+    })
+  }, [isFocused])
+
+  useEffect(() => {
+    if (isAppActive && isFocused && keepScreenOn) {
+      void KeepAwake.activateKeepAwakeAsync(KEEP_AWAKE_SHOPPING_TAG)
+    } else {
+      KeepAwake.deactivateKeepAwake(KEEP_AWAKE_SHOPPING_TAG)
+    }
+
+    return () => {
+      KeepAwake.deactivateKeepAwake(KEEP_AWAKE_SHOPPING_TAG)
+    }
+  }, [isAppActive, isFocused, keepScreenOn])
+
   // DraggableFlatList's gesture-handler wrapping breaks the native
   // contentInsetAdjustmentBehavior mechanism — set the inset manually instead.
   const navBarInset = insets.top + 44

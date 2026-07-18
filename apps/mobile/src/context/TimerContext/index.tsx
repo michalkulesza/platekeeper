@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import * as KeepAwake from 'expo-keep-awake'
 import * as Notifications from 'expo-notifications'
 import {
   createContext,
@@ -18,7 +17,6 @@ import {
   formatDurationLabel,
   getRemainingSeconds,
   isExpoGo,
-  KEEP_AWAKE_TAG,
   parseDurationMatch,
   scheduleNotif,
   STORAGE_KEY,
@@ -182,14 +180,6 @@ export const TimerProvider = ({ children }: { children: ReactNode }) => {
   }, [timers, translate])
 
   const hasRunningTimers = [...timers.values()].some((t) => t.status === 'running')
-
-  useEffect(() => {
-    if (hasRunningTimers) {
-      void KeepAwake.activateKeepAwakeAsync(KEEP_AWAKE_TAG)
-    } else {
-      KeepAwake.deactivateKeepAwake(KEEP_AWAKE_TAG)
-    }
-  }, [hasRunningTimers])
 
   const startTimer = useCallback(
     (

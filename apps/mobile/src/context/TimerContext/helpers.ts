@@ -11,7 +11,6 @@ import i18n from '../../i18n'
 export { formatCountdown, formatDurationLabel, parseDurationMatch, type DurationMatch }
 
 export const STORAGE_KEY = 'pk-timers'
-export const KEEP_AWAKE_TAG = 'pk-timer'
 
 export const isExpoGo = Constants.executionEnvironment === 'storeClient'
 

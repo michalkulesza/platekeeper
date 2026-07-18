@@ -2,11 +2,15 @@ import { useCallback, useEffect, useState } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Haptics from 'expo-haptics'
 import * as KeepAwake from 'expo-keep-awake'
+import { useIsFocused } from 'expo-router'
+import { useIsAppActive } from '../../hooks/useIsAppActive'
 import { FONT_SIZE_STORAGE_KEY, KEEP_AWAKE_RECIPE_TAG, SHOW_STEP_QTY_STORAGE_KEY } from './helpers'
 import { useCookingMode } from '../../context/CookingModeContext'
 
 export const useDisplayPrefs = () => {
   const { enabled: keepScreenOn, setEnabled: setKeepScreenOn } = useCookingMode()
+  const isFocused = useIsFocused()
+  const isAppActive = useIsAppActive()
   const [showStepQty, setShowStepQty] = useState(true)
   const [fontSizeIndex, setFontSizeIndex] = useState(2)
 
@@ -17,15 +21,19 @@ export const useDisplayPrefs = () => {
     AsyncStorage.getItem(FONT_SIZE_STORAGE_KEY).then((val) => {
       if (val !== null) setFontSizeIndex(Number(val))
     })
-    return () => {
-      KeepAwake.deactivateKeepAwake(KEEP_AWAKE_RECIPE_TAG)
-    }
   }, [])
 
   useEffect(() => {
-    if (keepScreenOn) void KeepAwake.activateKeepAwakeAsync(KEEP_AWAKE_RECIPE_TAG)
-    else KeepAwake.deactivateKeepAwake(KEEP_AWAKE_RECIPE_TAG)
-  }, [keepScreenOn])
+    if (isAppActive && isFocused && keepScreenOn) {
+      void KeepAwake.activateKeepAwakeAsync(KEEP_AWAKE_RECIPE_TAG)
+    } else {
+      KeepAwake.deactivateKeepAwake(KEEP_AWAKE_RECIPE_TAG)
+    }
+
+    return () => {
+      KeepAwake.deactivateKeepAwake(KEEP_AWAKE_RECIPE_TAG)
+    }
+  }, [isAppActive, isFocused, keepScreenOn])
 
   const handleToggleKeepScreenOn = useCallback(
     (val: boolean) => {
