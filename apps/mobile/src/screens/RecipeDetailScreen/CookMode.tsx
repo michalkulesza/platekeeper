@@ -1,20 +1,23 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
+  BackHandler,
+  DynamicColorIOS,
   Easing,
-  Modal,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
-import { BottomSheetBackdrop, BottomSheetModal, BottomSheetModalProvider, BottomSheetScrollView, type BottomSheetBackdropProps } from "@gorhom/bottom-sheet";
+import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView, type BottomSheetBackdropProps } from "@gorhom/bottom-sheet";
 import * as KeepAwake from "expo-keep-awake";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
+import { useNavigation } from "expo-router";
 import type { RecipeOut } from "@carrot/shared/types";
 import { displayIngredient } from "@carrot/shared/utils/ingredientUtils";
 import { parseDurationMatches } from "@carrot/shared/utils/timerUtils";
@@ -31,6 +34,68 @@ const MIN_FONT_SCALE = 0.8;
 const MAX_FONT_SCALE = 1.35;
 const FONT_SCALE_STEP = 0.1;
 
+const cookColor = (light: string, dark: string, colorScheme: "light" | "dark") =>
+  (Platform.OS === "ios"
+    ? DynamicColorIOS({ light, dark })
+    : colorScheme === "dark"
+      ? dark
+      : light) as unknown as string;
+
+const CookModeToolbar = ({
+  canDecreaseTextSize,
+  canIncreaseTextSize,
+  onDecreaseTextSize,
+  onIncreaseTextSize,
+  onOpenIngredients,
+  onClose,
+  muted,
+  decreaseTextSizeLabel,
+  increaseTextSizeLabel,
+}: {
+  canDecreaseTextSize: boolean;
+  canIncreaseTextSize: boolean;
+  onDecreaseTextSize: () => void;
+  onIncreaseTextSize: () => void;
+  onOpenIngredients: () => void;
+  onClose: () => void;
+  muted: string;
+  decreaseTextSizeLabel: string;
+  increaseTextSizeLabel: string;
+}) => (
+  <View style={styles.toolbar}>
+    <Pressable
+      disabled={!canDecreaseTextSize}
+      onPress={onDecreaseTextSize}
+      style={({ pressed }) => [
+        styles.toolbarButton,
+        pressed && { opacity: 0.55 },
+        !canDecreaseTextSize && styles.fontControlDisabled,
+      ]}
+      accessibilityLabel={decreaseTextSizeLabel}
+    >
+      <Text style={[styles.fontControlSmall, { color: muted }]}>aA</Text>
+    </Pressable>
+    <Pressable
+      disabled={!canIncreaseTextSize}
+      onPress={onIncreaseTextSize}
+      style={({ pressed }) => [
+        styles.toolbarButton,
+        pressed && { opacity: 0.55 },
+        !canIncreaseTextSize && styles.fontControlDisabled,
+      ]}
+      accessibilityLabel={increaseTextSizeLabel}
+    >
+      <Text style={[styles.fontControlLarge, { color: muted }]}>aA</Text>
+    </Pressable>
+    <Pressable onPress={onOpenIngredients} hitSlop={8} accessibilityLabel="Ingredients">
+      <Ionicons name="list-outline" size={25} color={muted} />
+    </Pressable>
+    <Pressable onPress={onClose} hitSlop={8} accessibilityLabel="Close cook mode">
+      <Ionicons name="close" size={29} color={muted} />
+    </Pressable>
+  </View>
+);
+
 const CookMode = ({
   recipe,
   visible,
@@ -44,10 +109,14 @@ const CookMode = ({
 }) => {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
   const dark = colorScheme === "dark";
-  const bg = dark ? "#20211f" : "#f7f5f0";
-  const text = dark ? "#f4f1eb" : "#252421";
-  const muted = dark ? "#aaa9a3" : "#74716b";
+  const bg = cookColor("#f7f5f0", "#20211f", colorScheme);
+  const text = cookColor("#252421", "#f4f1eb", colorScheme);
+  const muted = cookColor("#74716b", "#aaa9a3", colorScheme);
+  const inactiveProgress = cookColor("#d5d1c9", "#545550", colorScheme);
+  const secondaryButton = cookColor("#e9e5dd", "#30312e", colorScheme);
+  const sheetBackground = cookColor("#eeece7", "#2b2d2a", colorScheme);
   const steps = useMemo(
     () =>
       recipe.components.flatMap((component, componentIndex) =>
@@ -86,6 +155,26 @@ const CookMode = ({
     [step],
   );
   const storageKey = `cook-mode:${recipe.id}`;
+  const adjustFontScale = useCallback(
+    (delta: number) => {
+      const next = Math.min(
+        MAX_FONT_SCALE,
+        Math.max(MIN_FONT_SCALE, Number((fontScale + delta).toFixed(2))),
+      );
+      if (next === fontScale) return;
+      Animated.timing(stepContentOpacity, {
+        toValue: 0,
+        duration: 120,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (!finished) return;
+        setFontScale(next);
+        void AsyncStorage.setItem(FONT_SCALE_STORAGE_KEY, String(next));
+      });
+    },
+    [fontScale, stepContentOpacity],
+  );
 
   useEffect(() => {
     if (!visible) return;
@@ -145,7 +234,39 @@ const CookMode = ({
     if (ingredientsOpen) ingredientsSheetRef.current?.present();
     else ingredientsSheetRef.current?.dismiss();
   }, [ingredientsOpen]);
-  if (!step) return null;
+  useEffect(() => {
+    if (!visible) return;
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      onClose();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [visible, onClose]);
+  useLayoutEffect(() => {
+    if (!visible) return;
+    navigation.setOptions({
+      headerRight: () => (
+        <CookModeToolbar
+          canDecreaseTextSize={fontScale > MIN_FONT_SCALE}
+          canIncreaseTextSize={fontScale < MAX_FONT_SCALE}
+          onDecreaseTextSize={() => adjustFontScale(-FONT_SCALE_STEP)}
+          onIncreaseTextSize={() => adjustFontScale(FONT_SCALE_STEP)}
+          onOpenIngredients={() => setIngredientsOpen(true)}
+          onClose={onClose}
+          muted={muted}
+          decreaseTextSizeLabel={t("cookMode.decreaseTextSize")}
+          increaseTextSizeLabel={t("cookMode.increaseTextSize")}
+        />
+      ),
+    });
+  }, [adjustFontScale, fontScale, muted, navigation, onClose, t, visible]);
+  const renderIngredientsBackdrop = useCallback(
+    (props: BottomSheetBackdropProps) => (
+      <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} />
+    ),
+    [],
+  );
+  if (!visible || !step) return null;
   const allIngredients = recipe.components.flatMap(
     (component, componentIndex) =>
       component.ingredients.map((ingredient, ingredientIndex) => ({
@@ -165,52 +286,16 @@ const CookMode = ({
       if (finished) setIndex(target);
     });
   };
-  const adjustFontScale = (delta: number) => {
-    const next = Math.min(
-      MAX_FONT_SCALE,
-      Math.max(MIN_FONT_SCALE, Number((fontScale + delta).toFixed(2))),
-    );
-    if (next === fontScale) return;
-    Animated.timing(stepContentOpacity, {
-      toValue: 0,
-      duration: 120,
-      easing: Easing.in(Easing.cubic),
-      useNativeDriver: true,
-    }).start(({ finished }) => {
-      if (!finished) return;
-      setFontScale(next);
-      void AsyncStorage.setItem(FONT_SCALE_STORAGE_KEY, String(next));
-    });
-  };
-  const renderIngredientsBackdrop = useCallback(
-    (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} />
-    ),
-    [],
-  );
-
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="fullScreen"
-      onRequestClose={onClose}
-    >
-    <BottomSheetModalProvider>
-    <StatusBar style={dark ? "light" : "dark"} animated />
     <View
-      style={[
-        styles.root,
-        {
-          backgroundColor: bg,
-        },
-      ]}
+      style={[styles.root, { backgroundColor: bg }]}
     >
+      <StatusBar style={Platform.OS === "ios" ? "auto" : dark ? "light" : "dark"} animated />
       <View
         style={{
           flex: 1,
           paddingHorizontal: 24,
-          paddingTop: Math.max(18, insets.top + 10),
+          paddingTop: Math.max(92, insets.top + 66),
           paddingBottom: Math.max(24, insets.bottom + 12),
         }}
       >
@@ -218,46 +303,6 @@ const CookMode = ({
           <Text numberOfLines={1} style={[styles.recipeTitle, { color: text }]}>
             {recipe.title}
           </Text>
-          <View style={styles.fontControls}>
-            <Pressable
-              disabled={fontScale <= MIN_FONT_SCALE}
-              onPress={() => adjustFontScale(-FONT_SCALE_STEP)}
-              style={({ pressed }) => [
-                styles.fontControl,
-                pressed && { opacity: 0.55 },
-                fontScale <= MIN_FONT_SCALE && styles.fontControlDisabled,
-              ]}
-              accessibilityLabel={t("cookMode.decreaseTextSize")}
-            >
-              <Text style={[styles.fontControlSmall, { color: muted }]}>aA</Text>
-            </Pressable>
-            <Pressable
-              disabled={fontScale >= MAX_FONT_SCALE}
-              onPress={() => adjustFontScale(FONT_SCALE_STEP)}
-              style={({ pressed }) => [
-                styles.fontControl,
-                pressed && { opacity: 0.55 },
-                fontScale >= MAX_FONT_SCALE && styles.fontControlDisabled,
-              ]}
-              accessibilityLabel={t("cookMode.increaseTextSize")}
-            >
-              <Text style={[styles.fontControlLarge, { color: muted }]}>aA</Text>
-            </Pressable>
-          </View>
-          <Pressable
-            onPress={() => setIngredientsOpen(true)}
-            hitSlop={12}
-            accessibilityLabel="Ingredients"
-          >
-            <Ionicons name="list-outline" size={27} color={muted} />
-          </Pressable>
-          <Pressable
-            onPress={onClose}
-            hitSlop={12}
-            accessibilityLabel="Close cook mode"
-          >
-            <Ionicons name="close" size={31} color={muted} />
-          </Pressable>
         </View>
         <View style={styles.progress}>
           {steps.map((_, i) => (
@@ -267,7 +312,7 @@ const CookMode = ({
                 styles.progressItem,
                 {
                   backgroundColor:
-                    i <= index ? text : dark ? "#545550" : "#d5d1c9",
+                    i <= index ? text : inactiveProgress,
                 },
               ]}
             />
@@ -386,7 +431,7 @@ const CookMode = ({
             style={[
               styles.navButton,
               {
-                backgroundColor: dark ? "#30312e" : "#e9e5dd",
+                backgroundColor: secondaryButton,
                 opacity: index === 0 ? 0.35 : 1,
               },
             ]}
@@ -418,7 +463,7 @@ const CookMode = ({
           enablePanDownToClose
           onDismiss={() => setIngredientsOpen(false)}
           backdropComponent={renderIngredientsBackdrop}
-          backgroundStyle={{ backgroundColor: dark ? "#2b2d2a" : "#eeece7" }}
+          backgroundStyle={{ backgroundColor: sheetBackground }}
           handleIndicatorStyle={styles.sheetHandle}
         >
           <View style={[styles.sheet, { paddingBottom: 22 + insets.bottom }]}> 
@@ -468,21 +513,23 @@ const CookMode = ({
           </View>
         </BottomSheetModal>
       </View>
-    </BottomSheetModalProvider>
-    </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
-  header: { flexDirection: "row", alignItems: "center", gap: 18 },
+  root: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 100,
+    elevation: 100,
+  },
+  header: { flexDirection: "row", alignItems: "center" },
   recipeTitle: { flex: 1, fontSize: 18, fontWeight: "700" },
-  fontControls: { flexDirection: "row", alignItems: "center", gap: 2 },
-  fontControl: { minWidth: 28, minHeight: 44, alignItems: "center", justifyContent: "center" },
+  toolbar: { flexDirection: "row", alignItems: "center", gap: 12 },
+  toolbarButton: { minWidth: 24, minHeight: 36, alignItems: "center", justifyContent: "center" },
   fontControlDisabled: { opacity: 0.3 },
   fontControlSmall: { fontSize: 13, fontWeight: "600" },
   fontControlLarge: { fontSize: 18, fontWeight: "600" },
-  progress: { flexDirection: "row", gap: 5, marginTop: 28 },
+  progress: { flexDirection: "row", gap: 5, marginTop: 16 },
   progressItem: { flex: 1, height: 4, borderRadius: 2 },
   main: { flex: 1, justifyContent: "center", alignItems: "center" },
   stepLabel: {
