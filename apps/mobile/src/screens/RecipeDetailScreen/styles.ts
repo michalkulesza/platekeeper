@@ -1,4 +1,4 @@
-import { Dimensions, StyleSheet } from "react-native";
+import { Dimensions, PlatformColor, StyleSheet } from "react-native";
 import { colors } from "../../theme/colors";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -361,7 +361,7 @@ export const styles = StyleSheet.create({
   relatedRecipesRow: { gap: 10, paddingVertical: 4 },
   relatedRecipeCard: {
     maxWidth: 160,
-    height: 36,
+    height: 44,
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
@@ -370,12 +370,12 @@ export const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: "hidden",
   },
-  relatedRecipeImage: { width: 36, height: 36, backgroundColor: colors.gray6 },
+  relatedRecipeImage: { width: 44, height: 44, backgroundColor: colors.gray6 },
   relatedRecipeTitleContainer: { maxWidth: 108, paddingRight: 8 },
   relatedRecipeTitle: { fontSize: 13, color: colors.label },
   relatedRecipeAdd: {
     width: 90,
-    height: 36,
+    height: 44,
     borderRadius: 8,
     flexDirection: "row",
     gap: 6,
@@ -385,27 +385,34 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  relatedRecipeAddText: { fontSize: 13, color: colors.blue },
-  relatedPicker: { flex: 1, padding: 24, backgroundColor: colors.background },
+  relatedRecipeAddText: { fontSize: 13, color: PlatformColor('systemBlue') as unknown as string },
+  relatedPickerSheetBackground: { backgroundColor: PlatformColor('secondarySystemBackground') as unknown as string },
+  relatedPickerSheetHandle: { backgroundColor: PlatformColor('systemGray3') as unknown as string },
+  relatedPicker: { flex: 1, paddingTop: 8 },
   relatedPickerTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    marginBottom: 16,
+    fontSize: 17,
+    lineHeight: 22,
+    fontWeight: "600",
+    marginBottom: 8,
+    paddingHorizontal: 16,
     color: colors.label,
   },
   relatedPickerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderColor: colors.separator,
   },
   relatedPickerRowTitle: { flex: 1, fontSize: 16, color: colors.label },
   relatedPickerDone: {
-    marginTop: 16,
-    borderRadius: 10,
-    padding: 14,
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 16,
+    borderRadius: 12,
+    paddingVertical: 12,
     backgroundColor: colors.blue,
     alignItems: "center",
   },
