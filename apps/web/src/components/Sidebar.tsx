@@ -98,7 +98,7 @@ const Sidebar = () => {
   return (
     <aside
       className={`hidden md:flex flex-col shrink-0 sticky top-0 h-screen py-4 px-3 transition-[width] duration-200 overflow-hidden ${
-        collapsed ? 'w-[72px]' : 'w-60'
+        collapsed ? 'w-[72px]' : 'w-[290px]'
       }`}
     >
       <div
