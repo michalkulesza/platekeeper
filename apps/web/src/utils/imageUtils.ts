@@ -10,7 +10,9 @@ export const isR2Url = (url: string): boolean =>
   R2_PUBLIC_URL !== '' && url.startsWith(R2_PUBLIC_URL)
 
 export const proxyUrl = (url: string | null | undefined): string | null => {
-  if (!url) return null
+  // Keep recipes imported before thumbnail storage was added visually complete
+  // without needing to backfill their database rows.
+  if (!url) return PLACEHOLDER_URL || null
   if (isR2Url(url)) return url
 
   return `/api/proxy/image?url=${encodeURIComponent(url)}`

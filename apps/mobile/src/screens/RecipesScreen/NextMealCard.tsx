@@ -121,7 +121,7 @@ const NextMealCard = ({ enabled }: NextMealCardProps) => {
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
     >
-      {entry.recipe?.thumbnail_url ? (
+      {entry.recipe ? (
         <ThumbnailImage url={entry.recipe.thumbnail_url} style={styles.nextMealImage} />
       ) : (
         <View style={styles.nextMealFallbackIcon}>

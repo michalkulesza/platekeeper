@@ -103,7 +103,8 @@ const ReadView = ({
   const { t } = useTranslation();
   const { households } = useHousehold();
   const { user } = useAuth();
-  const hasImage = !!recipe.thumbnail_url;
+  const heroThumbnailUrl = proxyThumbnailUrl(recipe.thumbnail_url);
+  const hasImage = !!heroThumbnailUrl;
   const hasScalableServings = recipe.servings !== null && recipe.servings > 0;
   const personalName =
     user?.nickname || user?.email || t("households.personal");
@@ -162,10 +163,10 @@ const ReadView = ({
       >
         {hasImage && !heroImageErrored ? (
           <NetworkImage
-            uri={proxyThumbnailUrl(recipe.thumbnail_url!)!}
+            uri={heroThumbnailUrl!}
             style={styles.heroImage}
             accessibilityLabel={recipe.title}
-            recyclingKey={recipe.thumbnail_url}
+            recyclingKey={heroThumbnailUrl}
             onError={() => setHeroImageErrored(true)}
           />
         ) : hasImage && heroImageErrored && PLACEHOLDER_URL ? (

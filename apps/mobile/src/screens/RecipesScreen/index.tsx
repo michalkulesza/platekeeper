@@ -581,11 +581,7 @@ const RecipesScreen = () => {
             accessibilityLabel={item.title}
             accessibilityRole="button"
           >
-            {item.thumbnail_url ? (
-              <ThumbnailImage url={item.thumbnail_url} style={styles.cardImage} />
-            ) : (
-              <View style={styles.cardImagePlaceholder} />
-            )}
+            <ThumbnailImage url={item.thumbnail_url} style={styles.cardImage} />
             <View style={styles.cardBody}>
               <MarqueeSyncSlots>
                 {({ title: titleTurn, tags: tagsTurn }) => (
