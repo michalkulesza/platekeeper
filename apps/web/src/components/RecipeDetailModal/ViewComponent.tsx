@@ -23,6 +23,8 @@ interface ViewComponentProps {
   componentIndex: number
   addMode?: boolean
   sessionAdded?: Set<string>
+  checkedIngredients: Set<string>
+  onToggleIngredient: (key: string) => void
   onAddIngredient?: (ii: number) => void
   onAddAllIngredients?: () => void
   fontSizeIndex: number
@@ -52,6 +54,8 @@ const ViewComponent = ({
   componentIndex,
   addMode = false,
   sessionAdded,
+  checkedIngredients,
+  onToggleIngredient,
   onAddIngredient,
   onAddAllIngredients,
   fontSizeIndex,
@@ -124,7 +128,9 @@ const ViewComponent = ({
           <ul className="space-y-1 mb-3">
             {ingredients.map((ing, i) => {
               const flag = comp.ingredient_flags?.[i]
+              const key = `${componentIndex}-${i}`
               const added = sessionAdded?.has(`${componentIndex}-${i}`) ?? false
+              const checked = checkedIngredients.has(key)
               const addButtonLabel = added
                 ? t('shoppingList.addedToList')
                 : t('shoppingList.addToList')
@@ -134,8 +140,18 @@ const ViewComponent = ({
                   key={i}
                   className={`flex items-start gap-2 ${TEXT_SIZE_CLASSES[fontSizeIndex]}`}
                 >
-                  <span className="text-zinc-300 mt-1 shrink-0">·</span>
-                  <span className="flex-1">
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => onToggleIngredient(key)}
+                    aria-label={displayIngredient(ing)}
+                    className="mt-1 h-4 w-4 shrink-0 accent-primary"
+                  />
+                  <span
+                    className={`flex-1 transition-colors ${
+                      checked ? 'text-zinc-400 line-through' : ''
+                    }`}
+                  >
                     {displayIngredient(ing)}
                     {getMetricCupHint(comp, i, unitSystem, servingScale, t)}
                   </span>

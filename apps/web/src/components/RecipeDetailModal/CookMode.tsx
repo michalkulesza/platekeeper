@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ChevronLeft, ChevronRight, Clock, Play, X } from 'react-feather'
+import { ChevronLeft, ChevronRight, Clock, List, Play, X } from 'react-feather'
 import type { RecipeOut } from '@carrot/shared/types'
 import { displayIngredient } from '@carrot/shared/utils/ingredientUtils'
 import { parseDurationMatches } from '@carrot/shared/utils/timerUtils'
@@ -120,7 +120,7 @@ const CookMode = ({
 
   return (
     <div
-      className="fixed inset-0 z-[100] overflow-y-auto bg-[#f7f5f0] text-zinc-900 dark:bg-[#20211f] dark:text-zinc-100"
+      className="fixed inset-0 z-[100] select-none overflow-y-auto bg-zinc-50 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100"
       onTouchStart={(e) => {
         touchStart.current = e.touches[0].clientX
       }}
@@ -151,7 +151,7 @@ const CookMode = ({
             className="rounded-full p-3 text-zinc-500 hover:bg-black/5 dark:hover:bg-white/10"
             aria-label="Ingredients"
           >
-            ☷
+            <List size={22} aria-hidden="true" />
           </button>
           <button
             type="button"
@@ -245,7 +245,7 @@ const CookMode = ({
             type="button"
             disabled={index === 0}
             onClick={() => go(index - 1)}
-            className="grid h-14 w-14 place-items-center rounded-full bg-zinc-200/70 text-zinc-700 disabled:opacity-35 dark:bg-zinc-800 dark:text-zinc-200"
+            className="grid h-14 w-14 cursor-pointer place-items-center rounded-full bg-zinc-200/70 text-zinc-700 disabled:cursor-not-allowed disabled:opacity-35 dark:bg-zinc-800 dark:text-zinc-200"
           >
             <ChevronLeft />
           </button>
@@ -256,7 +256,7 @@ const CookMode = ({
             type="button"
             disabled={index === steps.length - 1}
             onClick={() => go(index + 1)}
-            className="grid h-14 w-14 place-items-center rounded-full bg-zinc-900 text-white disabled:opacity-35 dark:bg-zinc-100 dark:text-zinc-900"
+            className="grid h-14 w-14 cursor-pointer place-items-center rounded-full bg-zinc-900 text-white disabled:cursor-not-allowed disabled:opacity-35 dark:bg-zinc-100 dark:text-zinc-900"
           >
             <ChevronRight />
           </button>
@@ -268,15 +268,18 @@ const CookMode = ({
           onClick={() => setIngredientsOpen(false)}
         >
           <section
-            className="max-h-[75vh] w-full overflow-y-auto rounded-t-3xl bg-[#f7f5f0] p-6 dark:bg-[#20211f] sm:max-w-lg sm:rounded-3xl"
+            className="max-h-[75vh] w-full overflow-y-auto rounded-t-3xl bg-white p-6 text-zinc-900 sm:max-w-lg sm:rounded-3xl"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Ingredients</h2>
+              <h2 className="text-xl font-semibold text-zinc-900">
+                Ingredients
+              </h2>
               <button
                 type="button"
                 onClick={() => setIngredientsOpen(false)}
                 aria-label="Close ingredients"
+                className="rounded-full p-2 text-zinc-600 hover:bg-black/5"
               >
                 <X />
               </button>
@@ -284,7 +287,7 @@ const CookMode = ({
             {allIngredients.map((ingredient) => (
               <label
                 key={ingredient.key}
-                className="flex cursor-pointer items-center gap-3 py-3"
+                className="flex cursor-pointer items-center gap-3 py-3 text-zinc-900"
               >
                 <input
                   type="checkbox"
@@ -298,7 +301,7 @@ const CookMode = ({
                       return next
                     })
                   }
-                  className="h-5 w-5 accent-primary"
+                  className="h-5 w-5 cursor-pointer rounded border-zinc-400 accent-primary"
                 />
                 <span
                   className={

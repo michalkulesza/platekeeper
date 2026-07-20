@@ -76,6 +76,9 @@ const RecipeDetailModal = ({
   const [addMode, setAddMode] = useState(false)
   const [mealPlanOpen, setMealPlanOpen] = useState(false)
   const [sessionAdded, setSessionAdded] = useState<Set<string>>(new Set())
+  const [checkedIngredients, setCheckedIngredients] = useState<Set<string>>(
+    new Set()
+  )
   const [draft, setDraft] = useState<EditState | null>(null)
   const [localTags, setLocalTags] = useState<Tag[]>([])
   const [busy, setBusy] = useState(false)
@@ -103,6 +106,7 @@ const RecipeDetailModal = ({
       setAddMode(false)
       setMealPlanOpen(false)
       setSessionAdded(new Set())
+      setCheckedIngredients(new Set())
       setError(null)
       setCookModeOpen(false)
     }
@@ -141,8 +145,16 @@ const RecipeDetailModal = ({
     [recipe]
   )
 
+  const handleTagCreate = useCallback(
+    async (name: string): Promise<Tag> => createTagMutation.mutateAsync(name),
+    [createTagMutation]
+  )
+
   if (!recipe || !draft) return null
   const r = recipe
+  if (cookModeOpen) {
+    return <CookMode recipe={r} onClose={() => setCookModeOpen(false)} />
+  }
   const servingScale =
     r.servings && selectedServings ? selectedServings / r.servings : 1
 
@@ -199,8 +211,6 @@ const RecipeDetailModal = ({
       if (removed) setLocalTags((prev) => [...prev, removed])
     }
   }
-  const handleTagCreate = useCallback(async (name: string): Promise<Tag> => createTagMutation.mutateAsync(name), [createTagMutation])
-
   const handleNotesSave = async () => {
     const trimmed = localNotes.trim()
     if (trimmed === savedNotesRef.current.trim()) return
@@ -357,6 +367,16 @@ const RecipeDetailModal = ({
     )
   }
 
+  const handleToggleIngredient = (key: string) => {
+    setCheckedIngredients((current) => {
+      const next = new Set(current)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+
+      return next
+    })
+  }
+
   const cancelMode = () => {
     if (mode === 'editing') setDraft(toEditState(r))
     setMode('view')
@@ -427,7 +447,7 @@ const RecipeDetailModal = ({
                   onOpenCookMode={() => setCookModeOpen(true)}
                 />
 
-                <div className="px-5">
+                <div className="px-10">
                   {error && (
                     <div className="bg-danger-50 text-danger rounded-lg p-3 text-sm mb-3">
                       {error}
@@ -455,6 +475,8 @@ const RecipeDetailModal = ({
                       activeAllergens={activeAllergens}
                       addMode={addMode}
                       sessionAdded={sessionAdded}
+                      checkedIngredients={checkedIngredients}
+                      onToggleIngredient={handleToggleIngredient}
                       onReplaceIngredient={handleReplaceIngredient}
                       onRestoreIngredient={handleRestoreIngredient}
                       onAddIngredient={handleAddIngredient}
@@ -493,6 +515,8 @@ const RecipeDetailModal = ({
                           componentIndex={ci}
                           addMode={addMode}
                           sessionAdded={sessionAdded}
+                          checkedIngredients={checkedIngredients}
+                          onToggleIngredient={handleToggleIngredient}
                           onAddIngredient={(ii) => handleAddIngredient(ci, ii)}
                           onAddAllIngredients={() =>
                             handleAddAllIngredients(ci)
@@ -507,7 +531,7 @@ const RecipeDetailModal = ({
                 </div>
               </ModalBody>
 
-              <ModalFooter className="flex-col gap-2 items-stretch px-5 pb-5 pt-3">
+              <ModalFooter className="flex-col gap-2 items-stretch px-10 pb-5 pt-3">
                 <RecipeModalFooter
                   recipe={r}
                   mode={mode}
@@ -526,10 +550,6 @@ const RecipeDetailModal = ({
           </ModalContainer>
         </ModalBackdrop>
       </Modal>
-      {recipe && cookModeOpen && (
-        <CookMode recipe={recipe} onClose={() => setCookModeOpen(false)} />
-      )}
-
       <AssignToMealPlanModal
         isOpen={mealPlanOpen}
         onClose={() => setMealPlanOpen(false)}

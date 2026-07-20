@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom'
 import { Button, Card, CardContent } from '@heroui/react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
+import BrandLogo from '../components/BrandLogo'
 
 const RESEND_COOLDOWN = 60
 
@@ -98,7 +99,7 @@ const VerifyPage = () => {
     <main className="relative min-h-screen bg-background flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold tracking-tight">Carrot</h1>
+          <BrandLogo />
         </div>
 
         <Card>

@@ -30,6 +30,8 @@ const UnifiedIngredientList = ({
   activeAllergens,
   addMode,
   sessionAdded,
+  checkedIngredients,
+  onToggleIngredient,
   onReplaceIngredient,
   onRestoreIngredient,
   onAddIngredient,
@@ -42,6 +44,8 @@ const UnifiedIngredientList = ({
   activeAllergens: string[]
   addMode: boolean
   sessionAdded: Set<string>
+  checkedIngredients: Set<string>
+  onToggleIngredient: (key: string) => void
   onReplaceIngredient: (componentIndex: number, ingredientIndex: number) => void
   onRestoreIngredient: (componentIndex: number, ingredientIndex: number) => void
   onAddIngredient: (componentIndex: number, ingredientIndex: number) => void
@@ -72,7 +76,7 @@ const UnifiedIngredientList = ({
   if (ingredients.length === 0) return null
 
   return (
-    <section className="mb-5">
+    <section className="mt-8 mb-5">
       <div className="flex items-center justify-between mb-1">
         <p className="text-xs font-semibold uppercase text-zinc-400">
           {t('recipes.sectionIngredients')}
@@ -96,6 +100,7 @@ const UnifiedIngredientList = ({
             const key = `${componentIndex}-${ingredientIndex}`
             const flag = component.ingredient_flags?.[ingredientIndex]
             const added = sessionAdded.has(key)
+            const checked = checkedIngredients.has(key)
             const addButtonLabel = added
               ? t('shoppingList.addedToList')
               : t('shoppingList.addToList')
@@ -105,8 +110,18 @@ const UnifiedIngredientList = ({
                 key={key}
                 className={`flex items-start gap-2 ${TEXT_SIZE_CLASSES[fontSizeIndex]}`}
               >
-                <span className="text-zinc-300 mt-1 shrink-0">·</span>
-                <span className="flex-1">
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => onToggleIngredient(key)}
+                  aria-label={displayIngredient(ingredient)}
+                  className="mt-1 h-4 w-4 shrink-0 accent-primary"
+                />
+                <span
+                  className={`flex-1 transition-colors ${
+                    checked ? 'text-zinc-400 line-through' : ''
+                  }`}
+                >
                   {displayIngredient(ingredient)}
                   {getMetricCupHint(
                     component,

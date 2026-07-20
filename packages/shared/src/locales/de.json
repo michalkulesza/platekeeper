@@ -215,7 +215,9 @@
     "finishedWhileAway": "Abgeschlossen während Sie weg waren",
     "noTimers": "Keine Timer aktiv.",
     "timerRunning": "Timer läuft",
-    "timerPaused": "Timer pausiert"
+    "timerPaused": "Timer pausiert",
+    "keepScreenOn": "Bildschirm bei Timern eingeschaltet lassen",
+    "keepScreenOnDesc": "Bildschirm bleibt aktiv, während Timer laufen"
   },
   "bell": {
     "notifications": "Benachrichtigungen",
@@ -328,6 +330,8 @@
     "showIntelligentIngredientsDesc": "Zeigt automatisch Zutatenmengen unter dem passenden Schritt an",
     "screenAwake": "Bildschirm eingeschaltet lassen",
     "screenAwakeDesc": "Bildschirm bleibt aktiv, während die Rezeptdetails geöffnet sind",
+    "keepScreenOnDefault": "Bildschirm standardmäßig eingeschaltet lassen",
+    "keepScreenOnDefaultDesc": "Bildschirm bleibt beim Ansehen von Rezepten und Einkaufslisten aktiv",
     "recipeImport": "Rezeptimport",
     "shareImportsToPersonal": "Importierte Rezepte auch zu meiner persönlichen Rezeptbibliothek hinzufügen",
     "shareImportsToPersonalDesc": "Beim Hinzufügen eines Rezepts in einem Haushalt auch eine Kopie in deinen privaten Rezepten speichern",
@@ -421,7 +425,7 @@
     "switchContext": "Haushalt wechseln",
     "personal": "Persönlich",
     "personalHousehold": "Persönlicher Haushalt",
-    "manageTip": "Du kannst in den Einstellungen einen neuen Haushalt hinzufügen"
+    "manageTip": "Du kannst Haushalte auf der Seite <settings>Einstellungen</settings> verwalten."
   },
   "tags": {
     "tags": "Tags",

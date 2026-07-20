@@ -214,7 +214,9 @@
     "finishedWhileAway": "Finalizado mientras estabas fuera",
     "noTimers": "No hay temporizadores activos.",
     "timerRunning": "Temporizador en marcha",
-    "timerPaused": "Temporizador en pausa"
+    "timerPaused": "Temporizador en pausa",
+    "keepScreenOn": "Mantener la pantalla encendida para los temporizadores",
+    "keepScreenOnDesc": "Mantiene la pantalla activa mientras hay temporizadores en marcha"
   },
   "bell": {
     "notifications": "Notificaciones",
@@ -327,6 +329,8 @@
     "showIntelligentIngredientsDesc": "Muestra automáticamente las cantidades de ingredientes bajo el paso correspondiente",
     "screenAwake": "Mantener la pantalla encendida",
     "screenAwakeDesc": "La pantalla permanece activa mientras los detalles de la receta están abiertos",
+    "keepScreenOnDefault": "Mantener la pantalla encendida de forma predeterminada",
+    "keepScreenOnDefaultDesc": "Mantiene la pantalla activa al ver recetas y listas de compras",
     "recipeImport": "Importación de recetas",
     "shareImportsToPersonal": "Añadir también las recetas importadas a mi biblioteca personal",
     "shareImportsToPersonalDesc": "Al añadir una receta en un hogar, guarda también una copia en tus recetas privadas",
@@ -420,7 +424,7 @@
     "switchContext": "Cambiar de hogar",
     "personal": "Personal",
     "personalHousehold": "Hogar personal",
-    "manageTip": "Puedes añadir un nuevo hogar en Ajustes"
+    "manageTip": "Puedes gestionar los hogares en la página de <settings>Ajustes</settings>."
   },
   "tags": {
     "tags": "Etiquetas",

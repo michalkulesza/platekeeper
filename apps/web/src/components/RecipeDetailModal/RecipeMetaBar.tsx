@@ -120,7 +120,7 @@ const RecipeMetaBar = ({
   }
 
   return (
-    <div className={`px-5 pt-5 pb-0 flex flex-col gap-2 ${headerBg}`}>
+    <div className={`px-10 pt-5 pb-0 flex flex-col gap-2 ${headerBg}`}>
       <NutritionBoxGrid
         editing={editing}
         items={visibleNutritionItems}
@@ -180,7 +180,7 @@ const RecipeMetaBar = ({
         <button
           type="button"
           onClick={onOpenCookMode}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition hover:brightness-95"
+          className="my-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:brightness-95"
         >
           <PlayCircle size={18} /> {t('cookMode.start')}
         </button>

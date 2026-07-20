@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Button, Card, CardContent } from '@heroui/react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
+import BrandLogo from '../components/BrandLogo'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 import GoogleSignInButton from '../components/GoogleSignInButton'
 
@@ -89,7 +90,7 @@ const RegisterPage = () => {
       <LanguageSwitcher />
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold tracking-tight">Carrot</h1>
+          <BrandLogo />
           <p className="text-zinc-600 mt-1 text-sm">{t('auth.tagline')}</p>
         </div>
 

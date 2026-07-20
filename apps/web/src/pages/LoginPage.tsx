@@ -1,8 +1,9 @@
-import { type FormEvent, useCallback, useState } from 'react'
+import { type FormEvent, useCallback, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Button, Card, CardContent } from '@heroui/react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
+import BrandLogo from '../components/BrandLogo'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 import GoogleSignInButton from '../components/GoogleSignInButton'
 
@@ -37,12 +38,15 @@ const LoginPage = () => {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+  const signInInProgressRef = useRef(false)
+  const isSigningIn = loading || googleLoading
 
   const handleSubmit = useCallback(
     async (e: FormEvent) => {
       e.preventDefault()
-      if (!email || !password) return
+      if (!email || !password || signInInProgressRef.current) return
 
+      signInInProgressRef.current = true
       setError(null)
       setLoading(true)
 
@@ -59,6 +63,7 @@ const LoginPage = () => {
         setError(displayMessage)
       } finally {
         setLoading(false)
+        signInInProgressRef.current = false
       }
     },
     [email, password, login, navigate, t]
@@ -66,6 +71,9 @@ const LoginPage = () => {
 
   const handleGoogleCredential = useCallback(
     async (idToken: string) => {
+      if (signInInProgressRef.current) return
+
+      signInInProgressRef.current = true
       setError(null)
       setGoogleLoading(true)
 
@@ -76,6 +84,7 @@ const LoginPage = () => {
         setError(t('auth.googleSignInError'))
       } finally {
         setGoogleLoading(false)
+        signInInProgressRef.current = false
       }
     },
     [loginWithGoogle, navigate, t]
@@ -88,9 +97,9 @@ const LoginPage = () => {
   return (
     <main className="relative min-h-screen bg-background flex flex-col items-center justify-center px-4">
       <LanguageSwitcher />
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-[434px]">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold tracking-tight">Carrot</h1>
+          <BrandLogo />
           <p className="text-zinc-600 mt-1 text-sm">{t('auth.tagline')}</p>
         </div>
 
@@ -109,6 +118,7 @@ const LoginPage = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="email"
+                  disabled={isSigningIn}
                   className="px-3 py-2 text-sm rounded-lg border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
@@ -122,6 +132,7 @@ const LoginPage = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete="current-password"
+                  disabled={isSigningIn}
                   className="px-3 py-2 text-sm rounded-lg border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
@@ -131,10 +142,10 @@ const LoginPage = () => {
               <Button
                 variant="primary"
                 type="submit"
-                isDisabled={loading}
+                isDisabled={isSigningIn}
                 fullWidth
               >
-                {loading ? t('auth.signingIn') : t('auth.signIn')}
+                {isSigningIn ? t('auth.signingIn') : t('auth.signIn')}
               </Button>
             </form>
 
@@ -147,7 +158,7 @@ const LoginPage = () => {
             </div>
 
             <GoogleSignInSection
-              loading={googleLoading}
+              loading={isSigningIn}
               onCredential={handleGoogleCredential}
               onError={handleGoogleError}
             />

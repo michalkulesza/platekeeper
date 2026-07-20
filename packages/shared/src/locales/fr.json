@@ -215,7 +215,9 @@
     "finishedWhileAway": "Terminé pendant votre absence",
     "noTimers": "Aucun minuteur en cours.",
     "timerRunning": "Minuteur en cours",
-    "timerPaused": "Minuteur en pause"
+    "timerPaused": "Minuteur en pause",
+    "keepScreenOn": "Garder l'écran allumé pour les minuteurs",
+    "keepScreenOnDesc": "Garde l'écran actif lorsque des minuteurs sont en cours"
   },
   "bell": {
     "notifications": "Notifications",
@@ -328,6 +330,8 @@
     "showIntelligentIngredientsDesc": "Affiche automatiquement les quantités d'ingrédients sous l'étape correspondante",
     "screenAwake": "Garder l'écran allumé",
     "screenAwakeDesc": "L'écran reste actif lorsque les détails de la recette sont ouverts",
+    "keepScreenOnDefault": "Garder l'écran allumé par défaut",
+    "keepScreenOnDefaultDesc": "Garde l'écran actif pendant la consultation des recettes et des listes de courses",
     "recipeImport": "Import de recettes",
     "shareImportsToPersonal": "Ajouter aussi les recettes importées à ma bibliothèque personnelle",
     "shareImportsToPersonalDesc": "Lors de l'ajout d'une recette dans un foyer, enregistre aussi une copie dans tes recettes privées",
@@ -421,7 +425,7 @@
     "switchContext": "Changer de foyer",
     "personal": "Personnel",
     "personalHousehold": "Foyer personnel",
-    "manageTip": "Vous pouvez ajouter un nouveau foyer dans les Réglages"
+    "manageTip": "Vous pouvez gérer les foyers sur la page <settings>Paramètres</settings>."
   },
   "tags": {
     "tags": "Tags",

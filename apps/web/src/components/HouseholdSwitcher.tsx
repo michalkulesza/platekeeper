@@ -8,7 +8,8 @@ import {
   ModalBody,
 } from '@heroui/react'
 import { Check } from 'react-feather'
-import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
+import { Trans, useTranslation } from 'react-i18next'
 import { useHousehold } from '../context/HouseholdContext'
 
 interface HouseholdOption {
@@ -83,6 +84,10 @@ const HouseholdSwitcher = ({ isOpen, onClose }: HouseholdSwitcherProps) => {
     [onClose]
   )
 
+  const handleSettingsClick = useCallback(() => {
+    onClose()
+  }, [onClose])
+
   const options = useMemo<HouseholdOption[]>(
     () => [
       { id: null, name: t('households.personal'), color: null },
@@ -110,6 +115,22 @@ const HouseholdSwitcher = ({ isOpen, onClose }: HouseholdSwitcherProps) => {
                   />
                 ))}
               </ul>
+              {households.length === 0 && (
+                <p className="px-3 pt-3 text-sm leading-5 text-zinc-500">
+                  <Trans
+                    i18nKey="households.manageTip"
+                    components={{
+                      settings: (
+                        <Link
+                          to="/settings"
+                          onClick={handleSettingsClick}
+                          className="font-medium text-primary hover:underline"
+                        />
+                      ),
+                    }}
+                  />
+                </p>
+              )}
             </ModalBody>
           </ModalDialog>
         </ModalContainer>

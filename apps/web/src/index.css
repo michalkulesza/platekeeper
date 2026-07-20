@@ -6,12 +6,12 @@
 .default,
 [data-theme="light"],
 [data-theme="default"] {
-  --accent: #cb6134;
+  --accent: #ea8e4e;
 }
 
 @theme {
-  /* primary — Carrot brand orange (#cb6134) */
-  --color-primary: #cb6134;
+  /* primary — Carrot brand orange (#ea8e4e) */
+  --color-primary: #ea8e4e;
   /* near-black (#111) — white fails 4.5:1 AA on this orange */
   --color-primary-foreground: oklch(0.15 0 0);
 

@@ -219,7 +219,9 @@
     "finishedWhileAway": "Zakończone podczas Twojej nieobecności",
     "noTimers": "Brak aktywnych minutników.",
     "timerRunning": "Minutnik działa",
-    "timerPaused": "Minutnik wstrzymany"
+    "timerPaused": "Minutnik wstrzymany",
+    "keepScreenOn": "Nie wygaszaj ekranu dla minutników",
+    "keepScreenOnDesc": "Utrzymuje ekran włączony, gdy działają minutniki"
   },
   "bell": {
     "notifications": "Powiadomienia",
@@ -336,6 +338,8 @@
     "showIntelligentIngredientsDesc": "Automatycznie pokazuje ilości składników pod pasującym krokiem",
     "screenAwake": "Nie wygaszaj ekranu",
     "screenAwakeDesc": "Utrzymuje ekran włączony, gdy szczegóły przepisu są otwarte",
+    "keepScreenOnDefault": "Domyślnie nie wygaszaj ekranu",
+    "keepScreenOnDefaultDesc": "Utrzymuje ekran włączony podczas przeglądania przepisów i list zakupów",
     "recipeImport": "Import przepisów",
     "shareImportsToPersonal": "Dodawaj też importowane przepisy do mojej osobistej biblioteki",
     "shareImportsToPersonalDesc": "Podczas dodawania przepisu w gospodarstwie zapisz też kopię w Twoich prywatnych przepisach",
@@ -429,7 +433,7 @@
     "switchContext": "Przełącz gospodarstwo domowe",
     "personal": "Osobiste",
     "personalHousehold": "Gospodarstwo osobiste",
-    "manageTip": "Możesz dodać nowe gospodarstwo domowe w Ustawieniach"
+    "manageTip": "Gospodarstwami możesz zarządzać na stronie <settings>Ustawienia</settings>."
   },
   "tags": {
     "tags": "Tagi",

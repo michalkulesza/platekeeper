@@ -214,6 +214,8 @@
     "noTimers": "No timers running.",
     "timerRunning": "Timer running",
     "timerPaused": "Timer paused",
+    "keepScreenOn": "Keep screen on for timers",
+    "keepScreenOnDesc": "Keeps your screen awake while timers are running",
     "startTimer": "Start timer",
     "goToRecipe": "Go to recipe"
   },
@@ -328,6 +330,8 @@
     "showIntelligentIngredientsDesc": "Automatically shows ingredient amounts under each matching step",
     "screenAwake": "Keep screen awake",
     "screenAwakeDesc": "Keeps your screen awake while recipe details are open",
+    "keepScreenOnDefault": "Keep screen on by default",
+    "keepScreenOnDefaultDesc": "Keeps your screen awake while viewing recipes and shopping lists",
     "recipeImport": "Recipe Import",
     "shareImportsToPersonal": "Also add imported recipes to my personal library",
     "shareImportsToPersonalDesc": "When adding a recipe in a household, also save a copy to your personal recipes",
@@ -421,7 +425,7 @@
     "switchContext": "Switch household",
     "personal": "Personal",
     "personalHousehold": "Personal Household",
-    "manageTip": "You can add a new household in Settings"
+    "manageTip": "You can manage households in the <settings>Settings page</settings>."
   },
   "tags": {
     "tags": "Tags",

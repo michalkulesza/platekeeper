@@ -161,7 +161,7 @@ const RecipeHeroSection = ({
         </button>
       )}
 
-      <div className={`px-5 pb-1 ${proxied ? 'pt-5' : 'pt-14'}`}>
+      <div className={`px-10 pb-1 ${proxied ? 'pt-5' : 'pt-14'}`}>
         <div className="flex items-start gap-2">
           {mode === 'view' && (
             <button
@@ -210,7 +210,7 @@ const RecipeHeroSection = ({
       </div>
 
       {mode === 'editing' && !proxied && (
-        <div className="px-5 pt-2">
+        <div className="px-10 pt-2">
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
