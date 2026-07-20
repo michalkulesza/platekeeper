@@ -95,7 +95,7 @@ async def test_enrichment_falls_back_only_for_misaligned_field(monkeypatch) -> N
     result = await gemini.extract_recipe("Ingredients: 1 onion")
 
     assert result.components[0].ingredients[0].shopping_list_value == "1 onion"
-    assert result.components[0].metric_ingredients == ["100 g onion"]
+    assert result.components[0].metric_ingredients == ["1 onion"]
     assert generate_content.call_count == 2
 
 
@@ -217,6 +217,30 @@ def test_enrichment_preserves_tsp_and_tbsp_in_both_unit_variants() -> None:
 
     assert component.metric_ingredients == ["1 tsp vanilla extract", "2 tbsp olive oil"]
     assert component.imperial_ingredients == ["1 tsp vanilla extract", "2 tbsp olive oil"]
+
+
+def test_enrichment_preserves_discrete_ingredients_in_both_unit_variants() -> None:
+    source = RecipeSourceExtraction.model_validate({
+        "components": [{
+            "ingredients": [
+                {"qty": "1/2", "name": "sweet onion"},
+                {"qty": "1", "name": "stalk celery"},
+            ],
+        }],
+    })
+    enrichment = RecipeEnrichment.model_validate(_enrichment_payload(components=[{
+        "metric_ingredients": ["125 g sweet onion", "30 g celery"],
+        "imperial_ingredients": ["1/2 cup sweet onion", "1/4 cup celery"],
+        "metric_steps": [],
+        "imperial_steps": [],
+        "shopping_list_values": ["1 sweet onion", "1 stalk celery"],
+    }]))
+
+    repaired = gemini._repair_enrichment_alignment(source, enrichment)
+    component = repaired.components[0]
+
+    assert component.metric_ingredients == ["1/2 sweet onion", "1 stalk celery"]
+    assert component.imperial_ingredients == ["1/2 sweet onion", "1 stalk celery"]
 
 
 def test_assemble_recipe_rejects_mismatched_component_count() -> None:

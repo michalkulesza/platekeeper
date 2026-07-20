@@ -116,6 +116,19 @@ Each variant array must have the same number of entries and order as the
 component's source ingredients or steps. Preserve ingredient names and cooking
 instructions; change only units, amounts, and temperatures in the variant
 fields. Never modify ingredients or steps.
+
+Never convert, estimate, remove, or replace a discrete-item quantity: whole or
+partial ingredients and count descriptors in the ingredient name such as onion,
+cube, stalk, clove, slice, can, bunch, sprig, handful, and pinch must remain
+counts in BOTH variants. For example, "1/2 sweet onion" must remain "1/2 sweet
+onion", never "125 g sweet onion", and "1 stalk celery" must remain "1 stalk
+celery", never "30 g celery". When a count-based ingredient also contains a
+separate liquid measure in its descriptive text, preserve the count and convert
+only that liquid measure. In metric, retain the original cup quantity in
+parentheses after its metric equivalent (for example, "1 cube beef bouillon
+dissolved in 473 ml (2 cups) simmering water"); in imperial, retain just "1
+cube beef bouillon dissolved in 2 cups simmering water" and never add a metric
+equivalent.
 """
 
 _ENRICHMENT_SYSTEM = """\
@@ -189,11 +202,43 @@ def _source_ingredient_display(ingredient) -> str:
 
 
 _SPOON_UNIT_PATTERN = re.compile(r"\b(?:tsp|tbsp)\b", re.IGNORECASE)
+_COUNT_UNIT_PATTERN = re.compile(
+    r"\b(?:clove|cube|slice|stalk|can|bunch|pinch|sprig|handful)\b",
+    re.IGNORECASE,
+)
+_INLINE_CONVERTIBLE_MEASUREMENT_PATTERN = re.compile(
+    r"\b(?:\d+(?:[./]\d+)?|[½⅓⅔¼¾])\s*(?:ml|l|g|kg|cups?)\b",
+    re.IGNORECASE,
+)
 
 
 def _preserve_spoon_measurements(source_ingredients: list[str], variant_ingredients: list[str]) -> list[str]:
     return [
         source_ingredient if _SPOON_UNIT_PATTERN.search(source_ingredient) else variant_ingredient
+        for source_ingredient, variant_ingredient in zip(source_ingredients, variant_ingredients)
+    ]
+
+
+def _preserve_discrete_ingredient_measurements(
+    source_ingredients: list[str],
+    variant_ingredients: list[str],
+) -> list[str]:
+    """Keep count-based ingredients out of weight/volume conversions.
+
+    An inline convertible measurement is intentionally left to the model so it
+    can be converted while preserving the surrounding count-based ingredient
+    text.
+    """
+    return [
+        source_ingredient
+        if (
+            not _INLINE_CONVERTIBLE_MEASUREMENT_PATTERN.search(source_ingredient)
+            and (
+                not re.search(r"\b(?:ml|l|g|kg|cup)\b", source_ingredient, re.IGNORECASE)
+                or _COUNT_UNIT_PATTERN.search(source_ingredient)
+            )
+        )
+        else variant_ingredient
         for source_ingredient, variant_ingredient in zip(source_ingredients, variant_ingredients)
     ]
 
@@ -240,8 +285,14 @@ def _repair_enrichment_alignment(
         )
 
         repaired_components.append(component.model_copy(update={
-            "metric_ingredients": _preserve_spoon_measurements(ingredient_fallback, metric_ingredients),
-            "imperial_ingredients": _preserve_spoon_measurements(ingredient_fallback, imperial_ingredients),
+            "metric_ingredients": _preserve_discrete_ingredient_measurements(
+                ingredient_fallback,
+                _preserve_spoon_measurements(ingredient_fallback, metric_ingredients),
+            ),
+            "imperial_ingredients": _preserve_discrete_ingredient_measurements(
+                ingredient_fallback,
+                _preserve_spoon_measurements(ingredient_fallback, imperial_ingredients),
+            ),
             "shopping_list_values": aligned_or_fallback(
                 "shopping_list_values", component.shopping_list_values, ingredient_fallback,
             ),
@@ -506,11 +557,13 @@ async def estimate_unit_variants(
             continue
 
         repaired_components[index] = variant_component.model_copy(update={
-            "metric_ingredients": _preserve_spoon_measurements(
-                source_ingredients, variant_component.metric_ingredients,
+            "metric_ingredients": _preserve_discrete_ingredient_measurements(
+                source_ingredients,
+                _preserve_spoon_measurements(source_ingredients, variant_component.metric_ingredients),
             ),
-            "imperial_ingredients": _preserve_spoon_measurements(
-                source_ingredients, variant_component.imperial_ingredients,
+            "imperial_ingredients": _preserve_discrete_ingredient_measurements(
+                source_ingredients,
+                _preserve_spoon_measurements(source_ingredients, variant_component.imperial_ingredients),
             ),
         })
 
