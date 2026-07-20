@@ -347,9 +347,11 @@ const CookMode = ({
             swipeStart.current = null;
           }}
         >
-          <Text style={[styles.stepLabel, { color: muted }]}>
+          <Animated.Text
+            style={[styles.stepLabel, { color: muted, opacity: stepContentOpacity }]}
+          >
             STEP {index + 1}
-          </Text>
+          </Animated.Text>
           <Animated.Text
             key={`${index}-${mainHeight}-${instructionFontSize}`}
             style={[
@@ -452,9 +454,11 @@ const CookMode = ({
           >
             <Ionicons name="chevron-back" size={28} color={text} />
           </Pressable>
-          <Text style={[styles.count, { color: text }]}>
+          <Animated.Text
+            style={[styles.count, { color: text, opacity: stepContentOpacity }]}
+          >
             {index + 1} of {steps.length}
-          </Text>
+          </Animated.Text>
           <Pressable
             disabled={index === steps.length - 1}
             onPress={() => go(index + 1)}
