@@ -24,7 +24,16 @@ export const styles = StyleSheet.create({
   },
   floatingButtonPressed: { opacity: 0.8 },
   screen: { flex: 1, backgroundColor: colors.secondaryBackground },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  // Household switches temporarily replace the list with this loader. Give it an
+  // opaque dynamic surface so the navigation container's light fallback never
+  // flashes through while the next household's recipes load.
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    backgroundColor: colors.secondaryBackground,
+  },
   errorText: { color: colors.red, fontSize: 16, textAlign: 'center' },
   tagBar: {
     position: 'absolute',
