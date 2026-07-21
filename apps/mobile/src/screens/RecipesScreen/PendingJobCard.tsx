@@ -63,7 +63,7 @@ const PendingJobCard = ({
           <Feather name="alert-circle" size={28} color={PlatformColor('secondaryLabel') as unknown as string} />
         ) : (
           <View style={styles.pendingSpinnerOverlay}>
-            <ActivityIndicator size="small" color={PlatformColor('systemBackground')} />
+            <ActivityIndicator size="small" color={colors.tertiaryLabel} />
           </View>
         )}
       </View>

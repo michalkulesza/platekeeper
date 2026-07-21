@@ -61,6 +61,7 @@ const CookModeToolbar = ({
   muted,
   decreaseTextSizeLabel,
   increaseTextSizeLabel,
+  closeLabel,
 }: {
   canDecreaseTextSize: boolean;
   canIncreaseTextSize: boolean;
@@ -71,6 +72,7 @@ const CookModeToolbar = ({
   muted: string;
   decreaseTextSizeLabel: string;
   increaseTextSizeLabel: string;
+  closeLabel: string;
 }) => (
   <View style={styles.toolbar}>
     <Pressable
@@ -100,22 +102,32 @@ const CookModeToolbar = ({
     <Pressable onPress={onOpenIngredients} hitSlop={8} accessibilityLabel="Ingredients">
       <Ionicons name="list-outline" size={25} color={muted} />
     </Pressable>
-    <Pressable onPress={onClose} hitSlop={8} accessibilityLabel="Close cook mode">
+    <Pressable onPress={onClose} hitSlop={8} accessibilityLabel={closeLabel}>
       <Ionicons name="close" size={29} color={muted} />
     </Pressable>
   </View>
 );
+
+const CookModeBackButton = ({ onClose, muted, closeLabel }: { onClose: () => void; muted: string; closeLabel: string }) => (
+  <Pressable onPress={onClose} hitSlop={8} accessibilityLabel={closeLabel}>
+    <Ionicons name="chevron-back" size={28} color={muted} />
+  </Pressable>
+)
 
 const CookMode = ({
   recipe,
   visible,
   onClose,
   colorScheme,
+  initialComponentIndex,
+  initialStepIndex,
 }: {
   recipe: RecipeOut;
   visible: boolean;
   onClose: () => void;
   colorScheme: "light" | "dark";
+  initialComponentIndex: number | null;
+  initialStepIndex: number | null;
 }) => {
   const isAppActive = useIsAppActive();
   const { t } = useTranslation();
@@ -164,6 +176,15 @@ const CookMode = ({
     () => (step ? parseDurationMatches(step.text) : []),
     [step],
   );
+  const hasInitialStep = initialComponentIndex !== null && initialStepIndex !== null;
+  useLayoutEffect(() => {
+    if (!visible || !hasInitialStep) return;
+
+    const targetIndex = steps.findIndex(
+      (item) => item.componentIndex === initialComponentIndex && item.stepIndex === initialStepIndex,
+    );
+    if (targetIndex >= 0) setIndex(targetIndex);
+  }, [hasInitialStep, initialComponentIndex, initialStepIndex, steps, visible]);
   const storageKey = `cook-mode:${recipe.id}`;
   const adjustFontScale = useCallback(
     (direction: -1 | 1) => {
@@ -186,7 +207,7 @@ const CookMode = ({
   );
 
   useEffect(() => {
-    if (!visible) return;
+    if (!visible || hasInitialStep) return;
     void AsyncStorage.getItem(storageKey).then((value) => {
       if (!value) return;
       try {
@@ -198,7 +219,7 @@ const CookMode = ({
         setChecked(new Set(saved.checked ?? []));
       } catch {}
     });
-  }, [visible, storageKey, steps.length]);
+  }, [hasInitialStep, visible, storageKey, steps.length]);
 
   useEffect(() => {
     if (!visible || !isAppActive) {
@@ -259,6 +280,7 @@ const CookMode = ({
   useLayoutEffect(() => {
     if (!visible) return;
     navigation.setOptions({
+      headerLeft: () => <CookModeBackButton onClose={onClose} muted={muted} closeLabel={t("cookMode.close")} />,
       headerRight: () => (
         <CookModeToolbar
           canDecreaseTextSize={fontScale > MIN_FONT_SCALE}
@@ -270,6 +292,7 @@ const CookMode = ({
           muted={muted}
           decreaseTextSizeLabel={t("cookMode.decreaseTextSize")}
           increaseTextSizeLabel={t("cookMode.increaseTextSize")}
+          closeLabel={t("cookMode.close")}
         />
       ),
     });
@@ -416,6 +439,7 @@ const CookMode = ({
                           componentIndex: step.componentIndex,
                           stepIndex: step.stepIndex,
                           stepText: step.text,
+                          source: 'cook-mode',
                           totalSeconds: duration.seconds,
                         })
                       : !done && (running ? pauseTimer(id) : resumeTimer(id))

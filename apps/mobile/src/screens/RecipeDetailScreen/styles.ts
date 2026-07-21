@@ -66,13 +66,20 @@ export const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   tagText: { color: colors.brand, fontSize: 12, fontWeight: "500" },
-  householdRow: {
+  memberRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    marginBottom: 12,
+    gap: 8,
   },
-  householdAvatarWrapper: { position: "relative" },
+  memberScroll: { marginBottom: 12 },
+  memberChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    minHeight: 32,
+    paddingRight: 4,
+  },
+  memberName: { color: colors.secondaryLabel, fontSize: 13, lineHeight: 18 },
   servingStepperRow: {
     flexDirection: "row",
     alignItems: "center",

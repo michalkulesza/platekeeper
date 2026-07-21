@@ -12,6 +12,8 @@ export { formatCountdown, formatDurationLabel, parseDurationMatch, type Duration
 
 export const STORAGE_KEY = 'pk-timers'
 
+export type TimerSource = 'recipe' | 'cook-mode'
+
 export const isExpoGo = Constants.executionEnvironment === 'storeClient'
 
 if (!isExpoGo) {
@@ -33,11 +35,22 @@ export interface TimerEntry {
   componentIndex: number
   stepIndex: number
   stepText: string
+  source: TimerSource
   totalSeconds: number
   remainingAtStart: number
   startedAt: number | null
   status: 'running' | 'paused' | 'done'
   notificationId?: string
+}
+
+type TimerDestination = Pick<TimerEntry, 'recipeId' | 'componentIndex' | 'stepIndex'> & {
+  source?: TimerSource
+}
+
+export const getTimerDestination = ({ recipeId, componentIndex, stepIndex, source }: TimerDestination) => {
+  if (source !== 'cook-mode') return `/recipe/${recipeId}`
+
+  return `/recipe/${recipeId}?cookMode=1&componentIndex=${componentIndex}&stepIndex=${stepIndex}`
 }
 
 export interface ResumeInfo {
@@ -63,7 +76,14 @@ export const scheduleNotif = async (t: TimerEntry): Promise<string | null> => {
         title: `⏱️ ${i18n.t('bell.timerDone')}`,
         subtitle,
         body,
-        data: { timerId: t.id },
+        data: {
+          type: 'timer_done',
+          timerId: t.id,
+          recipeId: t.recipeId,
+          componentIndex: t.componentIndex,
+          stepIndex: t.stepIndex,
+          source: t.source,
+        },
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,

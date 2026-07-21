@@ -16,6 +16,9 @@ export interface NotificationItem {
   body: string
   timestamp: number
   recipe_id?: string
+  component_index?: number
+  step_index?: number
+  timer_source?: 'recipe' | 'cook-mode'
   job_id?: string
 }
 

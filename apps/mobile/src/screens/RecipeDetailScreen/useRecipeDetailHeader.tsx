@@ -159,6 +159,7 @@ const ViewHeaderRight = ({
 export const useRecipeDetailHeader = ({
   navigation,
   editing,
+  cooking,
   addMode,
   recipe,
   activeHouseholdId,
@@ -172,6 +173,7 @@ export const useRecipeDetailHeader = ({
 }: {
   navigation: RecipeDetailNavigation
   editing: boolean
+  cooking: boolean
   addMode: boolean
   recipe: { household_id: string | null; shared_to_personal: boolean }
   activeHouseholdId: string | null
@@ -184,6 +186,7 @@ export const useRecipeDetailHeader = ({
   handleSharePublicly: () => void
 }) => {
   useLayoutEffect(() => {
+    if (cooking) return
     if (editing) {
       navigation.setOptions({
         gestureEnabled: false,
@@ -218,6 +221,7 @@ export const useRecipeDetailHeader = ({
   }, [
     navigation,
     editing,
+    cooking,
     handleEdit,
     handleCancelEdit,
     handleOpenMealPlanSheet,

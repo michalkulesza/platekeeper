@@ -32,6 +32,7 @@ import { useImportJobs } from '@carrot/shared/hooks/useImportJobs'
 import { AuthProvider, useAuth } from '../src/context/AuthContext'
 import { NotificationHistoryProvider } from '../src/context/NotificationHistoryContext'
 import { TimerProvider } from '../src/context/TimerContext'
+import { getTimerDestination, type TimerSource } from '../src/context/TimerContext/helpers'
 import { HouseholdProvider } from '../src/context/HouseholdContext'
 import { ColorSchemeProvider, useAppLaunch } from '../src/context/ColorSchemeContext'
 import { CookingModeProvider } from '../src/context/CookingModeContext'
@@ -67,6 +68,21 @@ const asyncStoragePersister = createAsyncStoragePersister({ storage: AsyncStorag
 // Bump when the cached query data shape changes in a way older persisted caches can't handle.
 const QUERY_CACHE_BUSTER = '1'
 const PUSH_INSTALLATION_ID_KEY = 'push-installation-id'
+
+const getTimerNotificationDestination = (data: Record<string, unknown>): string | null => {
+  if (
+    typeof data.recipeId !== 'string' ||
+    typeof data.componentIndex !== 'number' ||
+    typeof data.stepIndex !== 'number'
+  ) return null
+
+  return getTimerDestination({
+    recipeId: data.recipeId,
+    componentIndex: data.componentIndex,
+    stepIndex: data.stepIndex,
+    source: data.source as TimerSource | undefined,
+  })
+}
 
 const AppStartupGate = ({ children }: { children: React.ReactNode }) => {
   const { user, loading: authLoading } = useAuth()
@@ -104,6 +120,7 @@ function RootLayoutNav() {
   const api = useApiClient()
   const { push: pushNotif } = useNotificationHistory()
   const responseListenerRef = useRef<Notifications.EventSubscription | null>(null)
+  const handledTimerNotificationResponseIdsRef = useRef(new Set<string>())
   const colorScheme = useResolvedColorScheme()
   const navigationTheme = useMemo<Theme>(
     () => ({
@@ -139,6 +156,15 @@ function RootLayoutNav() {
 
   // Handle APNs pushes from the background import worker
   useEffect(() => {
+    const handleTimerResponse = (data: Record<string, unknown>, notificationId: string) => {
+      if (handledTimerNotificationResponseIdsRef.current.has(notificationId)) return
+      const destination = getTimerNotificationDestination(data)
+      if (!destination) return
+
+      handledTimerNotificationResponseIdsRef.current.add(notificationId)
+      router.push(destination)
+    }
+
     // Foreground: add to in-app bell without navigating
     const receivedSub = Notifications.addNotificationReceivedListener((notification) => {
       const data = notification.request.content.data as Record<string, unknown>
@@ -185,7 +211,16 @@ function RootLayoutNav() {
           body: response.notification.request.content.body ?? t('bell.recipeImportFailedBody'),
           job_id: jobId,
         })
+      } else if (type === 'timer_done') {
+        handleTimerResponse(data, response.notification.request.identifier)
       }
+    })
+    void Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (!response) return
+      const data = response.notification.request.content.data as Record<string, unknown>
+      if (data.type !== 'timer_done') return
+      handleTimerResponse(data, response.notification.request.identifier)
+      void Notifications.clearLastNotificationResponseAsync()
     })
     return () => {
       receivedSub.remove()

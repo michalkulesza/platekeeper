@@ -3,7 +3,7 @@ import { ActionSheetIOS, ActivityIndicator, Alert, Platform, Share, Text, View }
 import { useTranslation } from "react-i18next";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation, useLocalSearchParams } from "expo-router";
+import { useNavigation, useLocalSearchParams, useRouter } from "expo-router";
 import { useApiClient } from "@carrot/shared/api/context";
 import { useRecipes } from "@carrot/shared/hooks/useRecipes";
 import { useShoppingList } from "@carrot/shared/hooks/useShoppingList";
@@ -42,11 +42,21 @@ const showPublicShareSheet = async (title: string, url: string): Promise<void> =
 }
 
 const RecipeDetailScreen = () => {
-  const { id: recipeId, edit: autoEditParam } = useLocalSearchParams<{
+  const {
+    id: recipeId,
+    edit: autoEditParam,
+    cookMode: cookModeParam,
+    componentIndex: componentIndexParam,
+    stepIndex: stepIndexParam,
+  } = useLocalSearchParams<{
     id: string;
     edit?: string;
+    cookMode?: string;
+    componentIndex?: string;
+    stepIndex?: string;
   }>();
   const navigation = useNavigation();
+  const router = useRouter();
   const { t } = useTranslation();
   const api = useApiClient();
   const {
@@ -54,6 +64,7 @@ const RecipeDetailScreen = () => {
     isLoading,
     error,
     toggleFavourite,
+    remove,
     linkToHousehold,
     linkToPersonal,
   } = useRecipes();
@@ -64,20 +75,34 @@ const RecipeDetailScreen = () => {
   const [heroImageErrored, setHeroImageErrored] = useState(false);
   const [addMode, setAddMode] = useState(false);
   const [sessionAdded, setSessionAdded] = useState<Set<string>>(new Set());
-  const [cookModeOpen, setCookModeOpen] = useState(false);
+  const [cookModeOpen, setCookModeOpen] = useState(cookModeParam === '1');
   const insets = useSafeAreaInsets();
   const mealPlanSheetRef = useRef<AddToMealPlanSheetHandle>(null);
   const addIngredientSheetRef =
     useRef<AddIngredientToShoppingListSheetHandle>(null);
   const pendingIngredientKeyRef = useRef<string | null>(null);
   const publicSharePendingRef = useRef(false);
+  const deletePendingRef = useRef(false);
 
   const displayPrefs = useDisplayPrefs();
+  const initialComponentIndex = Number.isInteger(Number(componentIndexParam))
+    ? Number(componentIndexParam)
+    : null
+  const initialStepIndex = Number.isInteger(Number(stepIndexParam))
+    ? Number(stepIndexParam)
+    : null
+
+  useEffect(() => {
+    if (cookModeParam === '1') setCookModeOpen(true)
+  }, [cookModeParam])
 
   const recipe: RecipeOut | undefined = useMemo(
     () => recipes.find((r) => r.id === recipeId),
     [recipes, recipeId],
   );
+  useEffect(() => {
+    if (!isLoading && !error && !recipe) router.replace('/(tabs)/recipes')
+  }, [error, isLoading, recipe, router])
   const { selectedServings, setServings } = useRecipeServingPreference(
     recipe?.id,
     recipe?.servings ?? null,
@@ -111,6 +136,35 @@ const RecipeDetailScreen = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     toggleFavourite.mutate(recipe.id);
   }, [recipe, toggleFavourite]);
+
+  const handleDeleteRecipe = useCallback(() => {
+    if (!recipe || deletePendingRef.current) return
+
+    Alert.alert(
+      t('recipes.deleteTitle'),
+      t('recipes.deleteConfirm', { title: recipe.title }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: () => {
+            if (deletePendingRef.current) return
+            deletePendingRef.current = true
+            void remove.mutateAsync(recipe.id)
+              .then(() => navigation.goBack())
+              .catch(() => Alert.alert(t('common.ok'), t('recipes.failedToDelete')))
+              .finally(() => { deletePendingRef.current = false })
+          },
+        },
+      ],
+    )
+  }, [navigation, recipe, remove, t])
+
+  const handleOpenCookMode = useCallback(() => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    setCookModeOpen(true)
+  }, [])
 
   const handleDecreaseServings = useCallback(() => {
     if (selectedServings !== null) setServings(Math.max(1, selectedServings - 1));
@@ -205,6 +259,7 @@ const RecipeDetailScreen = () => {
   useRecipeDetailHeader({
     navigation,
     editing: editDraft.editing,
+    cooking: cookModeOpen,
     addMode,
     recipe: recipe ?? { household_id: null, shared_to_personal: false },
     activeHouseholdId,
@@ -301,10 +356,8 @@ const RecipeDetailScreen = () => {
         handleToggleFavourite={handleToggleFavourite}
         handleDecreaseServings={handleDecreaseServings}
         handleIncreaseServings={handleIncreaseServings}
-      onOpenCookMode={() => {
-        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-        setCookModeOpen(true)
-      }}
+        onOpenCookMode={handleOpenCookMode}
+        onDeleteRecipe={handleDeleteRecipe}
         mealPlanSheetRef={mealPlanSheetRef}
         addIngredientSheetRef={addIngredientSheetRef}
       />
@@ -313,6 +366,8 @@ const RecipeDetailScreen = () => {
         visible={cookModeOpen}
         onClose={() => setCookModeOpen(false)}
         colorScheme={colorScheme}
+        initialComponentIndex={initialComponentIndex}
+        initialStepIndex={initialStepIndex}
       />
     </>
   );

@@ -48,6 +48,7 @@ const TimerSpan = ({
             componentIndex,
             stepIndex,
             stepText,
+            source: 'recipe',
             totalSeconds: seconds,
           })
         }

@@ -11,7 +11,6 @@ import {
   type NativeSyntheticEvent,
   type TextLayoutEventData,
 } from "react-native";
-import Avatar from "../../components/Avatar";
 import NetworkImage from "../../components/NetworkImage";
 import { useTranslation } from "react-i18next";
 import { useHousehold } from "../../context/HouseholdContext";
@@ -38,6 +37,7 @@ import NotesSection from "./NotesSection";
 import RelatedRecipesSection from "./RelatedRecipesSection";
 import TagsSection from "./TagsSection";
 import ServingStepper from "./ServingStepper";
+import RecipeMemberRow from './RecipeMemberRow'
 
 const formatCookingTime = (
   minutes: number | null,
@@ -73,6 +73,7 @@ const ReadView = ({
   handleDecreaseServings,
   handleIncreaseServings,
   onOpenCookMode,
+  onDeleteRecipe,
   mealPlanSheetRef,
   addIngredientSheetRef,
 }: {
@@ -97,6 +98,7 @@ const ReadView = ({
   handleDecreaseServings: () => void;
   handleIncreaseServings: () => void;
   onOpenCookMode: () => void;
+  onDeleteRecipe: () => void;
   mealPlanSheetRef: RefObject<AddToMealPlanSheetHandle | null>;
   addIngredientSheetRef: RefObject<AddIngredientToShoppingListSheetHandle | null>;
 }) => {
@@ -111,11 +113,6 @@ const ReadView = ({
   const contributorName = recipe.household_id
     ? (recipe.added_by ?? personalName)
     : personalName;
-  const contributorTooltip =
-    recipe.added_by ?? t("households.personalHousehold");
-  const [openHouseholdAvatar, setOpenHouseholdAvatar] = useState<string | null>(
-    null,
-  );
   const [titleIsSingleLine, setTitleIsSingleLine] = useState(true);
   const handleTitleTextLayout = useCallback(
     (e: NativeSyntheticEvent<TextLayoutEventData>) => {
@@ -130,23 +127,21 @@ const ReadView = ({
   const recipeHousehold = recipe.household_id
     ? households.find((h) => h.id === recipe.household_id)
     : undefined;
-  const householdAvatars = [
+  const recipeMembers = [
     ...(!recipe.household_id || recipe.shared_to_personal
       ? [
           {
-            key: "personal",
+            id: "personal",
             name: contributorName,
-            tooltip: contributorTooltip,
           },
         ]
       : []),
     ...(recipeHousehold
       ? [
           {
-            key: recipeHousehold.id,
+            id: recipeHousehold.id,
             name: recipeHousehold.name,
             color: recipeHousehold.color,
-            tooltip: recipeHousehold.name,
           },
         ]
       : []),
@@ -274,31 +269,7 @@ const ReadView = ({
             />
           )}
 
-          <View style={styles.householdRow}>
-            {householdAvatars.map(({ key, tooltip, ...avatarProps }) => (
-              <View key={key} style={styles.householdAvatarWrapper}>
-                <Pressable
-                  onPress={() =>
-                    setOpenHouseholdAvatar((current) =>
-                      current === key ? null : key,
-                    )
-                  }
-                  accessibilityLabel={tooltip}
-                  accessibilityRole="button"
-                >
-                  <Avatar {...avatarProps} size={28} />
-                </Pressable>
-                {openHouseholdAvatar === key && (
-                  <TooltipPopover
-                    text={tooltip}
-                    alignRight={false}
-                    fitContent
-                    onDismiss={() => setOpenHouseholdAvatar(null)}
-                  />
-                )}
-              </View>
-            ))}
-          </View>
+          <RecipeMemberRow members={recipeMembers} onDeleteRecipe={onDeleteRecipe} />
 
           <View style={styles.toggleGroup}>
             <View style={styles.keepScreenRow}>

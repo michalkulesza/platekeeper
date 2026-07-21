@@ -12,6 +12,7 @@ import {
   useTimers,
   getRemainingSeconds,
   formatCountdown,
+  getTimerDestination,
   type TimerEntry,
 } from '../context/TimerContext'
 import { useNotificationHistory, type NotificationItem } from '../context/NotificationHistoryContext'
@@ -25,7 +26,7 @@ const buildTimerAction = (timer: TimerEntry, pathname: string, t: TFunction): Me
   const subtitle = isRunning
     ? formatCountdown(remaining)
     : `${t('timers.timerPaused')} · ${formatCountdown(remaining)}`
-  const showGotoRecipe = pathname !== `/recipe/${timer.recipeId}`
+  const showGotoRecipe = timer.source === 'cook-mode' || pathname !== `/recipe/${timer.recipeId}`
 
   const subactions: MenuAction[] = [
     isRunning
@@ -88,6 +89,21 @@ const buildNotifAction = (notif: NotificationItem): MenuAction | null => {
     default:
       return null
   }
+}
+
+const getNotificationTimerDestination = (notification: NotificationItem): string | null => {
+  if (
+    !notification.recipe_id ||
+    notification.component_index === undefined ||
+    notification.step_index === undefined
+  ) return notification.recipe_id ? `/recipe/${notification.recipe_id}` : null
+
+  return getTimerDestination({
+    recipeId: notification.recipe_id,
+    componentIndex: notification.component_index,
+    stepIndex: notification.step_index,
+    source: notification.timer_source,
+  })
 }
 
 const BellMenu = () => {
@@ -154,13 +170,19 @@ const BellMenu = () => {
           break
         case 'timer-goto': {
           const timer = [...timers.values()].find((ti) => ti.id === payload)
-          if (timer) router.push(`/recipe/${timer.recipeId}`)
+          if (timer) router.push(getTimerDestination(timer))
           break
         }
         case 'timer-cancel':
           cancelTimer(payload)
           break
-        case 'timer-done':
+        case 'timer-done': {
+          const notification = notifHistory.find((item) => item.id === payload)
+          const destination = notification ? getNotificationTimerDestination(notification) : null
+          if (destination) router.push(destination)
+          dismissNotif(payload)
+          break
+        }
         case 'invitation-dismiss':
           dismissNotif(payload)
           break

@@ -15,6 +15,7 @@ import {
   cancelNotif,
   formatCountdown,
   formatDurationLabel,
+  getTimerDestination,
   getRemainingSeconds,
   isExpoGo,
   parseDurationMatch,
@@ -26,7 +27,7 @@ import {
 } from './helpers'
 
 export { formatCountdown, formatDurationLabel, parseDurationMatch, type DurationMatch }
-export { getRemainingSeconds, type ResumeInfo, type TimerEntry }
+export { getRemainingSeconds, getTimerDestination, type ResumeInfo, type TimerEntry }
 
 interface TimerContextValue {
   timers: Map<string, TimerEntry>
@@ -116,6 +117,10 @@ export const TimerProvider = ({ children }: { children: ReactNode }) => {
                 step: t.stepIndex + 1,
                 duration: formatDurationLabel(t.totalSeconds),
               }),
+              recipe_id: t.recipeId,
+              component_index: t.componentIndex,
+              step_index: t.stepIndex,
+              timer_source: t.source,
             })
           })
           setExpiredQueue(expired)
@@ -167,6 +172,10 @@ export const TimerProvider = ({ children }: { children: ReactNode }) => {
           step: t.stepIndex + 1,
           duration: formatDurationLabel(t.totalSeconds),
         }),
+        recipe_id: t.recipeId,
+        component_index: t.componentIndex,
+        step_index: t.stepIndex,
+        timer_source: t.source,
       })
       setTimeout(() => {
         setTimers((m) => {
