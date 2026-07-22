@@ -660,7 +660,7 @@ const RecipesScreen = () => {
         : undefined
       const avatars = []
       if (!recipe.household_id || recipe.shared_to_personal) {
-        avatars.push({ key: 'personal', name: t('households.you'), color: PERSONAL_LIBRARY_COLOR })
+        avatars.push({ key: 'personal', name: t('households.personal'), label: t('households.you').charAt(0), color: PERSONAL_LIBRARY_COLOR })
       }
       if (household) {
         avatars.push({ key: household.id, name: household.name, color: household.color })

@@ -126,7 +126,8 @@ const ReadView = ({
       ? [
           {
             id: "personal",
-            name: t("households.you"),
+            name: t("households.personal"),
+            label: t("households.you").charAt(0),
             color: PERSONAL_LIBRARY_COLOR,
           },
         ]

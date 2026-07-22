@@ -7,6 +7,7 @@ import { useHousehold } from '../context/HouseholdContext'
 interface HouseholdAvatar {
   id: string
   name: string
+  label?: string
   color?: string
   tooltip: string
 }
@@ -43,7 +44,8 @@ const HouseholdAvatarIndicators = ({
         ? [
             {
               id: 'personal',
-              name: t('households.you'),
+              name: t('households.personal'),
+              label: t('households.you').charAt(0),
               color: PERSONAL_LIBRARY_COLOR,
               tooltip: t('households.personalHousehold'),
             },
@@ -89,7 +91,7 @@ const HouseholdAvatarIndicators = ({
           role="img"
           aria-label={avatar.tooltip}
         >
-          {getInitials(avatar.name)}
+          {avatar.label ?? getInitials(avatar.name)}
         </span>
       ))}
     </div>

@@ -9,6 +9,7 @@ import { styles } from './styles'
 type RecipeMember = {
   id: string
   name: string
+  label?: string
   color?: string
 }
 
@@ -39,7 +40,7 @@ const RecipeMemberRow = ({ members, onDeleteRecipe }: { members: RecipeMember[];
             onPressAction={handleMenuAction}
           >
             <View style={styles.memberChip} accessible accessibilityLabel={member.name}>
-              <Avatar name={member.name} color={member.color} size={28} />
+              <Avatar name={member.name} label={member.label} color={member.color} size={28} />
               <Text numberOfLines={1} style={styles.memberName}>{member.name}</Text>
             </View>
           </MenuView>

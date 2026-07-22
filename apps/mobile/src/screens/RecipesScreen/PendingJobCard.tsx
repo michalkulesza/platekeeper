@@ -10,6 +10,8 @@ import MarqueeRow from '../../components/MarqueeRow'
 import { MarqueeSyncSlots } from '../../components/MarqueeSync'
 import { PLACEHOLDER_URL } from '../../api/thumbnailUrl'
 import { clearImportImagePreview, getImportImagePreview } from '../../utils/importImagePreviews'
+import { PERSONAL_LIBRARY_COLOR } from '@carrot/shared/utils/householdColors'
+import { useAuth } from '../../context/AuthContext'
 import { styles } from './styles'
 
 const PendingJobCard = ({
@@ -26,10 +28,12 @@ const PendingJobCard = ({
   onContinueManually: () => void
 }) => {
   const { t } = useTranslation()
+  const { user } = useAuth()
   const [actionPending, setActionPending] = useState(false)
   const actionInProgress = useRef(false)
   const sourceUrlOpening = useRef(false)
   const retryScheduled = job.status === 'pending' && job.retry_count > 0
+  const isCurrentUserImport = job.created_by_user_id === user?.id
   const importingMemberName = job.created_by_name ?? t('importJobs.someone')
   const imagePreview = getImportImagePreview(job.id)
   const imageUri = imagePreview ?? (job.kind === 'text' ? PLACEHOLDER_URL : null)
@@ -127,7 +131,12 @@ const PendingJobCard = ({
           </MarqueeSyncSlots>
         )}
         <View style={styles.pendingMetaRow}>
-          <Avatar name={importingMemberName} size={18} />
+          <Avatar
+            name={isCurrentUserImport ? t('households.personal') : importingMemberName}
+            label={isCurrentUserImport ? t('households.you').charAt(0) : undefined}
+            color={isCurrentUserImport ? PERSONAL_LIBRARY_COLOR : undefined}
+            size={18}
+          />
         </View>
       </View>
     </>
