@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react'
+import { HOUSEHOLD_COLOR_OPTIONS } from '@carrot/shared/utils/householdColors'
 
 export const WEEK_DAY_OPTIONS = [
   { key: '1', labelKey: 'settings.monday' },
@@ -6,16 +7,7 @@ export const WEEK_DAY_OPTIONS = [
   { key: '6', labelKey: 'settings.saturday' },
 ]
 
-export const PRESET_COLORS = [
-  '#6366f1',
-  '#ec4899',
-  '#14b8a6',
-  '#f59e0b',
-  '#22c55e',
-  '#ef4444',
-  '#8b5cf6',
-  '#06b6d4',
-]
+export const PRESET_COLORS = HOUSEHOLD_COLOR_OPTIONS
 
 export const LANGUAGE_CODES = ['en', 'de', 'pl', 'fr', 'es'] as const
 

@@ -426,6 +426,7 @@
     "prevMonth": "Mes anterior"
   },
   "households": {
+    "you": "TÚ",
     "switchContext": "Cambiar de hogar",
     "personal": "Personal",
     "personalHousehold": "Hogar personal",

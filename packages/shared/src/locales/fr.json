@@ -427,6 +427,7 @@
     "prevMonth": "Mois précédent"
   },
   "households": {
+    "you": "VOUS",
     "switchContext": "Changer de foyer",
     "personal": "Personnel",
     "personalHousehold": "Foyer personnel",

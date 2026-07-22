@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RecipeOut } from '@carrot/shared/types'
-import { useAuth } from '../context/AuthContext'
+import { PERSONAL_LIBRARY_COLOR } from '@carrot/shared/utils/householdColors'
 import { useHousehold } from '../context/HouseholdContext'
 
 interface HouseholdAvatar {
@@ -32,14 +32,7 @@ const HouseholdAvatarIndicators = ({
   className = '',
 }: HouseholdAvatarIndicatorsProps) => {
   const { t } = useTranslation()
-  const { user } = useAuth()
   const { households } = useHousehold()
-  const personalName = user?.nickname || user?.email || t('households.personal')
-  const contributorName = recipe.household_id
-    ? (recipe.added_by ?? personalName)
-    : personalName
-  const contributorTooltip =
-    recipe.added_by ?? t('households.personalHousehold')
   const recipeHousehold = recipe.household_id
     ? households.find((household) => household.id === recipe.household_id)
     : undefined
@@ -50,8 +43,9 @@ const HouseholdAvatarIndicators = ({
         ? [
             {
               id: 'personal',
-              name: contributorName,
-              tooltip: contributorTooltip,
+              name: t('households.you'),
+              color: PERSONAL_LIBRARY_COLOR,
+              tooltip: t('households.personalHousehold'),
             },
           ]
         : []),
@@ -67,11 +61,10 @@ const HouseholdAvatarIndicators = ({
         : []),
     ],
     [
-      contributorName,
-      contributorTooltip,
       recipe.household_id,
       recipe.shared_to_personal,
       recipeHousehold,
+      t,
     ]
   )
   const avatarClassName =

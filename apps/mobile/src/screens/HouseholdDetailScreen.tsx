@@ -16,20 +16,12 @@ import * as Haptics from 'expo-haptics'
 import { useHouseholds } from '@carrot/shared/hooks/useHouseholds'
 import { useMembers } from '@carrot/shared/hooks/useMembers'
 import type { MemberOut } from '@carrot/shared/types'
+import { HOUSEHOLD_COLOR_OPTIONS } from '@carrot/shared/utils/householdColors'
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
 import { colors } from '../theme/colors'
 
-const PRESET_COLORS = [
-  '#6366f1',
-  '#ec4899',
-  '#14b8a6',
-  '#f59e0b',
-  '#22c55e',
-  '#ef4444',
-  '#8b5cf6',
-  '#06b6d4',
-]
+const PRESET_COLORS = HOUSEHOLD_COLOR_OPTIONS
 
 interface HeaderSaveButtonProps {
   saving: boolean

@@ -427,6 +427,7 @@
     "nextMonth": "Next month"
   },
   "households": {
+    "you": "YOU",
     "switchContext": "Switch household",
     "personal": "Personal",
     "personalHousehold": "Personal Household",

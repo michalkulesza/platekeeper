@@ -14,10 +14,10 @@ import {
 import NetworkImage from "../../components/NetworkImage";
 import { useTranslation } from "react-i18next";
 import { useHousehold } from "../../context/HouseholdContext";
-import { useAuth } from "../../context/AuthContext";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import type { EdgeInsets } from "react-native-safe-area-context";
 import type { RecipeOut } from "@carrot/shared/types";
+import { PERSONAL_LIBRARY_COLOR } from "@carrot/shared/utils/householdColors";
 import AddToMealPlanSheet, {
   type AddToMealPlanSheetHandle,
 } from "../../components/AddToMealPlanSheet";
@@ -104,15 +104,9 @@ const ReadView = ({
 }) => {
   const { t } = useTranslation();
   const { households } = useHousehold();
-  const { user } = useAuth();
   const heroThumbnailUrl = proxyThumbnailUrl(recipe.thumbnail_url);
   const hasImage = !!heroThumbnailUrl;
   const hasScalableServings = recipe.servings !== null && recipe.servings > 0;
-  const personalName =
-    user?.nickname || user?.email || t("households.personal");
-  const contributorName = recipe.household_id
-    ? (recipe.added_by ?? personalName)
-    : personalName;
   const [titleIsSingleLine, setTitleIsSingleLine] = useState(true);
   const handleTitleTextLayout = useCallback(
     (e: NativeSyntheticEvent<TextLayoutEventData>) => {
@@ -132,7 +126,8 @@ const ReadView = ({
       ? [
           {
             id: "personal",
-            name: contributorName,
+            name: t("households.you"),
+            color: PERSONAL_LIBRARY_COLOR,
           },
         ]
       : []),

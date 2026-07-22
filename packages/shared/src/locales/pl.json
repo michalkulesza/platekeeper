@@ -435,6 +435,7 @@
     "prevMonth": "Poprzedni miesiąc"
   },
   "households": {
+    "you": "TY",
     "switchContext": "Przełącz gospodarstwo domowe",
     "personal": "Osobiste",
     "personalHousehold": "Gospodarstwo osobiste",

@@ -34,6 +34,7 @@ import { useTags } from '@carrot/shared/hooks/useTags'
 import { useApiClient } from '@carrot/shared/api/context'
 import { useQueryClient } from '@tanstack/react-query'
 import type { ImportJob, RecipeOut, Tag } from '@carrot/shared/types'
+import { PERSONAL_LIBRARY_COLOR } from '@carrot/shared/utils/householdColors'
 import { tTag } from '@carrot/shared/utils/tagUtils'
 import Avatar from '../../components/Avatar'
 import { TAG_CATEGORIES, groupTagsByCategory, matchesTagFilters } from '@carrot/shared/utils/tagFilters'
@@ -658,10 +659,8 @@ const RecipesScreen = () => {
         ? households.find((candidate) => candidate.id === recipe.household_id)
         : undefined
       const avatars = []
-      const contributorName = recipe.household_id ? recipe.added_by ?? personalName : personalName
-
       if (!recipe.household_id || recipe.shared_to_personal) {
-        avatars.push({ key: 'personal', name: contributorName })
+        avatars.push({ key: 'personal', name: t('households.you'), color: PERSONAL_LIBRARY_COLOR })
       }
       if (household) {
         avatars.push({ key: household.id, name: household.name, color: household.color })
@@ -669,7 +668,7 @@ const RecipesScreen = () => {
 
       return avatars
     },
-    [households, personalName],
+    [households, t],
   )
 
   const renderRecipe = useCallback(

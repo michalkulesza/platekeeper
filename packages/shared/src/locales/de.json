@@ -427,6 +427,7 @@
     "prevMonth": "Vorheriger Monat"
   },
   "households": {
+    "you": "DU",
     "switchContext": "Haushalt wechseln",
     "personal": "Persönlich",
     "personalHousehold": "Persönlicher Haushalt",
