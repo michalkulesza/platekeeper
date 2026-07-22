@@ -4,6 +4,54 @@ export interface DurationMatch {
   end: number;
 }
 
+// Recipe steps retain their source language, so recognize duration units across
+// every app locale rather than assuming English-only instructions.
+const HOUR_UNITS =
+  "hours?|hrs?|h|godzin(?:a|ę|y|ach)?|godz\\.?|stunden?|std\\.?|heure?s?|horas?";
+const MINUTE_UNITS =
+  "minutes?|mins?|m|minut(?:a|ę|y|ach)?|min\\.?|minuten?";
+const SECOND_UNITS =
+  "seconds?|secs?|s|sekund(?:a|ę|y|ach)?|sek\\.?|sekunden?";
+const POLISH_NUMBER_VALUES: Record<string, number> = {
+  jeden: 1,
+  jedna: 1,
+  "jedną": 1,
+  dwa: 2,
+  dwie: 2,
+  trzy: 3,
+  cztery: 4,
+  "pięć": 5,
+  "sześć": 6,
+  siedem: 7,
+  osiem: 8,
+  "dziewięć": 9,
+  "dziesięć": 10,
+  "jedenaście": 11,
+  "dwanaście": 12,
+  "trzynaście": 13,
+  "czternaście": 14,
+  "piętnaście": 15,
+  "szesnaście": 16,
+  "siedemnaście": 17,
+  "osiemnaście": 18,
+  "dziewiętnaście": 19,
+  "dwadzieścia": 20,
+};
+const DURATION_VALUE = `\\d+|${Object.keys(POLISH_NUMBER_VALUES).join("|")}`;
+const HOUR_UNIT = new RegExp(`^(?:${HOUR_UNITS})$`, "i");
+const MINUTE_UNIT = new RegExp(`^(?:${MINUTE_UNITS})$`, "i");
+
+const secondsForUnit = (unit: string): number => {
+  if (HOUR_UNIT.test(unit)) return 3600;
+  if (MINUTE_UNIT.test(unit)) return 60;
+  return 1;
+};
+
+const durationValue = (value: string): number =>
+  Number.isNaN(Number(value))
+    ? POLISH_NUMBER_VALUES[value.toLowerCase()]
+    : Number(value);
+
 export const formatCountdown = (seconds: number): string => {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
@@ -25,89 +73,37 @@ export const formatDurationLabel = (seconds: number): string => {
 };
 
 export const parseDurationMatch = (text: string): DurationMatch | null => {
-  let m: RegExpExecArray | null;
-
-  m = /\b(\d+)[–-](\d+)\s*(hours?|hrs?|minutes?|mins?|seconds?|secs?)\b/i.exec(
-    text,
-  );
-  if (m) {
-    const n = parseInt(m[1]);
-    const u = m[3].toLowerCase();
-    let seconds: number;
-    if (u.startsWith("h")) seconds = n * 3600;
-    else if (u.startsWith("m")) seconds = n * 60;
-    else seconds = n;
-    return { seconds, start: m.index, end: m.index + m[0].length };
-  }
-
-  m =
-    /\b(\d+)\s*(?:hours?|hrs?|h)\s+(?:and\s+)?(\d+)\s*(?:minutes?|mins?|m)\b/i.exec(
-      text,
-    );
-  if (m)
-    return {
-      seconds: parseInt(m[1]) * 3600 + parseInt(m[2]) * 60,
-      start: m.index,
-      end: m.index + m[0].length,
-    };
-
-  m = /\b(\d+)\s*(?:hours?|hrs?)\b/i.exec(text);
-  if (m)
-    return {
-      seconds: parseInt(m[1]) * 3600,
-      start: m.index,
-      end: m.index + m[0].length,
-    };
-
-  m = /\b(\d+)\s*(?:minutes?|mins?)\b/i.exec(text);
-  if (m)
-    return {
-      seconds: parseInt(m[1]) * 60,
-      start: m.index,
-      end: m.index + m[0].length,
-    };
-
-  m = /\b(\d+)\s*(?:seconds?|secs?)\b/i.exec(text);
-  if (m)
-    return {
-      seconds: parseInt(m[1]),
-      start: m.index,
-      end: m.index + m[0].length,
-    };
-
-  return null;
+  return parseDurationMatches(text)[0] ?? null;
 };
 
 /** Finds every duration in an instruction, in reading order. */
 export const parseDurationMatches = (text: string): DurationMatch[] => {
   const matches: DurationMatch[] = [];
-  // The combined form must be claimed first so "1 hour and 20 minutes" does
-  // not become two independent timers.
-  const combined =
-    /\b(\d+)\s*(?:hours?|hrs?|h)\s+(?:and\s+)?(\d+)\s*(?:minutes?|mins?|m)\b/gi;
+  // Claim combined forms first so "1 hour and 20 minutes" becomes one timer.
+  const combined = new RegExp(
+    `\\b(${DURATION_VALUE})\\s*(?:${HOUR_UNITS})\\s+(?:(?:and|i|und|et|y)\\s+)?(${DURATION_VALUE})\\s*(?:${MINUTE_UNITS})\\b`,
+    "gi",
+  );
   let match: RegExpExecArray | null;
   while ((match = combined.exec(text))) {
     matches.push({
-      seconds: parseInt(match[1]) * 3600 + parseInt(match[2]) * 60,
+      seconds: durationValue(match[1]) * 3600 + durationValue(match[2]) * 60,
       start: match.index,
       end: match.index + match[0].length,
     });
   }
 
-  const simple =
-    /\b(\d+)(?:[–-](\d+))?\s*(hours?|hrs?|h|minutes?|mins?|m|seconds?|secs?)\b/gi;
+  const simple = new RegExp(
+    `\\b(${DURATION_VALUE})(?:[–-](${DURATION_VALUE}))?\\s*(${HOUR_UNITS}|${MINUTE_UNITS}|${SECOND_UNITS})\\b`,
+    "gi",
+  );
   while ((match = simple.exec(text))) {
     const start = match.index;
     const end = start + match[0].length;
     if (matches.some((item) => start < item.end && end > item.start)) continue;
-    const unit = match[3].toLowerCase();
-    const value = parseInt(match[1]);
+    const value = durationValue(match[1]);
     matches.push({
-      seconds: unit.startsWith("h")
-        ? value * 3600
-        : unit.startsWith("m")
-          ? value * 60
-          : value,
+      seconds: value * secondsForUnit(match[3]),
       start,
       end,
     });
@@ -117,32 +113,5 @@ export const parseDurationMatches = (text: string): DurationMatch[] => {
 };
 
 export const parseDurationSeconds = (text: string): number | null => {
-  let m: RegExpMatchArray | null;
-
-  m = text.match(
-    /\b(\d+)[–-](\d+)\s*(hours?|hrs?|minutes?|mins?|seconds?|secs?)\b/i,
-  );
-  if (m) {
-    const n = parseInt(m[1]);
-    const u = m[3].toLowerCase();
-    if (u.startsWith("h")) return n * 3600;
-    if (u.startsWith("m")) return n * 60;
-    return n;
-  }
-
-  m = text.match(
-    /\b(\d+)\s*(?:hours?|hrs?|h)\s+(?:and\s+)?(\d+)\s*(?:minutes?|mins?|m)\b/i,
-  );
-  if (m) return parseInt(m[1]) * 3600 + parseInt(m[2]) * 60;
-
-  m = text.match(/\b(\d+)\s*(?:hours?|hrs?)\b/i);
-  if (m) return parseInt(m[1]) * 3600;
-
-  m = text.match(/\b(\d+)\s*(?:minutes?|mins?)\b/i);
-  if (m) return parseInt(m[1]) * 60;
-
-  m = text.match(/\b(\d+)\s*(?:seconds?|secs?)\b/i);
-  if (m) return parseInt(m[1]);
-
-  return null;
+  return parseDurationMatch(text)?.seconds ?? null;
 };

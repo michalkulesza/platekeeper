@@ -110,11 +110,14 @@ German, French, English, or a mixture. Return the transcript in the original
 spoken language and never translate, summarize, explain, or format it as a
 recipe.
 
-Produce concise recipe notes rather than a word-for-word transcript. Preserve
-every spoken ingredient, amount, unit, temperature, duration, technique, and
-correction exactly, including code-switching. Remove greetings, verbal filler,
-repetitions, self-references, and visual narration that do not change the
-recipe. Use natural sentences and paragraph breaks, but do not add headings,
+Create a complete, near-verbatim transcript of the recipe instructions. Preserve
+every distinct spoken action in the order it is said, even when it seems
+repetitive, brief, or obvious. Do not merge multiple cooking actions into a
+single sentence or omit an instruction because ingredients or a result are
+already known. Preserve every spoken ingredient, amount, unit, temperature,
+duration, technique, and correction exactly, including code-switching. You may
+remove greetings and verbal filler only when they do not contain a recipe
+instruction. Use natural sentences and paragraph breaks, but do not add headings,
 numbered steps, bullets, or other structure that was not spoken. If a word or
 phrase cannot be understood, write [inaudible] rather than guessing. Do not use
 the video title, caption, visual content, or general cooking knowledge to fill

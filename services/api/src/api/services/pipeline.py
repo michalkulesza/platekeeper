@@ -30,6 +30,7 @@ log = logging.getLogger(__name__)
 # maps this to a translated, actionable message.
 IMPORT_ERROR_CODE = "extraction_failed"
 USER_ACTION_REQUIRED_ERROR_CODE = "user_action_required"
+_IMPORT_CACHE_ENABLED = False  # Temporarily disabled while debugging transcription imports.
 
 
 # Reused across calls: opening a new CurlAsyncSession per request under
@@ -334,7 +335,7 @@ def _stage_event(key: str, label: str) -> dict[str, Any]:
 
 
 def _done_event(result: ImportResult, cache_key: str | None = None) -> dict[str, Any]:
-    if cache_key and result.stage != ImportStage.FAILED:
+    if _IMPORT_CACHE_ENABLED and cache_key and result.stage != ImportStage.FAILED:
         cache_svc.set(cache_key, result)
     return {"type": "done", "result": result.model_dump()}
 
@@ -366,11 +367,12 @@ async def _with_allergens(
 
 
 async def run_import_stream(url: str, model: str | None = None, available_tags: list[str] | None = None, allergens: list[str] | None = None) -> AsyncGenerator[dict[str, Any], None]:
-    cached = cache_svc.get(url)
-    if cached is not None:
-        log.debug("Cache hit for %s", url)
-        yield _done_event(cached)
-        return
+    if _IMPORT_CACHE_ENABLED:
+        cached = cache_svc.get(url)
+        if cached is not None:
+            log.debug("Cache hit for %s", url)
+            yield _done_event(cached)
+            return
 
     usage = gemini_svc.UsageTracker()
 
@@ -518,6 +520,7 @@ async def run_import_stream(url: str, model: str | None = None, available_tags: 
         try:
             transcript = await transcribe_video(metadata.video_url, usage=usage)
             if transcript.strip():
+                log.debug("Video transcript passed to recipe extraction:\n%s", transcript)
                 yield _stage_event("analyzing_transcript", "Analyzing transcript with Gemini…")
                 result_out_tr: list = []
                 async for _ev in _run_gemini(
@@ -530,7 +533,13 @@ async def run_import_stream(url: str, model: str | None = None, available_tags: 
                 ):
                     yield _ev
                 result = result_out_tr[0]
-                log.debug("Transcript extraction result: title=%r components=%d", result.title, len(result.components))
+                log.debug(
+                    "Transcript extraction result: title=%r components=%d ingredients=%d steps=%d",
+                    result.title,
+                    len(result.components),
+                    sum(len(component.ingredients) for component in result.components),
+                    sum(len(component.steps) for component in result.components),
+                )
                 if _is_complete(result):
                     r = ImportResult(stage=ImportStage.TRANSCRIPT, recipe=result, metadata=meta)
                     yield _done_event(await _with_allergens(r, allergens, usage), cache_key=url)

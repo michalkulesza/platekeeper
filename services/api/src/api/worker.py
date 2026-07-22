@@ -1,9 +1,14 @@
 import asyncio
+import logging
 
 from sqlalchemy import text
 
 from api.database import Base, engine, initialize_vector_schema
 from api.services.import_worker import run
+
+logging.basicConfig(level=logging.INFO)
+logging.getLogger("api.services.transcription").setLevel(logging.DEBUG)
+logging.getLogger("api.services.pipeline").setLevel(logging.DEBUG)
 
 
 async def main() -> None:

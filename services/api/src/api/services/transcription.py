@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import tempfile
 from pathlib import Path
 from urllib.parse import urlparse
@@ -8,6 +9,8 @@ from urllib.parse import urlparse
 import httpx
 
 from api.services import gemini
+
+log = logging.getLogger(__name__)
 
 _MAX_VIDEO_BYTES = 100 * 1024 * 1024
 _MAX_AUDIO_BYTES = 20 * 1024 * 1024
@@ -77,9 +80,15 @@ async def _extract_mp3(video_path: Path, audio_path: Path) -> None:
 
 async def transcribe_video(video_url: str, usage: gemini.UsageTracker | None = None) -> str:
     """Downloads a scraper-supplied video URL and transcribes its spoken audio."""
+    log.debug("Starting video transcription: url=%s", video_url)
     with tempfile.TemporaryDirectory(prefix="carrot-transcription-") as directory:
         video_path = Path(directory) / "video"
         audio_path = Path(directory) / "audio.mp3"
         await _download_video(video_url, video_path)
+        log.debug("Downloaded video for transcription: bytes=%d", video_path.stat().st_size)
         await _extract_mp3(video_path, audio_path)
-        return await gemini.transcribe_audio(audio_path.read_bytes(), usage=usage)
+        audio_data = audio_path.read_bytes()
+        log.debug("Extracted audio for transcription: bytes=%d", len(audio_data))
+        transcript = await gemini.transcribe_audio(audio_data, usage=usage)
+        log.debug("Transcription result for %s:\n%s", video_url, transcript)
+        return transcript
