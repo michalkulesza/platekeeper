@@ -253,9 +253,14 @@ _COUNT_UNIT_PATTERN = re.compile(
     re.IGNORECASE,
 )
 _INLINE_CONVERTIBLE_MEASUREMENT_PATTERN = re.compile(
-    r"\b(?:\d+(?:[./]\d+)?|[½⅓⅔¼¾])\s*(?:ml|l|g|kg|cups?)\b",
+    r"\b(?:\d+(?:[./]\d+)?|[½⅓⅔¼¾])\s*(?:ml|l|g|kg|cups?|lbs?|pounds?|oz|ounces?)\b",
     re.IGNORECASE,
 )
+_METRIC_CONVERSION_REQUIRED_PATTERN = re.compile(
+    r"\b(?:\d+(?:[./]\d+)?|[½⅓⅔¼¾])\s*(?:cups?|lbs?|pounds?|oz|ounces?)\b",
+    re.IGNORECASE,
+)
+_METRIC_MEASUREMENT_PATTERN = re.compile(r"\b(?:ml|l|g|kg)\b", re.IGNORECASE)
 
 
 def _preserve_spoon_measurements(source_ingredients: list[str], variant_ingredients: list[str]) -> list[str]:
@@ -287,6 +292,18 @@ def _preserve_discrete_ingredient_measurements(
         else variant_ingredient
         for source_ingredient, variant_ingredient in zip(source_ingredients, variant_ingredients)
     ]
+
+
+def _validate_metric_ingredients(enrichment: RecipeEnrichment) -> None:
+    for component_index, component in enumerate(enrichment.components):
+        for ingredient_index, ingredient in enumerate(component.metric_ingredients):
+            needs_conversion = _METRIC_CONVERSION_REQUIRED_PATTERN.search(ingredient)
+            has_metric_measurement = _METRIC_MEASUREMENT_PATTERN.search(ingredient)
+            if needs_conversion and not has_metric_measurement:
+                raise ValueError(
+                    f"component {component_index}: metric_ingredients[{ingredient_index}] "
+                    f"retains an unconverted measurement"
+                )
 
 
 def _repair_enrichment_alignment(
@@ -399,6 +416,7 @@ async def _enrich_recipe(
                 raise ValueError(
                     "total_time_minutes must be calculated for a recipe with content"
                 )
+            _validate_metric_ingredients(enrichment)
         except (json.JSONDecodeError, ValidationError, ValueError) as exc:
             validation_error = str(exc)
             if attempt == _MAX_ENRICHMENT_ATTEMPTS:

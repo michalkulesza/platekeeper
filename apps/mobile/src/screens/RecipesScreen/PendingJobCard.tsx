@@ -70,7 +70,6 @@ const PendingJobCard = ({
         text: t('importJobs.userActionRequired.continue'),
         onPress: () => {
           onContinueManually()
-          handleDismiss()
         },
       },
     ])

@@ -171,12 +171,8 @@ const ImportJobCards = ({
                 <Button
                   variant="primary"
                   onPress={() => {
-                    if (manualActionJob) {
+                    if (manualActionJob)
                       onContinueManually(manualActionJob.source_url)
-                      void runAction(manualActionJob.id, () =>
-                        onDismiss(manualActionJob.id)
-                      )
-                    }
                     setManualActionJob(null)
                   }}
                 >

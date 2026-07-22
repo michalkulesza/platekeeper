@@ -100,6 +100,24 @@ async def test_enrichment_falls_back_only_for_misaligned_field(monkeypatch) -> N
     assert generate_content.call_count == 2
 
 
+def test_metric_weight_conversion_is_not_replaced_with_the_source_measurement() -> None:
+    source = ["1 1/2 lbs. skinless salmon fillet"]
+    metric = ["680 g skinless salmon fillet"]
+
+    assert gemini._preserve_discrete_ingredient_measurements(source, metric) == metric
+
+
+def test_metric_ingredients_require_a_metric_measurement() -> None:
+    enrichment = _matching_enrichment()
+    enrichment.components[0].metric_ingredients = ["4 cup coleslaw* (4 cup)"]
+
+    with pytest.raises(ValueError, match="retains an unconverted measurement"):
+        gemini._validate_metric_ingredients(enrichment)
+
+    enrichment.components[0].metric_ingredients = ["227 g coleslaw* (4 cup)"]
+    gemini._validate_metric_ingredients(enrichment)
+
+
 @pytest.mark.asyncio
 async def test_enrichment_retries_when_recipe_time_is_missing(monkeypatch) -> None:
     source = _one_component_source().model_dump(mode="json")
