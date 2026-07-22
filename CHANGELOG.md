@@ -14,6 +14,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.2.0] — 2026-07-22
+
+### Recipes & importing
+
+- ✨ **Feature** — Added semantic recipe search on web and mobile, so searches can find recipes by meaning as well as by matching title or ingredient text.
+- ✨ **Feature** — Recipes can now be shared publicly with a time-limited link. Signed-in recipients can add a shared recipe to their personal library or a selected household.
+- ✨ **Feature** — Recipe serving selections now persist per user, so a chosen serving count is retained when reopening a recipe.
+- ✨ **Feature** — Allergen warnings are now retained and displayed while viewing and cooking recipes on mobile.
+- ✨ **Feature** — Social and video recipe imports now use Gemini audio transcription, improving import support without relying on the previous transcript provider.
+- 🐛 **Bug** — Improved resilience and recovery for failed recipe imports, including mobile URL imports.
+- 🐛 **Bug** — Improved semantic-search feedback and result presentation.
+- 🐛 **Bug** — Recipe thumbnails now have reliable fallback images when no thumbnail can be displayed.
+- 🐛 **Bug** — Ingredient-count conversions, related-recipe navigation and editor updates, and imported-recipe placeholder transitions are more reliable.
+
+### Recipes & cooking
+
+- ✨ **Feature** — Mobile recipe and timer navigation now provides quicker routes to recipe details and the relevant cooking step.
+- ✨ **Feature** — Added haptic feedback to more meaningful mobile interactions, including recipe-list actions.
+- 🐛 **Bug** — Refined Cook mode typography, ingredient checkboxes, theme treatment, screen-wake handling, and the ingredients sheet.
+
+### Apps & platform
+
+- 🐛 **Bug** — Fixed dark-mode transitions while switching households and improved mobile notification history behavior.
+- 🐛 **Bug** — Clarified personal-library ownership labels and household indicators throughout the apps.
+- 🐛 **Bug** — Improved the web sidebar layout.
+
 ## [1.1.0] — 2026-07-17
 
 ### Recipes & cooking
